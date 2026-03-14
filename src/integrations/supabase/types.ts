@@ -10580,6 +10580,86 @@ export type Database = {
           },
         ]
       }
+      export_bonded_warehouses: {
+        Row: {
+          bond_amount: number | null
+          bond_expiry: string | null
+          capacity_total: number | null
+          capacity_used: number | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string | null
+          customs_office: string | null
+          id: string
+          is_active: boolean | null
+          license_expiry: string | null
+          license_number: string | null
+          location: string | null
+          notes: string | null
+          shop_id: string
+          storage_rate_per_day: number | null
+          updated_at: string | null
+          warehouse_name: string
+          warehouse_type: string
+        }
+        Insert: {
+          bond_amount?: number | null
+          bond_expiry?: string | null
+          capacity_total?: number | null
+          capacity_used?: number | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string | null
+          customs_office?: string | null
+          id?: string
+          is_active?: boolean | null
+          license_expiry?: string | null
+          license_number?: string | null
+          location?: string | null
+          notes?: string | null
+          shop_id: string
+          storage_rate_per_day?: number | null
+          updated_at?: string | null
+          warehouse_name: string
+          warehouse_type?: string
+        }
+        Update: {
+          bond_amount?: number | null
+          bond_expiry?: string | null
+          capacity_total?: number | null
+          capacity_used?: number | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string | null
+          customs_office?: string | null
+          id?: string
+          is_active?: boolean | null
+          license_expiry?: string | null
+          license_number?: string | null
+          location?: string | null
+          notes?: string | null
+          shop_id?: string
+          storage_rate_per_day?: number | null
+          updated_at?: string | null
+          warehouse_name?: string
+          warehouse_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_bonded_warehouses_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_bookings: {
         Row: {
           ata: string | null
@@ -11512,6 +11592,101 @@ export type Database = {
           },
         ]
       }
+      export_customs_declarations: {
+        Row: {
+          accepted_date: string | null
+          broker_reference: string | null
+          consignee_name: string | null
+          created_at: string | null
+          currency: string | null
+          customs_broker: string | null
+          declaration_number: string | null
+          declaration_type: string
+          destination_country: string | null
+          exporter_name: string | null
+          filed_date: string | null
+          filing_type: string | null
+          hs_codes: string[] | null
+          id: string
+          itn_number: string | null
+          license_exceptions: string | null
+          notes: string | null
+          origin_country: string | null
+          port_of_entry: string | null
+          port_of_export: string | null
+          shipment_reference: string | null
+          shop_id: string
+          status: string
+          total_value: number | null
+          transport_mode: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accepted_date?: string | null
+          broker_reference?: string | null
+          consignee_name?: string | null
+          created_at?: string | null
+          currency?: string | null
+          customs_broker?: string | null
+          declaration_number?: string | null
+          declaration_type?: string
+          destination_country?: string | null
+          exporter_name?: string | null
+          filed_date?: string | null
+          filing_type?: string | null
+          hs_codes?: string[] | null
+          id?: string
+          itn_number?: string | null
+          license_exceptions?: string | null
+          notes?: string | null
+          origin_country?: string | null
+          port_of_entry?: string | null
+          port_of_export?: string | null
+          shipment_reference?: string | null
+          shop_id: string
+          status?: string
+          total_value?: number | null
+          transport_mode?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accepted_date?: string | null
+          broker_reference?: string | null
+          consignee_name?: string | null
+          created_at?: string | null
+          currency?: string | null
+          customs_broker?: string | null
+          declaration_number?: string | null
+          declaration_type?: string
+          destination_country?: string | null
+          exporter_name?: string | null
+          filed_date?: string | null
+          filing_type?: string | null
+          hs_codes?: string[] | null
+          id?: string
+          itn_number?: string | null
+          license_exceptions?: string | null
+          notes?: string | null
+          origin_country?: string | null
+          port_of_entry?: string | null
+          port_of_export?: string | null
+          shipment_reference?: string | null
+          shop_id?: string
+          status?: string
+          total_value?: number | null
+          transport_mode?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_customs_declarations_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_customs_documents: {
         Row: {
           country_of_origin: string | null
@@ -11606,6 +11781,68 @@ export type Database = {
           },
           {
             foreignKeyName: "export_customs_documents_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_document_templates: {
+        Row: {
+          body_fields: Json | null
+          created_at: string | null
+          default_terms: string | null
+          description: string | null
+          footer_fields: Json | null
+          header_fields: Json | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          logo_url: string | null
+          shop_id: string
+          template_name: string
+          template_type: string
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          body_fields?: Json | null
+          created_at?: string | null
+          default_terms?: string | null
+          description?: string | null
+          footer_fields?: Json | null
+          header_fields?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          logo_url?: string | null
+          shop_id: string
+          template_name: string
+          template_type?: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          body_fields?: Json | null
+          created_at?: string | null
+          default_terms?: string | null
+          description?: string | null
+          footer_fields?: Json | null
+          header_fields?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          logo_url?: string | null
+          shop_id?: string
+          template_name?: string
+          template_type?: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_document_templates_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -12925,6 +13162,80 @@ export type Database = {
           },
         ]
       }
+      export_ports: {
+        Row: {
+          average_transit_days: Json | null
+          city: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          country: string
+          created_at: string | null
+          handling_capabilities: string[] | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          operating_hours: string | null
+          port_code: string | null
+          port_name: string
+          port_type: string
+          shop_id: string
+          terminal_info: string | null
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          average_transit_days?: Json | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country: string
+          created_at?: string | null
+          handling_capabilities?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          operating_hours?: string | null
+          port_code?: string | null
+          port_name: string
+          port_type?: string
+          shop_id: string
+          terminal_info?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          average_transit_days?: Json | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string
+          created_at?: string | null
+          handling_capabilities?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          operating_hours?: string | null
+          port_code?: string | null
+          port_name?: string
+          port_type?: string
+          shop_id?: string
+          terminal_info?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_ports_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_product_categories: {
         Row: {
           created_at: string | null
@@ -14169,6 +14480,92 @@ export type Database = {
           },
         ]
       }
+      export_shipment_costs: {
+        Row: {
+          banking_fees: number | null
+          commission_cost: number | null
+          created_at: string | null
+          currency: string | null
+          customer_name: string | null
+          customs_duties: number | null
+          freight_cost: number | null
+          handling_cost: number | null
+          id: string
+          insurance_cost: number | null
+          margin_pct: number | null
+          notes: string | null
+          order_reference: string | null
+          other_costs: number | null
+          packaging_cost: number | null
+          product_cost: number | null
+          profit: number | null
+          revenue: number | null
+          shipment_date: string | null
+          shipment_reference: string
+          shop_id: string
+          total_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          banking_fees?: number | null
+          commission_cost?: number | null
+          created_at?: string | null
+          currency?: string | null
+          customer_name?: string | null
+          customs_duties?: number | null
+          freight_cost?: number | null
+          handling_cost?: number | null
+          id?: string
+          insurance_cost?: number | null
+          margin_pct?: number | null
+          notes?: string | null
+          order_reference?: string | null
+          other_costs?: number | null
+          packaging_cost?: number | null
+          product_cost?: number | null
+          profit?: number | null
+          revenue?: number | null
+          shipment_date?: string | null
+          shipment_reference: string
+          shop_id: string
+          total_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          banking_fees?: number | null
+          commission_cost?: number | null
+          created_at?: string | null
+          currency?: string | null
+          customer_name?: string | null
+          customs_duties?: number | null
+          freight_cost?: number | null
+          handling_cost?: number | null
+          id?: string
+          insurance_cost?: number | null
+          margin_pct?: number | null
+          notes?: string | null
+          order_reference?: string | null
+          other_costs?: number | null
+          packaging_cost?: number | null
+          product_cost?: number | null
+          profit?: number | null
+          revenue?: number | null
+          shipment_date?: string | null
+          shipment_reference?: string
+          shop_id?: string
+          total_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_shipment_costs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_shipments: {
         Row: {
           actual_arrival: string | null
@@ -14677,6 +15074,213 @@ export type Database = {
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "export_warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_trade_alerts: {
+        Row: {
+          action_url: string | null
+          alert_type: string
+          category: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          expires_at: string | null
+          id: string
+          is_dismissed: boolean | null
+          is_read: boolean | null
+          message: string
+          severity: string
+          shop_id: string
+          title: string
+          triggered_at: string | null
+        }
+        Insert: {
+          action_url?: string | null
+          alert_type?: string
+          category?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expires_at?: string | null
+          id?: string
+          is_dismissed?: boolean | null
+          is_read?: boolean | null
+          message: string
+          severity?: string
+          shop_id: string
+          title: string
+          triggered_at?: string | null
+        }
+        Update: {
+          action_url?: string | null
+          alert_type?: string
+          category?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expires_at?: string | null
+          id?: string
+          is_dismissed?: boolean | null
+          is_read?: boolean | null
+          message?: string
+          severity?: string
+          shop_id?: string
+          title?: string
+          triggered_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_trade_alerts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_trade_finance_snapshots: {
+        Row: {
+          active_guarantees_count: number | null
+          active_guarantees_value: number | null
+          available_credit: number | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          notes: string | null
+          open_lc_count: number | null
+          open_lc_value: number | null
+          overdue_receivables: number | null
+          pending_duty_drawbacks: number | null
+          shop_id: string
+          snapshot_date: string
+          total_credit_exposure: number | null
+          total_receivables: number | null
+        }
+        Insert: {
+          active_guarantees_count?: number | null
+          active_guarantees_value?: number | null
+          available_credit?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          notes?: string | null
+          open_lc_count?: number | null
+          open_lc_value?: number | null
+          overdue_receivables?: number | null
+          pending_duty_drawbacks?: number | null
+          shop_id: string
+          snapshot_date?: string
+          total_credit_exposure?: number | null
+          total_receivables?: number | null
+        }
+        Update: {
+          active_guarantees_count?: number | null
+          active_guarantees_value?: number | null
+          available_credit?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          notes?: string | null
+          open_lc_count?: number | null
+          open_lc_value?: number | null
+          overdue_receivables?: number | null
+          pending_duty_drawbacks?: number | null
+          shop_id?: string
+          snapshot_date?: string
+          total_credit_exposure?: number | null
+          total_receivables?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_trade_finance_snapshots_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_transport_legs: {
+        Row: {
+          actual_arrival: string | null
+          actual_departure: string | null
+          arrival_date: string | null
+          carrier_name: string | null
+          container_number: string | null
+          cost: number | null
+          created_at: string | null
+          currency: string | null
+          departure_date: string | null
+          destination_location: string
+          id: string
+          leg_number: number
+          notes: string | null
+          origin_location: string
+          shipment_reference: string | null
+          shop_id: string
+          status: string
+          tracking_number: string | null
+          transport_mode: string
+          updated_at: string | null
+          vessel_or_vehicle: string | null
+          weight_kg: number | null
+        }
+        Insert: {
+          actual_arrival?: string | null
+          actual_departure?: string | null
+          arrival_date?: string | null
+          carrier_name?: string | null
+          container_number?: string | null
+          cost?: number | null
+          created_at?: string | null
+          currency?: string | null
+          departure_date?: string | null
+          destination_location: string
+          id?: string
+          leg_number?: number
+          notes?: string | null
+          origin_location: string
+          shipment_reference?: string | null
+          shop_id: string
+          status?: string
+          tracking_number?: string | null
+          transport_mode?: string
+          updated_at?: string | null
+          vessel_or_vehicle?: string | null
+          weight_kg?: number | null
+        }
+        Update: {
+          actual_arrival?: string | null
+          actual_departure?: string | null
+          arrival_date?: string | null
+          carrier_name?: string | null
+          container_number?: string | null
+          cost?: number | null
+          created_at?: string | null
+          currency?: string | null
+          departure_date?: string | null
+          destination_location?: string
+          id?: string
+          leg_number?: number
+          notes?: string | null
+          origin_location?: string
+          shipment_reference?: string | null
+          shop_id?: string
+          status?: string
+          tracking_number?: string | null
+          transport_mode?: string
+          updated_at?: string | null
+          vessel_or_vehicle?: string | null
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_transport_legs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
