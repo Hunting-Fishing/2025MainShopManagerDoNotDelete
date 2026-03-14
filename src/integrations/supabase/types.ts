@@ -10979,6 +10979,191 @@ export type Database = {
           },
         ]
       }
+      export_packaging_options: {
+        Row: {
+          created_at: string | null
+          current_stock: number | null
+          height_cm: number | null
+          id: string
+          is_active: boolean | null
+          labor_cost_per_unit: number | null
+          last_order_date: string | null
+          last_order_qty: number | null
+          last_unit_price: number | null
+          length_cm: number | null
+          manufacturer_contact: string | null
+          manufacturer_country: string | null
+          manufacturer_lead_time_days: number | null
+          manufacturer_name: string | null
+          material: string | null
+          material_cost_per_unit: number | null
+          name: string
+          notes: string | null
+          packaging_type: string
+          preferred_supplier: string | null
+          reorder_point: number | null
+          shipping_cost_to_warehouse: number | null
+          shop_id: string
+          size_label: string | null
+          tare_weight_kg: number | null
+          total_cost_per_unit: number | null
+          updated_at: string | null
+          volume_cm3: number | null
+          weight_capacity_kg: number | null
+          width_cm: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_stock?: number | null
+          height_cm?: number | null
+          id?: string
+          is_active?: boolean | null
+          labor_cost_per_unit?: number | null
+          last_order_date?: string | null
+          last_order_qty?: number | null
+          last_unit_price?: number | null
+          length_cm?: number | null
+          manufacturer_contact?: string | null
+          manufacturer_country?: string | null
+          manufacturer_lead_time_days?: number | null
+          manufacturer_name?: string | null
+          material?: string | null
+          material_cost_per_unit?: number | null
+          name: string
+          notes?: string | null
+          packaging_type?: string
+          preferred_supplier?: string | null
+          reorder_point?: number | null
+          shipping_cost_to_warehouse?: number | null
+          shop_id: string
+          size_label?: string | null
+          tare_weight_kg?: number | null
+          total_cost_per_unit?: number | null
+          updated_at?: string | null
+          volume_cm3?: number | null
+          weight_capacity_kg?: number | null
+          width_cm?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          current_stock?: number | null
+          height_cm?: number | null
+          id?: string
+          is_active?: boolean | null
+          labor_cost_per_unit?: number | null
+          last_order_date?: string | null
+          last_order_qty?: number | null
+          last_unit_price?: number | null
+          length_cm?: number | null
+          manufacturer_contact?: string | null
+          manufacturer_country?: string | null
+          manufacturer_lead_time_days?: number | null
+          manufacturer_name?: string | null
+          material?: string | null
+          material_cost_per_unit?: number | null
+          name?: string
+          notes?: string | null
+          packaging_type?: string
+          preferred_supplier?: string | null
+          reorder_point?: number | null
+          shipping_cost_to_warehouse?: number | null
+          shop_id?: string
+          size_label?: string | null
+          tare_weight_kg?: number | null
+          total_cost_per_unit?: number | null
+          updated_at?: string | null
+          volume_cm3?: number | null
+          weight_capacity_kg?: number | null
+          width_cm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_packaging_options_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_packaging_shipments: {
+        Row: {
+          actual_arrival: string | null
+          created_at: string | null
+          expected_arrival: string | null
+          id: string
+          invoice_number: string | null
+          notes: string | null
+          packaging_id: string
+          quantity: number
+          shipment_date: string
+          shipping_cost: number | null
+          shop_id: string
+          status: string | null
+          supplier_country: string | null
+          supplier_name: string | null
+          total_cost: number | null
+          tracking_number: string | null
+          unit_cost: number
+          updated_at: string | null
+        }
+        Insert: {
+          actual_arrival?: string | null
+          created_at?: string | null
+          expected_arrival?: string | null
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          packaging_id: string
+          quantity: number
+          shipment_date: string
+          shipping_cost?: number | null
+          shop_id: string
+          status?: string | null
+          supplier_country?: string | null
+          supplier_name?: string | null
+          total_cost?: number | null
+          tracking_number?: string | null
+          unit_cost?: number
+          updated_at?: string | null
+        }
+        Update: {
+          actual_arrival?: string | null
+          created_at?: string | null
+          expected_arrival?: string | null
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          packaging_id?: string
+          quantity?: number
+          shipment_date?: string
+          shipping_cost?: number | null
+          shop_id?: string
+          status?: string | null
+          supplier_country?: string | null
+          supplier_name?: string | null
+          total_cost?: number | null
+          tracking_number?: string | null
+          unit_cost?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_packaging_shipments_packaging_id_fkey"
+            columns: ["packaging_id"]
+            isOneToOne: false
+            referencedRelation: "export_packaging_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_packaging_shipments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_product_categories: {
         Row: {
           created_at: string | null
@@ -11068,6 +11253,7 @@ export type Database = {
           moisture_content_pct: number | null
           name: string
           packaging_cost_per_unit: number | null
+          packaging_option_id: string | null
           packaging_type: string | null
           phytosanitary_required: boolean | null
           preferred_incoterms: string | null
@@ -11092,6 +11278,7 @@ export type Database = {
           total_units_sold: number | null
           unit_of_measure: string | null
           unit_price: number | null
+          units_per_package: number | null
           updated_at: string | null
           weight_per_unit: number | null
         }
@@ -11133,6 +11320,7 @@ export type Database = {
           moisture_content_pct?: number | null
           name: string
           packaging_cost_per_unit?: number | null
+          packaging_option_id?: string | null
           packaging_type?: string | null
           phytosanitary_required?: boolean | null
           preferred_incoterms?: string | null
@@ -11157,6 +11345,7 @@ export type Database = {
           total_units_sold?: number | null
           unit_of_measure?: string | null
           unit_price?: number | null
+          units_per_package?: number | null
           updated_at?: string | null
           weight_per_unit?: number | null
         }
@@ -11198,6 +11387,7 @@ export type Database = {
           moisture_content_pct?: number | null
           name?: string
           packaging_cost_per_unit?: number | null
+          packaging_option_id?: string | null
           packaging_type?: string | null
           phytosanitary_required?: boolean | null
           preferred_incoterms?: string | null
@@ -11222,6 +11412,7 @@ export type Database = {
           total_units_sold?: number | null
           unit_of_measure?: string | null
           unit_price?: number | null
+          units_per_package?: number | null
           updated_at?: string | null
           weight_per_unit?: number | null
         }
@@ -11231,6 +11422,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "export_product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_products_packaging_option_id_fkey"
+            columns: ["packaging_option_id"]
+            isOneToOne: false
+            referencedRelation: "export_packaging_options"
             referencedColumns: ["id"]
           },
           {
