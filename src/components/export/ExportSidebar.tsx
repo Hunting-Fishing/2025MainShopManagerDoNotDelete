@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ClipboardCheck, Factory, Lock, MapPin, ArrowDownToLine, PackageCheck, ShieldCheck, Bell } from 'lucide-react';
+import { ClipboardCheck, Factory, Lock, MapPin, ArrowDownToLine, PackageCheck, ShieldCheck, Bell, RotateCcw, Landmark, CalendarDays, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -60,6 +60,7 @@ const navSections: NavSection[] = [
       { title: 'Completions', href: '/export/completions', icon: BarChart3, color: 'from-green-500 to-emerald-600' },
       { title: 'Quotes', href: '/export/quotes', icon: FileText, color: 'from-pink-500 to-rose-500' },
       { title: 'Contracts', href: '/export/contracts', icon: FileText, color: 'from-violet-500 to-purple-600' },
+      { title: 'Returns & Claims', href: '/export/returns', icon: RotateCcw, color: 'from-rose-500 to-red-600' },
     ],
   },
   {
@@ -79,6 +80,8 @@ const navSections: NavSection[] = [
       { title: 'Driver App', href: '/export/driver-app', icon: Globe, color: 'from-orange-500 to-amber-600' },
       { title: 'Routes', href: '/export/routes', icon: Route, color: 'from-emerald-500 to-teal-500' },
       { title: 'Insurance', href: '/export/insurance', icon: ShieldCheck, color: 'from-cyan-500 to-blue-500' },
+      { title: 'Forwarders', href: '/export/forwarders', icon: Truck, color: 'from-purple-500 to-indigo-600' },
+      { title: 'Quality Control', href: '/export/quality', icon: ClipboardCheck, color: 'from-teal-500 to-cyan-600' },
     ],
   },
   {
@@ -97,6 +100,8 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Documents', href: '/export/documents', icon: FileText, color: 'from-fuchsia-500 to-pink-600' },
       { title: 'Customs', href: '/export/customs', icon: ShieldCheck, color: 'from-purple-500 to-violet-600' },
+      { title: 'Compliance Calendar', href: '/export/compliance-calendar', icon: CalendarDays, color: 'from-orange-500 to-red-600' },
+      { title: 'Sanctions', href: '/export/sanctions', icon: ShieldAlert, color: 'from-red-500 to-rose-600' },
     ],
   },
   {
@@ -106,6 +111,8 @@ const navSections: NavSection[] = [
       { title: 'Payments', href: '/export/payments', icon: DollarSign, color: 'from-emerald-500 to-green-600' },
       { title: 'Pricing', href: '/export/pricing', icon: DollarSign, color: 'from-amber-500 to-orange-600' },
       { title: 'Currency', href: '/export/currency', icon: ArrowDownToLine, color: 'from-cyan-500 to-teal-600' },
+      { title: 'Letters of Credit', href: '/export/letters-of-credit', icon: Landmark, color: 'from-indigo-500 to-blue-600' },
+      { title: 'Duty Drawbacks', href: '/export/duty-drawbacks', icon: Receipt, color: 'from-lime-500 to-emerald-600' },
     ],
   },
   {
