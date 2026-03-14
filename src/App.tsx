@@ -479,6 +479,18 @@ const ExportTradeFinanceDashboard = lazy(() => import('@/pages/export/ExportTrad
 const ExportDocumentTemplates = lazy(() => import('@/pages/export/ExportDocumentTemplates'));
 const ExportCustomsDeclarations = lazy(() => import('@/pages/export/ExportCustomsDeclarations'));
 const ExportTradeAlerts = lazy(() => import('@/pages/export/ExportTradeAlerts'));
+const ExportShipmentTracker = lazy(() => import('@/pages/export/ExportShipmentTracker'));
+const ExportVendorScorecards = lazy(() => import('@/pages/export/ExportVendorScorecards'));
+const ExportDemandForecasting = lazy(() => import('@/pages/export/ExportDemandForecasting'));
+const ExportContainerLoadPlanning = lazy(() => import('@/pages/export/ExportContainerLoadPlanning'));
+const ExportConsolidatedPL = lazy(() => import('@/pages/export/ExportConsolidatedPL'));
+const ExportAgingReports = lazy(() => import('@/pages/export/ExportAgingReports'));
+const ExportLandedCostCalculator = lazy(() => import('@/pages/export/ExportLandedCostCalculator'));
+const ExportMessagingTemplates = lazy(() => import('@/pages/export/ExportMessagingTemplates'));
+const ExportCustomerPortal = lazy(() => import('@/pages/export/ExportCustomerPortal'));
+const ExportEdiHub = lazy(() => import('@/pages/export/ExportEdiHub'));
+const ExportTradeLaneAnalytics = lazy(() => import('@/pages/export/ExportTradeLaneAnalytics'));
+const ExportKpiDashboard = lazy(() => import('@/pages/export/ExportKpiDashboard'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
