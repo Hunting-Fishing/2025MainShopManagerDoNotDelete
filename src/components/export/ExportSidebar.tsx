@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { ClipboardCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -48,9 +49,10 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Orders & Shipments',
+    title: 'Orders & Requests',
     items: [
       { title: 'Orders', href: '/export/orders', icon: ClipboardList, color: 'from-blue-500 to-cyan-500' },
+      { title: 'Requests', href: '/export/requests', icon: ClipboardCheck, color: 'from-orange-500 to-amber-500' },
       { title: 'Shipments', href: '/export/shipments', icon: Ship, color: 'from-indigo-500 to-violet-600' },
       { title: 'Completions', href: '/export/completions', icon: BarChart3, color: 'from-green-500 to-emerald-600' },
       { title: 'Quotes', href: '/export/quotes', icon: FileText, color: 'from-pink-500 to-rose-500' },
