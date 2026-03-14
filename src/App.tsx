@@ -1639,6 +1639,11 @@ function App() {
                   <Route path="/import-orders" element={<ImportPurchaseOrders />} />
                   <Route path="/import-receiving" element={<ImportReceiving />} />
                   <Route path="/import-customs" element={<ImportCustomsClearance />} />
+                  <Route path="/import-invoices" element={<ImportInvoices />} />
+                  <Route path="/contracts" element={<ExportContracts />} />
+                  <Route path="/currency" element={<ExportCurrencyRates />} />
+                  <Route path="/insurance" element={<ExportShippingInsurance />} />
+                  <Route path="/activity" element={<ExportActivityLog />} />
                 </Routes>
               </ExportLayout>
             </AuthGate>
