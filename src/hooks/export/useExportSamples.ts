@@ -12,7 +12,7 @@ export function useExportSamples() {
   const fetch = useCallback(async () => {
     if (!shopId) return;
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('export_samples')
       .select('*')
       .eq('shop_id', shopId)
@@ -25,27 +25,21 @@ export function useExportSamples() {
 
   const create = async (form: Record<string, any>) => {
     if (!shopId) return false;
-    const { error } = await supabase.from('export_samples').insert({ ...form, shop_id: shopId } as any);
+    const { error } = await (supabase as any).from('export_samples').insert({ ...form, shop_id: shopId });
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
-    toast({ title: 'Sample created' });
-    fetch();
-    return true;
+    toast({ title: 'Sample created' }); fetch(); return true;
   };
 
   const update = async (id: string, form: Record<string, any>) => {
-    const { error } = await supabase.from('export_samples').update(form).eq('id', id);
+    const { error } = await (supabase as any).from('export_samples').update(form).eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
-    toast({ title: 'Sample updated' });
-    fetch();
-    return true;
+    toast({ title: 'Sample updated' }); fetch(); return true;
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from('export_samples').delete().eq('id', id);
+    const { error } = await (supabase as any).from('export_samples').delete().eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
-    toast({ title: 'Sample removed' });
-    fetch();
-    return true;
+    toast({ title: 'Sample removed' }); fetch(); return true;
   };
 
   return { samples, loading, fetch, create, update, remove };

@@ -12,7 +12,7 @@ export function useExportHsCodes() {
   const fetch = useCallback(async () => {
     if (!shopId) return;
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('export_hs_codes')
       .select('*')
       .eq('shop_id', shopId)
@@ -25,27 +25,21 @@ export function useExportHsCodes() {
 
   const create = async (form: Record<string, any>) => {
     if (!shopId) return false;
-    const { error } = await supabase.from('export_hs_codes').insert({ ...form, shop_id: shopId } as any);
+    const { error } = await (supabase as any).from('export_hs_codes').insert({ ...form, shop_id: shopId });
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
-    toast({ title: 'HS Code added' });
-    fetch();
-    return true;
+    toast({ title: 'HS Code added' }); fetch(); return true;
   };
 
   const update = async (id: string, form: Record<string, any>) => {
-    const { error } = await supabase.from('export_hs_codes').update(form).eq('id', id);
+    const { error } = await (supabase as any).from('export_hs_codes').update(form).eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
-    toast({ title: 'HS Code updated' });
-    fetch();
-    return true;
+    toast({ title: 'HS Code updated' }); fetch(); return true;
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from('export_hs_codes').delete().eq('id', id);
+    const { error } = await (supabase as any).from('export_hs_codes').delete().eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
-    toast({ title: 'HS Code removed' });
-    fetch();
-    return true;
+    toast({ title: 'HS Code removed' }); fetch(); return true;
   };
 
   return { hsCodes, loading, fetch, create, update, remove };
