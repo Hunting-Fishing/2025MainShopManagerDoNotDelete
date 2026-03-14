@@ -415,6 +415,32 @@ const SepticInspections = lazy(() => import('@/pages/septic/SepticInspections'))
 const SepticDeveloper = lazy(() => import('@/pages/septic/SepticDeveloper'));
 import { SepticLayout } from '@/components/septic';
 
+// Export Company
+const ExportDashboard = lazy(() => import('@/pages/export/ExportDashboard'));
+const ExportOrders = lazy(() => import('@/pages/export/ExportOrders'));
+const ExportCustomers = lazy(() => import('@/pages/export/ExportCustomers'));
+const ExportProducts = lazy(() => import('@/pages/export/ExportProducts'));
+const ExportVehicles = lazy(() => import('@/pages/export/ExportVehicles'));
+const ExportShipments = lazy(() => import('@/pages/export/ExportShipments'));
+const ExportWarehouses = lazy(() => import('@/pages/export/ExportWarehouses'));
+const ExportInventory = lazy(() => import('@/pages/export/ExportInventory'));
+const ExportDocuments = lazy(() => import('@/pages/export/ExportDocuments'));
+const ExportTrucks = lazy(() => import('@/pages/export/ExportTrucks'));
+const ExportDrivers = lazy(() => import('@/pages/export/ExportDrivers'));
+const ExportRoutes = lazy(() => import('@/pages/export/ExportRoutes'));
+const ExportCompletions = lazy(() => import('@/pages/export/ExportCompletions'));
+const ExportInvoices = lazy(() => import('@/pages/export/ExportInvoices'));
+const ExportQuotes = lazy(() => import('@/pages/export/ExportQuotes'));
+const ExportPricing = lazy(() => import('@/pages/export/ExportPricing'));
+const ExportStaff = lazy(() => import('@/pages/export/ExportStaff'));
+const ExportEquipment = lazy(() => import('@/pages/export/ExportEquipment'));
+const ExportDriverApp = lazy(() => import('@/pages/export/ExportDriverApp'));
+const ExportProfile = lazy(() => import('@/pages/export/ExportProfile'));
+const ExportSettings = lazy(() => import('@/pages/export/ExportSettings'));
+const ExportStore = lazy(() => import('@/pages/export/ExportStore'));
+const ExportDeveloper = lazy(() => import('@/pages/export/ExportDeveloper'));
+import { ExportLayout } from '@/components/export';
+
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
@@ -1550,6 +1576,42 @@ function App() {
                   <Route path="/developer" element={<SepticDeveloper />} />
                 </Routes>
               </SepticLayout>
+            </AuthGate>
+          }
+        />
+
+        {/* Export Company Module */}
+        <Route
+          path="/export/*"
+          element={
+            <AuthGate>
+              <ExportLayout>
+                <Routes>
+                  <Route path="/" element={<ExportDashboard />} />
+                  <Route path="/orders" element={<ExportOrders />} />
+                  <Route path="/customers" element={<ExportCustomers />} />
+                  <Route path="/products" element={<ExportProducts />} />
+                  <Route path="/vehicles" element={<ExportVehicles />} />
+                  <Route path="/shipments" element={<ExportShipments />} />
+                  <Route path="/warehouses" element={<ExportWarehouses />} />
+                  <Route path="/inventory" element={<ExportInventory />} />
+                  <Route path="/documents" element={<ExportDocuments />} />
+                  <Route path="/trucks" element={<ExportTrucks />} />
+                  <Route path="/drivers" element={<ExportDrivers />} />
+                  <Route path="/routes" element={<ExportRoutes />} />
+                  <Route path="/completions" element={<ExportCompletions />} />
+                  <Route path="/invoices" element={<ExportInvoices />} />
+                  <Route path="/quotes" element={<ExportQuotes />} />
+                  <Route path="/pricing" element={<ExportPricing />} />
+                  <Route path="/staff" element={<ExportStaff />} />
+                  <Route path="/equipment" element={<ExportEquipment />} />
+                  <Route path="/driver-app" element={<ExportDriverApp />} />
+                  <Route path="/profile" element={<ExportProfile />} />
+                  <Route path="/settings" element={<ExportSettings />} />
+                  <Route path="/store" element={<ExportStore />} />
+                  <Route path="/developer" element={<ExportDeveloper />} />
+                </Routes>
+              </ExportLayout>
             </AuthGate>
           }
         />
