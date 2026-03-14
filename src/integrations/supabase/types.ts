@@ -11928,6 +11928,7 @@ export type Database = {
           storage_temperature: string | null
           supplier_contact: string | null
           supplier_country: string | null
+          supplier_id: string | null
           supplier_lead_time_days: number | null
           supplier_name: string | null
           target_markets: string[] | null
@@ -11995,6 +11996,7 @@ export type Database = {
           storage_temperature?: string | null
           supplier_contact?: string | null
           supplier_country?: string | null
+          supplier_id?: string | null
           supplier_lead_time_days?: number | null
           supplier_name?: string | null
           target_markets?: string[] | null
@@ -12062,6 +12064,7 @@ export type Database = {
           storage_temperature?: string | null
           supplier_contact?: string | null
           supplier_country?: string | null
+          supplier_id?: string | null
           supplier_lead_time_days?: number | null
           supplier_name?: string | null
           target_markets?: string[] | null
@@ -12095,6 +12098,13 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "export_suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -12678,6 +12688,107 @@ export type Database = {
           },
           {
             foreignKeyName: "export_staff_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_suppliers: {
+        Row: {
+          address: string | null
+          certification_expiry: string | null
+          certifications: string[] | null
+          city: string | null
+          company_name: string
+          contact_name: string | null
+          country: string | null
+          created_at: string | null
+          currency: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          is_preferred: boolean | null
+          lead_time_days: number | null
+          notes: string | null
+          on_time_delivery_pct: number | null
+          payment_terms: string | null
+          phone: string | null
+          product_categories: string[] | null
+          quality_rating: number | null
+          reliability_rating: number | null
+          shop_id: string
+          tags: string[] | null
+          tax_id: string | null
+          total_orders: number | null
+          total_spend: number | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          certification_expiry?: string | null
+          certifications?: string[] | null
+          city?: string | null
+          company_name: string
+          contact_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_preferred?: boolean | null
+          lead_time_days?: number | null
+          notes?: string | null
+          on_time_delivery_pct?: number | null
+          payment_terms?: string | null
+          phone?: string | null
+          product_categories?: string[] | null
+          quality_rating?: number | null
+          reliability_rating?: number | null
+          shop_id: string
+          tags?: string[] | null
+          tax_id?: string | null
+          total_orders?: number | null
+          total_spend?: number | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          certification_expiry?: string | null
+          certifications?: string[] | null
+          city?: string | null
+          company_name?: string
+          contact_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_preferred?: boolean | null
+          lead_time_days?: number | null
+          notes?: string | null
+          on_time_delivery_pct?: number | null
+          payment_terms?: string | null
+          phone?: string | null
+          product_categories?: string[] | null
+          quality_rating?: number | null
+          reliability_rating?: number | null
+          shop_id?: string
+          tags?: string[] | null
+          tax_id?: string | null
+          total_orders?: number | null
+          total_spend?: number | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_suppliers_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
