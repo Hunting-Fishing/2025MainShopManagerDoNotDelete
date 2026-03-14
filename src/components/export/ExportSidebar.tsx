@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ClipboardCheck, Factory, Lock, MapPin, ArrowDownToLine, PackageCheck, ShieldCheck, Bell, RotateCcw, Landmark, CalendarDays, ShieldAlert } from 'lucide-react';
+import { ClipboardCheck, Factory, Lock, MapPin, ArrowDownToLine, PackageCheck, ShieldCheck, Bell, RotateCcw, Landmark, CalendarDays, ShieldAlert, Anchor, Globe2, CreditCard, FileCheck, Hash, Package as PackageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -25,6 +25,7 @@ import {
   Boxes,
   Settings,
   Wrench,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
