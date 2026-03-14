@@ -34,7 +34,7 @@ export default function ExportReports() {
       ]);
 
       const orders = ordersRes.data || [];
-      const totalRevenue = orders.reduce((s, o) => s + Number(o.total_amount || 0), 0);
+      const totalRevenue = orders.reduce((s, o) => s + Number(o.total || 0), 0);
       const ordersByStatus: Record<string, number> = {};
       orders.forEach(o => { ordersByStatus[o.status] = (ordersByStatus[o.status] || 0) + 1; });
 
