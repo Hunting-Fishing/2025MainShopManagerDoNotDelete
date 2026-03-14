@@ -90,6 +90,9 @@ const navSections: NavSection[] = [
       { title: 'Ports', href: '/export/ports', icon: Navigation, color: 'from-sky-500 to-blue-600' },
       { title: 'Intermodal', href: '/export/intermodal', icon: GitBranch, color: 'from-violet-500 to-indigo-600' },
       { title: 'Quality Control', href: '/export/quality', icon: ClipboardCheck, color: 'from-teal-500 to-cyan-600' },
+      { title: 'Shipment Tracker', href: '/export/shipment-tracker', icon: Radar, color: 'from-emerald-500 to-cyan-600' },
+      { title: 'Container Planning', href: '/export/container-load-planning', icon: BoxSelect, color: 'from-orange-500 to-amber-600' },
+      { title: 'Vendor Scorecards', href: '/export/vendor-scorecards', icon: Star, color: 'from-yellow-500 to-amber-600' },
     ],
   },
   {
