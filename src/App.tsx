@@ -1682,6 +1682,14 @@ function App() {
                   <Route path="/credit" element={<ExportCreditManagement />} />
                   <Route path="/certificates" element={<ExportCertificates />} />
                   <Route path="/hs-codes" element={<ExportHsCodes />} />
+                  <Route path="/ports" element={<ExportPorts />} />
+                  <Route path="/bonded-warehouses" element={<ExportBondedWarehouses />} />
+                  <Route path="/intermodal" element={<ExportIntermodal />} />
+                  <Route path="/shipment-pl" element={<ExportShipmentPL />} />
+                  <Route path="/trade-finance" element={<ExportTradeFinanceDashboard />} />
+                  <Route path="/doc-templates" element={<ExportDocumentTemplates />} />
+                  <Route path="/declarations" element={<ExportCustomsDeclarations />} />
+                  <Route path="/trade-alerts" element={<ExportTradeAlerts />} />
                 </Routes>
               </ExportLayout>
             </AuthGate>
