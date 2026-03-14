@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck, Factory, Lock, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
