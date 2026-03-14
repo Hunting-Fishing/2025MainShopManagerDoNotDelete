@@ -1627,6 +1627,13 @@ function App() {
                   <Route path="/suppliers" element={<ExportSuppliers />} />
                   <Route path="/packing" element={<ExportPackingTraceability />} />
                   <Route path="/reservations" element={<ExportReservations />} />
+                  <Route path="/payments" element={<ExportPayments />} />
+                  <Route path="/customs" element={<ExportCustomsCompliance />} />
+                  <Route path="/reports" element={<ExportReports />} />
+                  <Route path="/notifications" element={<ExportNotifications />} />
+                  <Route path="/import-orders" element={<ImportPurchaseOrders />} />
+                  <Route path="/import-receiving" element={<ImportReceiving />} />
+                  <Route path="/import-customs" element={<ImportCustomsClearance />} />
                 </Routes>
               </ExportLayout>
             </AuthGate>
