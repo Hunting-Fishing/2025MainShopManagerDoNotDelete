@@ -1702,6 +1702,18 @@ function App() {
                   <Route path="/doc-templates" element={<ExportDocumentTemplates />} />
                   <Route path="/declarations" element={<ExportCustomsDeclarations />} />
                   <Route path="/trade-alerts" element={<ExportTradeAlerts />} />
+                  <Route path="/shipment-tracker" element={<ExportShipmentTracker />} />
+                  <Route path="/vendor-scorecards" element={<ExportVendorScorecards />} />
+                  <Route path="/demand-forecasting" element={<ExportDemandForecasting />} />
+                  <Route path="/container-load-planning" element={<ExportContainerLoadPlanning />} />
+                  <Route path="/consolidated-pl" element={<ExportConsolidatedPL />} />
+                  <Route path="/aging-reports" element={<ExportAgingReports />} />
+                  <Route path="/landed-cost" element={<ExportLandedCostCalculator />} />
+                  <Route path="/messaging-templates" element={<ExportMessagingTemplates />} />
+                  <Route path="/customer-portal" element={<ExportCustomerPortal />} />
+                  <Route path="/edi-hub" element={<ExportEdiHub />} />
+                  <Route path="/trade-lanes" element={<ExportTradeLaneAnalytics />} />
+                  <Route path="/kpi-dashboard" element={<ExportKpiDashboard />} />
                 </Routes>
               </ExportLayout>
             </AuthGate>
