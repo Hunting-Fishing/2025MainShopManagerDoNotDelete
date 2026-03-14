@@ -10489,6 +10489,80 @@ export type Database = {
           },
         ]
       }
+      export_compliance_calendar: {
+        Row: {
+          authority: string | null
+          completed_by: string | null
+          completed_date: string | null
+          compliance_type: string
+          created_at: string | null
+          created_by: string | null
+          due_date: string
+          entity_id: string | null
+          entity_label: string | null
+          entity_type: string | null
+          id: string
+          notes: string | null
+          priority: string | null
+          reference_number: string | null
+          reminder_days: number | null
+          shop_id: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          authority?: string | null
+          completed_by?: string | null
+          completed_date?: string | null
+          compliance_type: string
+          created_at?: string | null
+          created_by?: string | null
+          due_date: string
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          reference_number?: string | null
+          reminder_days?: number | null
+          shop_id: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          authority?: string | null
+          completed_by?: string | null
+          completed_date?: string | null
+          compliance_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          due_date?: string
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          reference_number?: string | null
+          reminder_days?: number | null
+          shop_id?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_compliance_calendar_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_container_packing: {
         Row: {
           barcode: string | null
@@ -11232,6 +11306,86 @@ export type Database = {
           },
         ]
       }
+      export_duty_drawbacks: {
+        Row: {
+          approval_date: string | null
+          claim_amount: number | null
+          claim_number: string
+          created_at: string | null
+          created_by: string | null
+          customs_reference: string | null
+          duty_paid: number | null
+          export_date: string | null
+          export_entry_number: string | null
+          filing_date: string | null
+          id: string
+          import_date: string | null
+          import_entry_number: string | null
+          notes: string | null
+          payment_date: string | null
+          product_description: string | null
+          refund_received: number | null
+          shop_id: string
+          status: string
+          supporting_docs: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          approval_date?: string | null
+          claim_amount?: number | null
+          claim_number: string
+          created_at?: string | null
+          created_by?: string | null
+          customs_reference?: string | null
+          duty_paid?: number | null
+          export_date?: string | null
+          export_entry_number?: string | null
+          filing_date?: string | null
+          id?: string
+          import_date?: string | null
+          import_entry_number?: string | null
+          notes?: string | null
+          payment_date?: string | null
+          product_description?: string | null
+          refund_received?: number | null
+          shop_id: string
+          status?: string
+          supporting_docs?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          approval_date?: string | null
+          claim_amount?: number | null
+          claim_number?: string
+          created_at?: string | null
+          created_by?: string | null
+          customs_reference?: string | null
+          duty_paid?: number | null
+          export_date?: string | null
+          export_entry_number?: string | null
+          filing_date?: string | null
+          id?: string
+          import_date?: string | null
+          import_entry_number?: string | null
+          notes?: string | null
+          payment_date?: string | null
+          product_description?: string | null
+          refund_received?: number | null
+          shop_id?: string
+          status?: string
+          supporting_docs?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_duty_drawbacks_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_equipment: {
         Row: {
           assigned_to: string | null
@@ -11293,6 +11447,89 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "export_equipment_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_freight_forwarders: {
+        Row: {
+          address: string | null
+          company_name: string
+          contact_name: string | null
+          contract_end: string | null
+          contract_start: string | null
+          country: string | null
+          created_at: string | null
+          damage_rate: number | null
+          email: string | null
+          id: string
+          license_number: string | null
+          notes: string | null
+          on_time_rate: number | null
+          payment_terms: string | null
+          phone: string | null
+          preferred: boolean | null
+          rating: number | null
+          services: Json | null
+          shop_id: string
+          status: string
+          total_shipments: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          company_name: string
+          contact_name?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
+          country?: string | null
+          created_at?: string | null
+          damage_rate?: number | null
+          email?: string | null
+          id?: string
+          license_number?: string | null
+          notes?: string | null
+          on_time_rate?: number | null
+          payment_terms?: string | null
+          phone?: string | null
+          preferred?: boolean | null
+          rating?: number | null
+          services?: Json | null
+          shop_id: string
+          status?: string
+          total_shipments?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          company_name?: string
+          contact_name?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
+          country?: string | null
+          created_at?: string | null
+          damage_rate?: number | null
+          email?: string | null
+          id?: string
+          license_number?: string | null
+          notes?: string | null
+          on_time_rate?: number | null
+          payment_terms?: string | null
+          phone?: string | null
+          preferred?: boolean | null
+          rating?: number | null
+          services?: Json | null
+          shop_id?: string
+          status?: string
+          total_shipments?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_freight_forwarders_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -11625,6 +11862,98 @@ export type Database = {
           },
           {
             foreignKeyName: "export_invoices_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_letters_of_credit: {
+        Row: {
+          advising_bank: string | null
+          amendments: Json | null
+          amount: number
+          beneficiary: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          customer_name: string | null
+          discrepancies: Json | null
+          expiry_date: string | null
+          id: string
+          issue_date: string | null
+          issuing_bank: string | null
+          latest_shipment_date: string | null
+          lc_number: string
+          lc_type: string | null
+          notes: string | null
+          order_id: string | null
+          payment_date: string | null
+          payment_terms: string | null
+          presentation_date: string | null
+          required_documents: Json | null
+          shop_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          advising_bank?: string | null
+          amendments?: Json | null
+          amount: number
+          beneficiary?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_name?: string | null
+          discrepancies?: Json | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_bank?: string | null
+          latest_shipment_date?: string | null
+          lc_number: string
+          lc_type?: string | null
+          notes?: string | null
+          order_id?: string | null
+          payment_date?: string | null
+          payment_terms?: string | null
+          presentation_date?: string | null
+          required_documents?: Json | null
+          shop_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          advising_bank?: string | null
+          amendments?: Json | null
+          amount?: number
+          beneficiary?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_name?: string | null
+          discrepancies?: Json | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_bank?: string | null
+          latest_shipment_date?: string | null
+          lc_number?: string
+          lc_type?: string | null
+          notes?: string | null
+          order_id?: string | null
+          payment_date?: string | null
+          payment_terms?: string | null
+          presentation_date?: string | null
+          required_documents?: Json | null
+          shop_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_letters_of_credit_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -12560,6 +12889,83 @@ export type Database = {
           },
         ]
       }
+      export_quality_inspections: {
+        Row: {
+          certificate_number: string | null
+          checklist: Json | null
+          corrective_actions: string | null
+          created_at: string | null
+          created_by: string | null
+          entity_id: string | null
+          entity_label: string | null
+          entity_type: string
+          findings: string | null
+          id: string
+          inspection_date: string | null
+          inspection_number: string
+          inspection_type: string | null
+          inspector_name: string | null
+          next_inspection_date: string | null
+          overall_grade: string | null
+          photos: Json | null
+          shop_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          certificate_number?: string | null
+          checklist?: Json | null
+          corrective_actions?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string
+          findings?: string | null
+          id?: string
+          inspection_date?: string | null
+          inspection_number: string
+          inspection_type?: string | null
+          inspector_name?: string | null
+          next_inspection_date?: string | null
+          overall_grade?: string | null
+          photos?: Json | null
+          shop_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          certificate_number?: string | null
+          checklist?: Json | null
+          corrective_actions?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string
+          findings?: string | null
+          id?: string
+          inspection_date?: string | null
+          inspection_number?: string
+          inspection_type?: string | null
+          inspector_name?: string | null
+          next_inspection_date?: string | null
+          overall_grade?: string | null
+          photos?: Json | null
+          shop_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_quality_inspections_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_quotes: {
         Row: {
           created_at: string | null
@@ -12854,6 +13260,83 @@ export type Database = {
           },
         ]
       }
+      export_returns: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          credit_note_amount: number | null
+          credit_note_number: string | null
+          customer_name: string | null
+          debit_note_amount: number | null
+          debit_note_number: string | null
+          filed_date: string | null
+          id: string
+          items: Json | null
+          order_id: string | null
+          reason: string | null
+          resolution_notes: string | null
+          resolved_date: string | null
+          return_number: string
+          return_type: string
+          shop_id: string
+          status: string
+          total_value: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          credit_note_amount?: number | null
+          credit_note_number?: string | null
+          customer_name?: string | null
+          debit_note_amount?: number | null
+          debit_note_number?: string | null
+          filed_date?: string | null
+          id?: string
+          items?: Json | null
+          order_id?: string | null
+          reason?: string | null
+          resolution_notes?: string | null
+          resolved_date?: string | null
+          return_number: string
+          return_type?: string
+          shop_id: string
+          status?: string
+          total_value?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          credit_note_amount?: number | null
+          credit_note_number?: string | null
+          customer_name?: string | null
+          debit_note_amount?: number | null
+          debit_note_number?: string | null
+          filed_date?: string | null
+          id?: string
+          items?: Json | null
+          order_id?: string | null
+          reason?: string | null
+          resolution_notes?: string | null
+          resolved_date?: string | null
+          return_number?: string
+          return_type?: string
+          shop_id?: string
+          status?: string
+          total_value?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_returns_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_route_stops: {
         Row: {
           address: string | null
@@ -12989,6 +13472,74 @@ export type Database = {
             columns: ["truck_id"]
             isOneToOne: false
             referencedRelation: "export_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_sanctions_screenings: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          match_details: Json | null
+          result: string
+          review_date: string | null
+          review_notes: string | null
+          reviewed_by: string | null
+          risk_score: number | null
+          screened_entity: string
+          screening_date: string | null
+          screening_source: string | null
+          shop_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          match_details?: Json | null
+          result?: string
+          review_date?: string | null
+          review_notes?: string | null
+          reviewed_by?: string | null
+          risk_score?: number | null
+          screened_entity: string
+          screening_date?: string | null
+          screening_source?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          match_details?: Json | null
+          result?: string
+          review_date?: string | null
+          review_notes?: string | null
+          reviewed_by?: string | null
+          risk_score?: number | null
+          screened_entity?: string
+          screening_date?: string | null
+          screening_source?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_sanctions_screenings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
