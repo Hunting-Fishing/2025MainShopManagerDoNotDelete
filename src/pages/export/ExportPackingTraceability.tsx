@@ -148,7 +148,7 @@ export default function ExportPackingTraceability() {
 
           {loadingPacking ? <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div> : Object.keys(containers).length === 0 ? <p className="text-center text-muted-foreground py-8">No packing records. Add items to containers.</p> : (
             <div className="space-y-4">
-              {Object.entries(containers).map(([containerNum, items]) => {
+              {Object.entries(containers).map(([containerNum, items]: [string, any[]]) => {
                 const totalGross = items.reduce((s: number, i: any) => s + Number(i.gross_weight_kg || 0), 0);
                 const totalNet = items.reduce((s: number, i: any) => s + Number(i.net_weight_kg || 0), 0);
                 const totalCbm = items.reduce((s: number, i: any) => s + Number(i.volume_cbm || 0), 0);
