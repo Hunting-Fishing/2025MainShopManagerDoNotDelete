@@ -10353,7 +10353,7 @@ export type Database = {
           event_id: string | null
           id: string
           is_sent: boolean | null
-          reminder_time: unknown
+          reminder_time: string
           reminder_type: string
           sent_at: string | null
         }
@@ -10362,7 +10362,7 @@ export type Database = {
           event_id?: string | null
           id?: string
           is_sent?: boolean | null
-          reminder_time: unknown
+          reminder_time: string
           reminder_type: string
           sent_at?: string | null
         }
@@ -10371,7 +10371,7 @@ export type Database = {
           event_id?: string | null
           id?: string
           is_sent?: boolean | null
-          reminder_time?: unknown
+          reminder_time?: string
           reminder_type?: string
           sent_at?: string | null
         }
@@ -49415,7 +49415,7 @@ export type Database = {
           employee_count: number | null
           employee_ids: string[] | null
           employee_names: string[] | null
-          hour_block: unknown
+          hour_block: string | null
           shop_id: string | null
         }
         Relationships: [
