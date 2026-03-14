@@ -422,6 +422,7 @@ const ExportCustomers = lazy(() => import('@/pages/export/ExportCustomers'));
 const ExportProducts = lazy(() => import('@/pages/export/ExportProducts'));
 const ExportVehicles = lazy(() => import('@/pages/export/ExportVehicles'));
 const ExportShipments = lazy(() => import('@/pages/export/ExportShipments'));
+const ExportPackaging = lazy(() => import('@/pages/export/ExportPackaging'));
 const ExportWarehouses = lazy(() => import('@/pages/export/ExportWarehouses'));
 const ExportInventory = lazy(() => import('@/pages/export/ExportInventory'));
 const ExportDocuments = lazy(() => import('@/pages/export/ExportDocuments'));
