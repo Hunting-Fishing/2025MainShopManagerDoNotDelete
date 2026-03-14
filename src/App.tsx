@@ -441,6 +441,9 @@ const ExportSettings = lazy(() => import('@/pages/export/ExportSettings'));
 const ExportStore = lazy(() => import('@/pages/export/ExportStore'));
 const ExportDeveloper = lazy(() => import('@/pages/export/ExportDeveloper'));
 const ExportRequests = lazy(() => import('@/pages/export/ExportRequests'));
+const ExportSuppliers = lazy(() => import('@/pages/export/ExportSuppliers'));
+const ExportPackingTraceability = lazy(() => import('@/pages/export/ExportPackingTraceability'));
+const ExportReservations = lazy(() => import('@/pages/export/ExportReservations'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
@@ -1614,6 +1617,9 @@ function App() {
                   <Route path="/store" element={<ExportStore />} />
                   <Route path="/developer" element={<ExportDeveloper />} />
                   <Route path="/requests" element={<ExportRequests />} />
+                  <Route path="/suppliers" element={<ExportSuppliers />} />
+                  <Route path="/packing" element={<ExportPackingTraceability />} />
+                  <Route path="/reservations" element={<ExportReservations />} />
                 </Routes>
               </ExportLayout>
             </AuthGate>

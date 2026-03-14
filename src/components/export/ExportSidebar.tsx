@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck, Factory, Lock, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -61,7 +61,8 @@ const navSections: NavSection[] = [
   {
     title: 'Customers & Products',
     items: [
-      { title: 'Customers', href: '/export/customers', icon: Users, color: 'from-sky-500 to-blue-600' },
+      { title: 'Clients', href: '/export/customers', icon: Users, color: 'from-sky-500 to-blue-600' },
+      { title: 'Suppliers', href: '/export/suppliers', icon: Factory, color: 'from-orange-500 to-red-500' },
       { title: 'Products', href: '/export/products', icon: Package, color: 'from-amber-500 to-orange-600' },
       { title: 'Vehicles', href: '/export/vehicles', icon: Car, color: 'from-red-500 to-rose-600' },
     ],
@@ -79,7 +80,9 @@ const navSections: NavSection[] = [
     title: 'Inventory & Warehouses',
     items: [
       { title: 'Inventory', href: '/export/inventory', icon: Boxes, color: 'from-teal-500 to-cyan-600' },
+      { title: 'Reservations', href: '/export/reservations', icon: Lock, color: 'from-amber-500 to-yellow-600' },
       { title: 'Warehouses', href: '/export/warehouses', icon: Warehouse, color: 'from-violet-500 to-purple-600' },
+      { title: 'Packing & Trace', href: '/export/packing', icon: MapPin, color: 'from-teal-500 to-emerald-600' },
       { title: 'Equipment', href: '/export/equipment', icon: Wrench, color: 'from-gray-500 to-slate-600' },
     ],
   },
