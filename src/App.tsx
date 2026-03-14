@@ -463,6 +463,14 @@ const ExportLettersOfCredit = lazy(() => import('@/pages/export/ExportLettersOfC
 const ExportDutyDrawbacks = lazy(() => import('@/pages/export/ExportDutyDrawbacks'));
 const ExportComplianceCalendar = lazy(() => import('@/pages/export/ExportComplianceCalendar'));
 const ExportSanctionsScreening = lazy(() => import('@/pages/export/ExportSanctionsScreening'));
+const ExportSamples = lazy(() => import('@/pages/export/ExportSamples'));
+const ExportBookings = lazy(() => import('@/pages/export/ExportBookings'));
+const ExportCountryRequirements = lazy(() => import('@/pages/export/ExportCountryRequirements'));
+const ExportAgents = lazy(() => import('@/pages/export/ExportAgents'));
+const ExportBankGuarantees = lazy(() => import('@/pages/export/ExportBankGuarantees'));
+const ExportCreditManagement = lazy(() => import('@/pages/export/ExportCreditManagement'));
+const ExportCertificates = lazy(() => import('@/pages/export/ExportCertificates'));
+const ExportHsCodes = lazy(() => import('@/pages/export/ExportHsCodes'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
