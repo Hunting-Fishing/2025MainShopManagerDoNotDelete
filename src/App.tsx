@@ -1613,6 +1613,7 @@ function App() {
                   <Route path="/settings" element={<ExportSettings />} />
                   <Route path="/store" element={<ExportStore />} />
                   <Route path="/developer" element={<ExportDeveloper />} />
+                  <Route path="/requests" element={<ExportRequests />} />
                 </Routes>
               </ExportLayout>
             </AuthGate>
