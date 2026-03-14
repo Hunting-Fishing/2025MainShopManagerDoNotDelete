@@ -440,6 +440,7 @@ const ExportProfile = lazy(() => import('@/pages/export/ExportProfile'));
 const ExportSettings = lazy(() => import('@/pages/export/ExportSettings'));
 const ExportStore = lazy(() => import('@/pages/export/ExportStore'));
 const ExportDeveloper = lazy(() => import('@/pages/export/ExportDeveloper'));
+const ExportRequests = lazy(() => import('@/pages/export/ExportRequests'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
