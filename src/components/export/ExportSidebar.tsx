@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ClipboardCheck, Factory, Lock, MapPin } from 'lucide-react';
+import { ClipboardCheck, Factory, Lock, MapPin, ArrowDownToLine, PackageCheck, ShieldCheck, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -46,6 +46,8 @@ const navSections: NavSection[] = [
     title: 'Overview',
     items: [
       { title: 'Dashboard', href: '/export', icon: LayoutDashboard, color: 'from-emerald-500 to-teal-600' },
+      { title: 'Alerts', href: '/export/notifications', icon: Bell, color: 'from-red-500 to-rose-600' },
+      { title: 'Reports', href: '/export/reports', icon: BarChart3, color: 'from-cyan-500 to-blue-600' },
     ],
   },
   {
@@ -82,6 +84,7 @@ const navSections: NavSection[] = [
       { title: 'Inventory', href: '/export/inventory', icon: Boxes, color: 'from-teal-500 to-cyan-600' },
       { title: 'Reservations', href: '/export/reservations', icon: Lock, color: 'from-amber-500 to-yellow-600' },
       { title: 'Warehouses', href: '/export/warehouses', icon: Warehouse, color: 'from-violet-500 to-purple-600' },
+      { title: 'Packaging', href: '/export/packaging', icon: Package, color: 'from-lime-500 to-green-600' },
       { title: 'Packing & Trace', href: '/export/packing', icon: MapPin, color: 'from-teal-500 to-emerald-600' },
       { title: 'Equipment', href: '/export/equipment', icon: Wrench, color: 'from-gray-500 to-slate-600' },
     ],
@@ -90,13 +93,23 @@ const navSections: NavSection[] = [
     title: 'Documents & Compliance',
     items: [
       { title: 'Documents', href: '/export/documents', icon: FileText, color: 'from-fuchsia-500 to-pink-600' },
+      { title: 'Customs', href: '/export/customs', icon: ShieldCheck, color: 'from-purple-500 to-violet-600' },
     ],
   },
   {
     title: 'Billing',
     items: [
       { title: 'Invoices', href: '/export/invoices', icon: Receipt, color: 'from-purple-500 to-indigo-600' },
-      { title: 'Pricing', href: '/export/pricing', icon: DollarSign, color: 'from-emerald-500 to-green-600' },
+      { title: 'Payments', href: '/export/payments', icon: DollarSign, color: 'from-emerald-500 to-green-600' },
+      { title: 'Pricing', href: '/export/pricing', icon: DollarSign, color: 'from-amber-500 to-orange-600' },
+    ],
+  },
+  {
+    title: 'Import',
+    items: [
+      { title: 'Purchase Orders', href: '/export/import-orders', icon: ArrowDownToLine, color: 'from-blue-500 to-indigo-600' },
+      { title: 'Receiving', href: '/export/import-receiving', icon: PackageCheck, color: 'from-green-500 to-emerald-600' },
+      { title: 'Customs Clearance', href: '/export/import-customs', icon: ShieldCheck, color: 'from-purple-500 to-indigo-600' },
     ],
   },
   {
