@@ -441,6 +441,9 @@ const ExportSettings = lazy(() => import('@/pages/export/ExportSettings'));
 const ExportStore = lazy(() => import('@/pages/export/ExportStore'));
 const ExportDeveloper = lazy(() => import('@/pages/export/ExportDeveloper'));
 const ExportRequests = lazy(() => import('@/pages/export/ExportRequests'));
+const ExportSuppliers = lazy(() => import('@/pages/export/ExportSuppliers'));
+const ExportPackingTraceability = lazy(() => import('@/pages/export/ExportPackingTraceability'));
+const ExportReservations = lazy(() => import('@/pages/export/ExportReservations'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
