@@ -74,7 +74,7 @@ export function useExportClientContacts(customerId: string | null) {
 
   const create = async (form: Record<string, any>) => {
     if (!shopId || !customerId) return false;
-    const { error } = await supabase.from('export_client_contacts').insert({ ...form, shop_id: shopId, customer_id: customerId });
+    const { error } = await supabase.from('export_client_contacts').insert({ ...form, shop_id: shopId, customer_id: customerId } as any);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     toast({ title: 'Contact added' });
     fetch();

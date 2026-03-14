@@ -73,7 +73,7 @@ export function useExportRequestItems(requestId: string | null) {
 
   const create = async (form: Record<string, any>) => {
     if (!shopId || !requestId) return false;
-    const { error } = await supabase.from('export_request_items').insert({ ...form, shop_id: shopId, request_id: requestId });
+    const { error } = await supabase.from('export_request_items').insert({ ...form, shop_id: shopId, request_id: requestId } as any);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     toast({ title: 'Item added' });
     fetch();

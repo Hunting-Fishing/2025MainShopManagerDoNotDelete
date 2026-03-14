@@ -30,7 +30,7 @@ export function useExportTraceability(filters?: { productId?: string; lotNumber?
 
   const logEvent = async (form: Record<string, any>) => {
     if (!shopId) return false;
-    const { error } = await supabase.from('export_traceability_log').insert({ ...form, shop_id: shopId });
+    const { error } = await supabase.from('export_traceability_log').insert({ ...form, shop_id: shopId } as any);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     fetch();
     return true;
