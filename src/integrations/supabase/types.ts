@@ -10385,6 +10385,1230 @@ export type Database = {
           },
         ]
       }
+      export_customers: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_name: string
+          contact_name: string | null
+          country: string
+          created_at: string | null
+          currency: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          phone: string | null
+          port_of_destination: string | null
+          shop_id: string
+          tax_id: string | null
+          trade_terms: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_name: string
+          contact_name?: string | null
+          country: string
+          created_at?: string | null
+          currency?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          port_of_destination?: string | null
+          shop_id: string
+          tax_id?: string | null
+          trade_terms?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_name?: string
+          contact_name?: string | null
+          country?: string
+          created_at?: string | null
+          currency?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          port_of_destination?: string | null
+          shop_id?: string
+          tax_id?: string | null
+          trade_terms?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_customers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_documents: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          document_number: string | null
+          document_type: string
+          expiry_date: string | null
+          file_url: string | null
+          id: string
+          issue_date: string | null
+          issued_by: string | null
+          notes: string | null
+          order_id: string | null
+          shipment_id: string | null
+          shop_id: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          document_number?: string | null
+          document_type: string
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          issue_date?: string | null
+          issued_by?: string | null
+          notes?: string | null
+          order_id?: string | null
+          shipment_id?: string | null
+          shop_id: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          document_number?: string | null
+          document_type?: string
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          issue_date?: string | null
+          issued_by?: string | null
+          notes?: string | null
+          order_id?: string | null
+          shipment_id?: string | null
+          shop_id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_documents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_documents_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "export_shipments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_documents_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_drivers: {
+        Row: {
+          assigned_truck_id: string | null
+          created_at: string | null
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string
+          license_class: string | null
+          license_expiry: string | null
+          license_number: string | null
+          notes: string | null
+          phone: string | null
+          profile_id: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_truck_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          license_class?: string | null
+          license_expiry?: string | null
+          license_number?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_truck_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          license_class?: string | null
+          license_expiry?: string | null
+          license_number?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_drivers_assigned_truck_id_fkey"
+            columns: ["assigned_truck_id"]
+            isOneToOne: false
+            referencedRelation: "export_trucks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_drivers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_drivers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_equipment: {
+        Row: {
+          assigned_to: string | null
+          condition: string | null
+          created_at: string | null
+          equipment_type: string
+          id: string
+          location: string | null
+          manufacturer: string | null
+          model: string | null
+          name: string
+          next_maintenance: string | null
+          notes: string | null
+          purchase_date: string | null
+          purchase_price: number | null
+          serial_number: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          condition?: string | null
+          created_at?: string | null
+          equipment_type: string
+          id?: string
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          next_maintenance?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          condition?: string | null
+          created_at?: string | null
+          equipment_type?: string
+          id?: string
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          next_maintenance?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_equipment_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_inventory: {
+        Row: {
+          created_at: string | null
+          expiry_date: string | null
+          id: string
+          last_restocked: string | null
+          lot_number: string | null
+          notes: string | null
+          product_id: string | null
+          quantity: number
+          reorder_level: number | null
+          shop_id: string
+          unit: string | null
+          updated_at: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          last_restocked?: string | null
+          lot_number?: string | null
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number
+          reorder_level?: number | null
+          shop_id: string
+          unit?: string | null
+          updated_at?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          last_restocked?: string | null
+          lot_number?: string | null
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number
+          reorder_level?: number | null
+          shop_id?: string
+          unit?: string | null
+          updated_at?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_inventory_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "export_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_inventory_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_inventory_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "export_warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_invoices: {
+        Row: {
+          amount_paid: number | null
+          bank_details: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          customer_id: string | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          invoice_type: string | null
+          issue_date: string
+          notes: string | null
+          order_id: string | null
+          payment_terms: string | null
+          shipping: number | null
+          shop_id: string
+          status: string | null
+          subtotal: number | null
+          tax: number | null
+          total: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          bank_details?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          invoice_type?: string | null
+          issue_date?: string
+          notes?: string | null
+          order_id?: string | null
+          payment_terms?: string | null
+          shipping?: number | null
+          shop_id: string
+          status?: string | null
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          bank_details?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          invoice_type?: string | null
+          issue_date?: string
+          notes?: string | null
+          order_id?: string | null
+          payment_terms?: string | null
+          shipping?: number | null
+          shop_id?: string
+          status?: string | null
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "export_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_invoices_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_order_items: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          order_id: string
+          product_id: string | null
+          quantity: number
+          total_price: number
+          total_weight: number | null
+          unit_price: number
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          order_id: string
+          product_id?: string | null
+          quantity?: number
+          total_price?: number
+          total_weight?: number | null
+          unit_price?: number
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          quantity?: number
+          total_price?: number
+          total_weight?: number | null
+          unit_price?: number
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "export_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_order_items_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "export_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_orders: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          customer_id: string | null
+          destination_country: string | null
+          destination_port: string | null
+          estimated_ship_date: string | null
+          id: string
+          incoterms: string | null
+          notes: string | null
+          order_number: string
+          shipping_cost: number | null
+          shop_id: string
+          status: string
+          subtotal: number | null
+          tax: number | null
+          total: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          destination_country?: string | null
+          destination_port?: string | null
+          estimated_ship_date?: string | null
+          id?: string
+          incoterms?: string | null
+          notes?: string | null
+          order_number: string
+          shipping_cost?: number | null
+          shop_id: string
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          destination_country?: string | null
+          destination_port?: string | null
+          estimated_ship_date?: string | null
+          id?: string
+          incoterms?: string | null
+          notes?: string | null
+          order_number?: string
+          shipping_cost?: number | null
+          shop_id?: string
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "export_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_orders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_products: {
+        Row: {
+          category: string
+          country_of_origin: string | null
+          created_at: string | null
+          description: string | null
+          hs_code: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          packaging_type: string | null
+          shop_id: string
+          sku: string | null
+          unit_of_measure: string | null
+          unit_price: number | null
+          updated_at: string | null
+          weight_per_unit: number | null
+        }
+        Insert: {
+          category?: string
+          country_of_origin?: string | null
+          created_at?: string | null
+          description?: string | null
+          hs_code?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          packaging_type?: string | null
+          shop_id: string
+          sku?: string | null
+          unit_of_measure?: string | null
+          unit_price?: number | null
+          updated_at?: string | null
+          weight_per_unit?: number | null
+        }
+        Update: {
+          category?: string
+          country_of_origin?: string | null
+          created_at?: string | null
+          description?: string | null
+          hs_code?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          packaging_type?: string | null
+          shop_id?: string
+          sku?: string | null
+          unit_of_measure?: string | null
+          unit_price?: number | null
+          updated_at?: string | null
+          weight_per_unit?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_products_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_quotes: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          customer_id: string | null
+          destination_country: string | null
+          destination_port: string | null
+          id: string
+          incoterms: string | null
+          notes: string | null
+          quote_number: string
+          shipping_estimate: number | null
+          shop_id: string
+          status: string | null
+          subtotal: number | null
+          total: number | null
+          updated_at: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          destination_country?: string | null
+          destination_port?: string | null
+          id?: string
+          incoterms?: string | null
+          notes?: string | null
+          quote_number: string
+          shipping_estimate?: number | null
+          shop_id: string
+          status?: string | null
+          subtotal?: number | null
+          total?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          destination_country?: string | null
+          destination_port?: string | null
+          id?: string
+          incoterms?: string | null
+          notes?: string | null
+          quote_number?: string
+          shipping_estimate?: number | null
+          shop_id?: string
+          status?: string | null
+          subtotal?: number | null
+          total?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "export_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_quotes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_route_stops: {
+        Row: {
+          address: string | null
+          arrival_time: string | null
+          created_at: string | null
+          departure_time: string | null
+          id: string
+          latitude: number | null
+          location_name: string
+          longitude: number | null
+          notes: string | null
+          order_id: string | null
+          route_id: string
+          status: string | null
+          stop_order: number
+          stop_type: string | null
+        }
+        Insert: {
+          address?: string | null
+          arrival_time?: string | null
+          created_at?: string | null
+          departure_time?: string | null
+          id?: string
+          latitude?: number | null
+          location_name: string
+          longitude?: number | null
+          notes?: string | null
+          order_id?: string | null
+          route_id: string
+          status?: string | null
+          stop_order: number
+          stop_type?: string | null
+        }
+        Update: {
+          address?: string | null
+          arrival_time?: string | null
+          created_at?: string | null
+          departure_time?: string | null
+          id?: string
+          latitude?: number | null
+          location_name?: string
+          longitude?: number | null
+          notes?: string | null
+          order_id?: string | null
+          route_id?: string
+          status?: string | null
+          stop_order?: number
+          stop_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_route_stops_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_route_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "export_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_routes: {
+        Row: {
+          created_at: string | null
+          driver_id: string | null
+          end_location: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          notes: string | null
+          route_name: string
+          scheduled_date: string
+          shop_id: string
+          start_location: string | null
+          status: string | null
+          total_distance_km: number | null
+          truck_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id?: string | null
+          end_location?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          route_name: string
+          scheduled_date: string
+          shop_id: string
+          start_location?: string | null
+          status?: string | null
+          total_distance_km?: number | null
+          truck_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: string | null
+          end_location?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          route_name?: string
+          scheduled_date?: string
+          shop_id?: string
+          start_location?: string | null
+          status?: string | null
+          total_distance_km?: number | null
+          truck_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_routes_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "export_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_routes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_routes_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "export_trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_shipments: {
+        Row: {
+          actual_arrival: string | null
+          actual_departure: string | null
+          bill_of_lading: string | null
+          container_number: string | null
+          created_at: string | null
+          eta: string | null
+          etd: string | null
+          freight_cost: number | null
+          id: string
+          notes: string | null
+          order_id: string | null
+          port_of_destination: string | null
+          port_of_origin: string | null
+          seal_number: string | null
+          shipment_number: string
+          shipping_line: string | null
+          shop_id: string
+          status: string | null
+          tracking_url: string | null
+          updated_at: string | null
+          vessel_name: string | null
+          volume_cbm: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          actual_arrival?: string | null
+          actual_departure?: string | null
+          bill_of_lading?: string | null
+          container_number?: string | null
+          created_at?: string | null
+          eta?: string | null
+          etd?: string | null
+          freight_cost?: number | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          port_of_destination?: string | null
+          port_of_origin?: string | null
+          seal_number?: string | null
+          shipment_number: string
+          shipping_line?: string | null
+          shop_id: string
+          status?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
+          vessel_name?: string | null
+          volume_cbm?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          actual_arrival?: string | null
+          actual_departure?: string | null
+          bill_of_lading?: string | null
+          container_number?: string | null
+          created_at?: string | null
+          eta?: string | null
+          etd?: string | null
+          freight_cost?: number | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          port_of_destination?: string | null
+          port_of_origin?: string | null
+          seal_number?: string | null
+          shipment_number?: string
+          shipping_line?: string | null
+          shop_id?: string
+          status?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
+          vessel_name?: string | null
+          volume_cbm?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_shipments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_staff: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string | null
+          first_name: string
+          id: string
+          is_active: boolean | null
+          last_name: string
+          phone: string | null
+          profile_id: string | null
+          role: string | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          is_active?: boolean | null
+          last_name: string
+          phone?: string | null
+          profile_id?: string | null
+          role?: string | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          is_active?: boolean | null
+          last_name?: string
+          phone?: string | null
+          profile_id?: string | null
+          role?: string | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_staff_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_staff_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_trucks: {
+        Row: {
+          created_at: string | null
+          current_mileage: number | null
+          id: string
+          insurance_expiry: string | null
+          license_plate: string | null
+          make: string | null
+          max_payload_kg: number | null
+          model: string | null
+          next_service_date: string | null
+          notes: string | null
+          shop_id: string
+          status: string | null
+          truck_type: string | null
+          unit_number: string
+          updated_at: string | null
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_mileage?: number | null
+          id?: string
+          insurance_expiry?: string | null
+          license_plate?: string | null
+          make?: string | null
+          max_payload_kg?: number | null
+          model?: string | null
+          next_service_date?: string | null
+          notes?: string | null
+          shop_id: string
+          status?: string | null
+          truck_type?: string | null
+          unit_number: string
+          updated_at?: string | null
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          current_mileage?: number | null
+          id?: string
+          insurance_expiry?: string | null
+          license_plate?: string | null
+          make?: string | null
+          max_payload_kg?: number | null
+          model?: string | null
+          next_service_date?: string | null
+          notes?: string | null
+          shop_id?: string
+          status?: string | null
+          truck_type?: string | null
+          unit_number?: string
+          updated_at?: string | null
+          vin?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_trucks_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_vehicles: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          customs_status: string | null
+          engine_type: string | null
+          export_destination: string | null
+          id: string
+          location: string | null
+          make: string
+          mileage: number | null
+          model: string
+          notes: string | null
+          photos: string[] | null
+          purchase_price: number | null
+          selling_price: number | null
+          shop_id: string
+          status: string | null
+          title_status: string | null
+          updated_at: string | null
+          vin: string
+          year: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          customs_status?: string | null
+          engine_type?: string | null
+          export_destination?: string | null
+          id?: string
+          location?: string | null
+          make: string
+          mileage?: number | null
+          model: string
+          notes?: string | null
+          photos?: string[] | null
+          purchase_price?: number | null
+          selling_price?: number | null
+          shop_id: string
+          status?: string | null
+          title_status?: string | null
+          updated_at?: string | null
+          vin: string
+          year?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          customs_status?: string | null
+          engine_type?: string | null
+          export_destination?: string | null
+          id?: string
+          location?: string | null
+          make?: string
+          mileage?: number | null
+          model?: string
+          notes?: string | null
+          photos?: string[] | null
+          purchase_price?: number | null
+          selling_price?: number | null
+          shop_id?: string
+          status?: string | null
+          title_status?: string | null
+          updated_at?: string | null
+          vin?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_vehicles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_warehouses: {
+        Row: {
+          address: string | null
+          capacity_sqft: number | null
+          city: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          capacity_sqft?: number | null
+          city?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          capacity_sqft?: number | null
+          city?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_warehouses_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_request_comments: {
         Row: {
           commenter_email: string | null
