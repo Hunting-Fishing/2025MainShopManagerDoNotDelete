@@ -10385,6 +10385,50 @@ export type Database = {
           },
         ]
       }
+      export_activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_label: string | null
+          entity_type: string
+          id: string
+          shop_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type: string
+          id?: string
+          shop_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string
+          id?: string
+          shop_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_activity_log_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_client_contacts: {
         Row: {
           contact_name: string
@@ -10577,6 +10621,214 @@ export type Database = {
             columns: ["variant_id"]
             isOneToOne: false
             referencedRelation: "export_product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_contract_items: {
+        Row: {
+          contract_id: string
+          created_at: string
+          delivery_schedule: string | null
+          description: string | null
+          id: string
+          notes: string | null
+          product_id: string | null
+          quantity: number | null
+          shop_id: string
+          total_price: number | null
+          unit: string | null
+          unit_price: number | null
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          delivery_schedule?: string | null
+          description?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number | null
+          shop_id: string
+          total_price?: number | null
+          unit?: string | null
+          unit_price?: number | null
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          delivery_schedule?: string | null
+          description?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number | null
+          shop_id?: string
+          total_price?: number | null
+          unit?: string | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_contract_items_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "export_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_contract_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "export_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_contract_items_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_contracts: {
+        Row: {
+          auto_renew: boolean | null
+          contract_number: string
+          contract_type: string
+          created_at: string
+          currency: string | null
+          customer_id: string | null
+          end_date: string
+          id: string
+          incoterm: string | null
+          notes: string | null
+          payment_terms: string | null
+          renewal_notice_days: number | null
+          shop_id: string
+          signed_by: string | null
+          signed_date: string | null
+          start_date: string
+          status: string
+          supplier_id: string | null
+          terms_and_conditions: string | null
+          title: string
+          total_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          contract_number: string
+          contract_type?: string
+          created_at?: string
+          currency?: string | null
+          customer_id?: string | null
+          end_date: string
+          id?: string
+          incoterm?: string | null
+          notes?: string | null
+          payment_terms?: string | null
+          renewal_notice_days?: number | null
+          shop_id: string
+          signed_by?: string | null
+          signed_date?: string | null
+          start_date: string
+          status?: string
+          supplier_id?: string | null
+          terms_and_conditions?: string | null
+          title: string
+          total_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          auto_renew?: boolean | null
+          contract_number?: string
+          contract_type?: string
+          created_at?: string
+          currency?: string | null
+          customer_id?: string | null
+          end_date?: string
+          id?: string
+          incoterm?: string | null
+          notes?: string | null
+          payment_terms?: string | null
+          renewal_notice_days?: number | null
+          shop_id?: string
+          signed_by?: string | null
+          signed_date?: string | null
+          start_date?: string
+          status?: string
+          supplier_id?: string | null
+          terms_and_conditions?: string | null
+          title?: string
+          total_value?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_contracts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "export_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_contracts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_contracts_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "export_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_currency_rates: {
+        Row: {
+          base_currency: string
+          created_at: string
+          effective_date: string
+          id: string
+          notes: string | null
+          rate: number
+          shop_id: string
+          source: string | null
+          target_currency: string
+        }
+        Insert: {
+          base_currency?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          notes?: string | null
+          rate: number
+          shop_id: string
+          source?: string | null
+          target_currency: string
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          notes?: string | null
+          rate?: number
+          shop_id?: string
+          source?: string | null
+          target_currency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_currency_rates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -12827,6 +13079,103 @@ export type Database = {
           },
           {
             foreignKeyName: "export_shipments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_shipping_insurance: {
+        Row: {
+          claim_amount: number | null
+          claim_date: string | null
+          claim_description: string | null
+          claim_filed: boolean | null
+          claim_status: string | null
+          coverage_type: string | null
+          created_at: string
+          currency: string | null
+          deductible: number | null
+          effective_date: string
+          expiry_date: string
+          id: string
+          insurance_provider: string
+          insured_value: number
+          notes: string | null
+          order_id: string | null
+          policy_number: string | null
+          premium: number | null
+          shipment_id: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          claim_amount?: number | null
+          claim_date?: string | null
+          claim_description?: string | null
+          claim_filed?: boolean | null
+          claim_status?: string | null
+          coverage_type?: string | null
+          created_at?: string
+          currency?: string | null
+          deductible?: number | null
+          effective_date: string
+          expiry_date: string
+          id?: string
+          insurance_provider: string
+          insured_value?: number
+          notes?: string | null
+          order_id?: string | null
+          policy_number?: string | null
+          premium?: number | null
+          shipment_id?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          claim_amount?: number | null
+          claim_date?: string | null
+          claim_description?: string | null
+          claim_filed?: boolean | null
+          claim_status?: string | null
+          coverage_type?: string | null
+          created_at?: string
+          currency?: string | null
+          deductible?: number | null
+          effective_date?: string
+          expiry_date?: string
+          id?: string
+          insurance_provider?: string
+          insured_value?: number
+          notes?: string | null
+          order_id?: string | null
+          policy_number?: string | null
+          premium?: number | null
+          shipment_id?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_shipping_insurance_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_shipping_insurance_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "export_shipments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_shipping_insurance_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -21223,6 +21572,100 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_invoices: {
+        Row: {
+          amount_paid: number | null
+          created_at: string
+          currency: string | null
+          due_date: string | null
+          duties: number | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          payment_date: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          purchase_order_id: string | null
+          shipping: number | null
+          shop_id: string
+          status: string
+          subtotal: number | null
+          supplier_id: string | null
+          tax: number | null
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          created_at?: string
+          currency?: string | null
+          due_date?: string | null
+          duties?: number | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          purchase_order_id?: string | null
+          shipping?: number | null
+          shop_id: string
+          status?: string
+          subtotal?: number | null
+          supplier_id?: string | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number | null
+          created_at?: string
+          currency?: string | null
+          due_date?: string | null
+          duties?: number | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          purchase_order_id?: string | null
+          shipping?: number | null
+          shop_id?: string
+          status?: string
+          subtotal?: number | null
+          supplier_id?: string | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_invoices_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "import_purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_invoices_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "export_suppliers"
             referencedColumns: ["id"]
           },
         ]

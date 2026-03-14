@@ -48,6 +48,7 @@ const navSections: NavSection[] = [
       { title: 'Dashboard', href: '/export', icon: LayoutDashboard, color: 'from-emerald-500 to-teal-600' },
       { title: 'Alerts', href: '/export/notifications', icon: Bell, color: 'from-red-500 to-rose-600' },
       { title: 'Reports', href: '/export/reports', icon: BarChart3, color: 'from-cyan-500 to-blue-600' },
+      { title: 'Activity Log', href: '/export/activity', icon: ClipboardCheck, color: 'from-slate-500 to-zinc-600' },
     ],
   },
   {
@@ -58,6 +59,7 @@ const navSections: NavSection[] = [
       { title: 'Shipments', href: '/export/shipments', icon: Ship, color: 'from-indigo-500 to-violet-600' },
       { title: 'Completions', href: '/export/completions', icon: BarChart3, color: 'from-green-500 to-emerald-600' },
       { title: 'Quotes', href: '/export/quotes', icon: FileText, color: 'from-pink-500 to-rose-500' },
+      { title: 'Contracts', href: '/export/contracts', icon: FileText, color: 'from-violet-500 to-purple-600' },
     ],
   },
   {
@@ -76,6 +78,7 @@ const navSections: NavSection[] = [
       { title: 'Drivers', href: '/export/drivers', icon: UserCheck, color: 'from-green-500 to-emerald-600' },
       { title: 'Driver App', href: '/export/driver-app', icon: Globe, color: 'from-orange-500 to-amber-600' },
       { title: 'Routes', href: '/export/routes', icon: Route, color: 'from-emerald-500 to-teal-500' },
+      { title: 'Insurance', href: '/export/insurance', icon: ShieldCheck, color: 'from-cyan-500 to-blue-500' },
     ],
   },
   {
@@ -97,11 +100,12 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Billing',
+    title: 'Billing & Finance',
     items: [
       { title: 'Invoices', href: '/export/invoices', icon: Receipt, color: 'from-purple-500 to-indigo-600' },
       { title: 'Payments', href: '/export/payments', icon: DollarSign, color: 'from-emerald-500 to-green-600' },
       { title: 'Pricing', href: '/export/pricing', icon: DollarSign, color: 'from-amber-500 to-orange-600' },
+      { title: 'Currency', href: '/export/currency', icon: ArrowDownToLine, color: 'from-cyan-500 to-teal-600' },
     ],
   },
   {
@@ -110,6 +114,7 @@ const navSections: NavSection[] = [
       { title: 'Purchase Orders', href: '/export/import-orders', icon: ArrowDownToLine, color: 'from-blue-500 to-indigo-600' },
       { title: 'Receiving', href: '/export/import-receiving', icon: PackageCheck, color: 'from-green-500 to-emerald-600' },
       { title: 'Customs Clearance', href: '/export/import-customs', icon: ShieldCheck, color: 'from-purple-500 to-indigo-600' },
+      { title: 'Invoices (AP)', href: '/export/import-invoices', icon: Receipt, color: 'from-blue-500 to-cyan-600' },
     ],
   },
   {

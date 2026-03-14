@@ -451,6 +451,11 @@ const ExportNotifications = lazy(() => import('@/pages/export/ExportNotification
 const ImportPurchaseOrders = lazy(() => import('@/pages/export/ImportPurchaseOrders'));
 const ImportReceiving = lazy(() => import('@/pages/export/ImportReceiving'));
 const ImportCustomsClearance = lazy(() => import('@/pages/export/ImportCustomsClearance'));
+const ExportContracts = lazy(() => import('@/pages/export/ExportContracts'));
+const ExportCurrencyRates = lazy(() => import('@/pages/export/ExportCurrencyRates'));
+const ImportInvoices = lazy(() => import('@/pages/export/ImportInvoices'));
+const ExportShippingInsurance = lazy(() => import('@/pages/export/ExportShippingInsurance'));
+const ExportActivityLog = lazy(() => import('@/pages/export/ExportActivityLog'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
@@ -1634,6 +1639,11 @@ function App() {
                   <Route path="/import-orders" element={<ImportPurchaseOrders />} />
                   <Route path="/import-receiving" element={<ImportReceiving />} />
                   <Route path="/import-customs" element={<ImportCustomsClearance />} />
+                  <Route path="/import-invoices" element={<ImportInvoices />} />
+                  <Route path="/contracts" element={<ExportContracts />} />
+                  <Route path="/currency" element={<ExportCurrencyRates />} />
+                  <Route path="/insurance" element={<ExportShippingInsurance />} />
+                  <Route path="/activity" element={<ExportActivityLog />} />
                 </Routes>
               </ExportLayout>
             </AuthGate>
