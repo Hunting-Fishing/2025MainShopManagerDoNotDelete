@@ -479,6 +479,18 @@ const ExportTradeFinanceDashboard = lazy(() => import('@/pages/export/ExportTrad
 const ExportDocumentTemplates = lazy(() => import('@/pages/export/ExportDocumentTemplates'));
 const ExportCustomsDeclarations = lazy(() => import('@/pages/export/ExportCustomsDeclarations'));
 const ExportTradeAlerts = lazy(() => import('@/pages/export/ExportTradeAlerts'));
+const ExportShipmentTracker = lazy(() => import('@/pages/export/ExportShipmentTracker'));
+const ExportVendorScorecards = lazy(() => import('@/pages/export/ExportVendorScorecards'));
+const ExportDemandForecasting = lazy(() => import('@/pages/export/ExportDemandForecasting'));
+const ExportContainerLoadPlanning = lazy(() => import('@/pages/export/ExportContainerLoadPlanning'));
+const ExportConsolidatedPL = lazy(() => import('@/pages/export/ExportConsolidatedPL'));
+const ExportAgingReports = lazy(() => import('@/pages/export/ExportAgingReports'));
+const ExportLandedCostCalculator = lazy(() => import('@/pages/export/ExportLandedCostCalculator'));
+const ExportMessagingTemplates = lazy(() => import('@/pages/export/ExportMessagingTemplates'));
+const ExportCustomerPortal = lazy(() => import('@/pages/export/ExportCustomerPortal'));
+const ExportEdiHub = lazy(() => import('@/pages/export/ExportEdiHub'));
+const ExportTradeLaneAnalytics = lazy(() => import('@/pages/export/ExportTradeLaneAnalytics'));
+const ExportKpiDashboard = lazy(() => import('@/pages/export/ExportKpiDashboard'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
@@ -1690,6 +1702,18 @@ function App() {
                   <Route path="/doc-templates" element={<ExportDocumentTemplates />} />
                   <Route path="/declarations" element={<ExportCustomsDeclarations />} />
                   <Route path="/trade-alerts" element={<ExportTradeAlerts />} />
+                  <Route path="/shipment-tracker" element={<ExportShipmentTracker />} />
+                  <Route path="/vendor-scorecards" element={<ExportVendorScorecards />} />
+                  <Route path="/demand-forecasting" element={<ExportDemandForecasting />} />
+                  <Route path="/container-load-planning" element={<ExportContainerLoadPlanning />} />
+                  <Route path="/consolidated-pl" element={<ExportConsolidatedPL />} />
+                  <Route path="/aging-reports" element={<ExportAgingReports />} />
+                  <Route path="/landed-cost" element={<ExportLandedCostCalculator />} />
+                  <Route path="/messaging-templates" element={<ExportMessagingTemplates />} />
+                  <Route path="/customer-portal" element={<ExportCustomerPortal />} />
+                  <Route path="/edi-hub" element={<ExportEdiHub />} />
+                  <Route path="/trade-lanes" element={<ExportTradeLaneAnalytics />} />
+                  <Route path="/kpi-dashboard" element={<ExportKpiDashboard />} />
                 </Routes>
               </ExportLayout>
             </AuthGate>

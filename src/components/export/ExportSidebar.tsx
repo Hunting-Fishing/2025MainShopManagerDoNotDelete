@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ClipboardCheck, Factory, Lock, MapPin, ArrowDownToLine, PackageCheck, ShieldCheck, Bell, RotateCcw, Landmark, CalendarDays, ShieldAlert, Anchor, Globe2, CreditCard, FileCheck, Hash, Package as PackageIcon, Navigation, Container, GitBranch, TrendingUp, FileStack, FileBadge, BellRing } from 'lucide-react';
+import { ClipboardCheck, Factory, Lock, MapPin, ArrowDownToLine, PackageCheck, ShieldCheck, Bell, RotateCcw, Landmark, CalendarDays, ShieldAlert, Anchor, Globe2, CreditCard, FileCheck, Hash, Package as PackageIcon, Navigation, Container, GitBranch, TrendingUp, FileStack, FileBadge, BellRing, Radar, Star, LineChart, BoxSelect, Layers, Clock, Calculator, MessageSquare, UserCheck as UserPortal, Cable, Map, Gauge } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -90,6 +90,9 @@ const navSections: NavSection[] = [
       { title: 'Ports', href: '/export/ports', icon: Navigation, color: 'from-sky-500 to-blue-600' },
       { title: 'Intermodal', href: '/export/intermodal', icon: GitBranch, color: 'from-violet-500 to-indigo-600' },
       { title: 'Quality Control', href: '/export/quality', icon: ClipboardCheck, color: 'from-teal-500 to-cyan-600' },
+      { title: 'Shipment Tracker', href: '/export/shipment-tracker', icon: Radar, color: 'from-emerald-500 to-cyan-600' },
+      { title: 'Container Planning', href: '/export/container-load-planning', icon: BoxSelect, color: 'from-orange-500 to-amber-600' },
+      { title: 'Vendor Scorecards', href: '/export/vendor-scorecards', icon: Star, color: 'from-yellow-500 to-amber-600' },
     ],
   },
   {
@@ -130,6 +133,25 @@ const navSections: NavSection[] = [
       { title: 'Bank Guarantees', href: '/export/bank-guarantees', icon: Shield, color: 'from-slate-500 to-zinc-600' },
       { title: 'Trade Finance', href: '/export/trade-finance', icon: TrendingUp, color: 'from-cyan-500 to-emerald-600' },
       { title: 'Shipment P&L', href: '/export/shipment-pl', icon: TrendingUp, color: 'from-green-500 to-emerald-600' },
+      { title: 'Consolidated P&L', href: '/export/consolidated-pl', icon: Layers, color: 'from-blue-500 to-indigo-600' },
+      { title: 'AR/AP Aging', href: '/export/aging-reports', icon: Clock, color: 'from-amber-500 to-orange-600' },
+      { title: 'Landed Cost', href: '/export/landed-cost', icon: Calculator, color: 'from-teal-500 to-emerald-600' },
+    ],
+  },
+  {
+    title: 'Analytics & Intelligence',
+    items: [
+      { title: 'Trade Lanes', href: '/export/trade-lanes', icon: Map, color: 'from-sky-500 to-blue-600' },
+      { title: 'KPI Dashboard', href: '/export/kpi-dashboard', icon: Gauge, color: 'from-emerald-500 to-teal-600' },
+      { title: 'Demand Forecast', href: '/export/demand-forecasting', icon: LineChart, color: 'from-violet-500 to-purple-600' },
+    ],
+  },
+  {
+    title: 'Communication & Integration',
+    items: [
+      { title: 'Messaging', href: '/export/messaging-templates', icon: MessageSquare, color: 'from-blue-500 to-cyan-600' },
+      { title: 'Customer Portal', href: '/export/customer-portal', icon: UserPortal, color: 'from-indigo-500 to-violet-600' },
+      { title: 'EDI / API Hub', href: '/export/edi-hub', icon: Cable, color: 'from-slate-500 to-zinc-600' },
     ],
   },
   {

@@ -10503,6 +10503,63 @@ export type Database = {
           },
         ]
       }
+      export_aging_reports: {
+        Row: {
+          as_of_date: string
+          counterparty_id: string | null
+          counterparty_name: string
+          created_at: string | null
+          currency: string | null
+          current_amount: number | null
+          days_120_plus: number | null
+          days_30: number | null
+          days_60: number | null
+          days_90: number | null
+          id: string
+          notes: string | null
+          report_type: string
+          shop_id: string
+          total_outstanding: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          as_of_date?: string
+          counterparty_id?: string | null
+          counterparty_name: string
+          created_at?: string | null
+          currency?: string | null
+          current_amount?: number | null
+          days_120_plus?: number | null
+          days_30?: number | null
+          days_60?: number | null
+          days_90?: number | null
+          id?: string
+          notes?: string | null
+          report_type: string
+          shop_id: string
+          total_outstanding?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          as_of_date?: string
+          counterparty_id?: string | null
+          counterparty_name?: string
+          created_at?: string | null
+          currency?: string | null
+          current_amount?: number | null
+          days_120_plus?: number | null
+          days_30?: number | null
+          days_60?: number | null
+          days_90?: number | null
+          id?: string
+          notes?: string | null
+          report_type?: string
+          shop_id?: string
+          total_outstanding?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       export_bank_guarantees: {
         Row: {
           amount: number
@@ -10953,6 +11010,140 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_consolidated_pl: {
+        Row: {
+          base_currency: string
+          breakdown_by_currency: Json | null
+          created_at: string | null
+          fx_gain_loss: number | null
+          gross_profit: number | null
+          id: string
+          net_profit: number | null
+          notes: string | null
+          period_end: string
+          period_start: string
+          report_name: string
+          shop_id: string
+          total_cogs: number | null
+          total_commissions: number | null
+          total_duties: number | null
+          total_freight: number | null
+          total_insurance: number | null
+          total_other_costs: number | null
+          total_revenue: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          base_currency?: string
+          breakdown_by_currency?: Json | null
+          created_at?: string | null
+          fx_gain_loss?: number | null
+          gross_profit?: number | null
+          id?: string
+          net_profit?: number | null
+          notes?: string | null
+          period_end: string
+          period_start: string
+          report_name: string
+          shop_id: string
+          total_cogs?: number | null
+          total_commissions?: number | null
+          total_duties?: number | null
+          total_freight?: number | null
+          total_insurance?: number | null
+          total_other_costs?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          base_currency?: string
+          breakdown_by_currency?: Json | null
+          created_at?: string | null
+          fx_gain_loss?: number | null
+          gross_profit?: number | null
+          id?: string
+          net_profit?: number | null
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          report_name?: string
+          shop_id?: string
+          total_cogs?: number | null
+          total_commissions?: number | null
+          total_duties?: number | null
+          total_freight?: number | null
+          total_insurance?: number | null
+          total_other_costs?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      export_container_load_plans: {
+        Row: {
+          container_type: string
+          created_at: string | null
+          id: string
+          items: Json | null
+          max_volume_cbm: number | null
+          max_weight_kg: number | null
+          notes: string | null
+          plan_name: string
+          planned_volume_cbm: number | null
+          planned_weight_kg: number | null
+          shipment_id: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string | null
+          utilization_volume_pct: number | null
+          utilization_weight_pct: number | null
+        }
+        Insert: {
+          container_type?: string
+          created_at?: string | null
+          id?: string
+          items?: Json | null
+          max_volume_cbm?: number | null
+          max_weight_kg?: number | null
+          notes?: string | null
+          plan_name: string
+          planned_volume_cbm?: number | null
+          planned_weight_kg?: number | null
+          shipment_id?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string | null
+          utilization_volume_pct?: number | null
+          utilization_weight_pct?: number | null
+        }
+        Update: {
+          container_type?: string
+          created_at?: string | null
+          id?: string
+          items?: Json | null
+          max_volume_cbm?: number | null
+          max_weight_kg?: number | null
+          notes?: string | null
+          plan_name?: string
+          planned_volume_cbm?: number | null
+          planned_weight_kg?: number | null
+          shipment_id?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string | null
+          utilization_volume_pct?: number | null
+          utilization_weight_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_container_load_plans_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "export_shipments"
             referencedColumns: ["id"]
           },
         ]
@@ -11788,6 +11979,65 @@ export type Database = {
           },
         ]
       }
+      export_demand_forecasts: {
+        Row: {
+          actual_qty: number | null
+          confidence_level: number | null
+          created_at: string | null
+          forecast_period: string
+          forecast_qty: number
+          id: string
+          method: string | null
+          notes: string | null
+          product_id: string | null
+          product_name: string
+          region: string | null
+          shop_id: string
+          updated_at: string | null
+          variance_pct: number | null
+        }
+        Insert: {
+          actual_qty?: number | null
+          confidence_level?: number | null
+          created_at?: string | null
+          forecast_period: string
+          forecast_qty?: number
+          id?: string
+          method?: string | null
+          notes?: string | null
+          product_id?: string | null
+          product_name: string
+          region?: string | null
+          shop_id: string
+          updated_at?: string | null
+          variance_pct?: number | null
+        }
+        Update: {
+          actual_qty?: number | null
+          confidence_level?: number | null
+          created_at?: string | null
+          forecast_period?: string
+          forecast_qty?: number
+          id?: string
+          method?: string | null
+          notes?: string | null
+          product_id?: string | null
+          product_name?: string
+          region?: string | null
+          shop_id?: string
+          updated_at?: string | null
+          variance_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_demand_forecasts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "export_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_document_templates: {
         Row: {
           body_fields: Json | null
@@ -12084,6 +12334,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      export_edi_connections: {
+        Row: {
+          auth_type: string | null
+          config: Json | null
+          connection_name: string
+          connection_type: string
+          created_at: string | null
+          endpoint_url: string | null
+          error_count: number | null
+          id: string
+          last_sync_at: string | null
+          message_count: number | null
+          notes: string | null
+          partner_name: string
+          protocol: string | null
+          shop_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auth_type?: string | null
+          config?: Json | null
+          connection_name: string
+          connection_type?: string
+          created_at?: string | null
+          endpoint_url?: string | null
+          error_count?: number | null
+          id?: string
+          last_sync_at?: string | null
+          message_count?: number | null
+          notes?: string | null
+          partner_name: string
+          protocol?: string | null
+          shop_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auth_type?: string | null
+          config?: Json | null
+          connection_name?: string
+          connection_type?: string
+          created_at?: string | null
+          endpoint_url?: string | null
+          error_count?: number | null
+          id?: string
+          last_sync_at?: string | null
+          message_count?: number | null
+          notes?: string | null
+          partner_name?: string
+          protocol?: string | null
+          shop_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       export_equipment: {
         Row: {
@@ -12648,6 +12955,129 @@ export type Database = {
           },
         ]
       }
+      export_kpi_widgets: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          current_value: number | null
+          display_order: number | null
+          id: string
+          is_visible: boolean | null
+          kpi_type: string
+          period: string | null
+          shop_id: string
+          target_value: number | null
+          trend: string | null
+          trend_value: number | null
+          unit: string | null
+          updated_at: string | null
+          widget_name: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          current_value?: number | null
+          display_order?: number | null
+          id?: string
+          is_visible?: boolean | null
+          kpi_type: string
+          period?: string | null
+          shop_id: string
+          target_value?: number | null
+          trend?: string | null
+          trend_value?: number | null
+          unit?: string | null
+          updated_at?: string | null
+          widget_name: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          current_value?: number | null
+          display_order?: number | null
+          id?: string
+          is_visible?: boolean | null
+          kpi_type?: string
+          period?: string | null
+          shop_id?: string
+          target_value?: number | null
+          trend?: string | null
+          trend_value?: number | null
+          unit?: string | null
+          updated_at?: string | null
+          widget_name?: string
+        }
+        Relationships: []
+      }
+      export_landed_cost_calculations: {
+        Row: {
+          calculation_name: string
+          created_at: string | null
+          currency: string | null
+          customs_duty_amount: number | null
+          customs_duty_rate: number | null
+          destination_country: string | null
+          freight_cost: number | null
+          handling_cost: number | null
+          hs_code: string | null
+          id: string
+          insurance_cost: number | null
+          notes: string | null
+          other_costs: number | null
+          product_cost: number | null
+          product_name: string
+          quantity: number | null
+          shop_id: string
+          total_landed_cost: number | null
+          unit_landed_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          calculation_name: string
+          created_at?: string | null
+          currency?: string | null
+          customs_duty_amount?: number | null
+          customs_duty_rate?: number | null
+          destination_country?: string | null
+          freight_cost?: number | null
+          handling_cost?: number | null
+          hs_code?: string | null
+          id?: string
+          insurance_cost?: number | null
+          notes?: string | null
+          other_costs?: number | null
+          product_cost?: number | null
+          product_name: string
+          quantity?: number | null
+          shop_id: string
+          total_landed_cost?: number | null
+          unit_landed_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          calculation_name?: string
+          created_at?: string | null
+          currency?: string | null
+          customs_duty_amount?: number | null
+          customs_duty_rate?: number | null
+          destination_country?: string | null
+          freight_cost?: number | null
+          handling_cost?: number | null
+          hs_code?: string | null
+          id?: string
+          insurance_cost?: number | null
+          notes?: string | null
+          other_costs?: number | null
+          product_cost?: number | null
+          product_name?: string
+          quantity?: number | null
+          shop_id?: string
+          total_landed_cost?: number | null
+          unit_landed_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       export_letters_of_credit: {
         Row: {
           advising_bank: string | null
@@ -12739,6 +13169,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      export_messaging_templates: {
+        Row: {
+          body: string
+          category: string
+          channel: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          language: string | null
+          shop_id: string
+          subject: string | null
+          template_name: string
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          body: string
+          category?: string
+          channel?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          language?: string | null
+          shop_id: string
+          subject?: string | null
+          template_name: string
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          body?: string
+          category?: string
+          channel?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          language?: string | null
+          shop_id?: string
+          subject?: string | null
+          template_name?: string
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
       }
       export_order_items: {
         Row: {
@@ -13158,6 +13633,50 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_portal_access: {
+        Row: {
+          access_token: string | null
+          created_at: string | null
+          customer_id: string | null
+          id: string
+          is_active: boolean | null
+          last_login: string | null
+          permissions: Json | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_login?: string | null
+          permissions?: Json | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_login?: string | null
+          permissions?: Json | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_portal_access_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "export_customers"
             referencedColumns: ["id"]
           },
         ]
@@ -14566,6 +15085,93 @@ export type Database = {
           },
         ]
       }
+      export_shipment_tracker: {
+        Row: {
+          actual_arrival: string | null
+          actual_departure: string | null
+          container_number: string | null
+          created_at: string | null
+          current_location: string | null
+          current_status: string
+          delay_days: number | null
+          destination_port: string | null
+          eta: string | null
+          etd: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          milestone_log: Json | null
+          notes: string | null
+          order_id: string | null
+          origin_port: string | null
+          shipment_id: string | null
+          shop_id: string
+          updated_at: string | null
+          vessel_name: string | null
+        }
+        Insert: {
+          actual_arrival?: string | null
+          actual_departure?: string | null
+          container_number?: string | null
+          created_at?: string | null
+          current_location?: string | null
+          current_status?: string
+          delay_days?: number | null
+          destination_port?: string | null
+          eta?: string | null
+          etd?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          milestone_log?: Json | null
+          notes?: string | null
+          order_id?: string | null
+          origin_port?: string | null
+          shipment_id?: string | null
+          shop_id: string
+          updated_at?: string | null
+          vessel_name?: string | null
+        }
+        Update: {
+          actual_arrival?: string | null
+          actual_departure?: string | null
+          container_number?: string | null
+          created_at?: string | null
+          current_location?: string | null
+          current_status?: string
+          delay_days?: number | null
+          destination_port?: string | null
+          eta?: string | null
+          etd?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          milestone_log?: Json | null
+          notes?: string | null
+          order_id?: string | null
+          origin_port?: string | null
+          shipment_id?: string | null
+          shop_id?: string
+          updated_at?: string | null
+          vessel_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_shipment_tracker_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "export_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_shipment_tracker_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "export_shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_shipments: {
         Row: {
           actual_arrival: string | null
@@ -15202,6 +15808,66 @@ export type Database = {
           },
         ]
       }
+      export_trade_lanes: {
+        Row: {
+          avg_cost_per_kg: number | null
+          avg_transit_days: number | null
+          created_at: string | null
+          destination_country: string
+          destination_port: string | null
+          id: string
+          notes: string | null
+          origin_country: string
+          origin_port: string | null
+          period: string | null
+          primary_transport_mode: string | null
+          shop_id: string
+          total_revenue: number | null
+          total_shipments: number | null
+          total_volume_cbm: number | null
+          total_weight_kg: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avg_cost_per_kg?: number | null
+          avg_transit_days?: number | null
+          created_at?: string | null
+          destination_country: string
+          destination_port?: string | null
+          id?: string
+          notes?: string | null
+          origin_country: string
+          origin_port?: string | null
+          period?: string | null
+          primary_transport_mode?: string | null
+          shop_id: string
+          total_revenue?: number | null
+          total_shipments?: number | null
+          total_volume_cbm?: number | null
+          total_weight_kg?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avg_cost_per_kg?: number | null
+          avg_transit_days?: number | null
+          created_at?: string | null
+          destination_country?: string
+          destination_port?: string | null
+          id?: string
+          notes?: string | null
+          origin_country?: string
+          origin_port?: string | null
+          period?: string | null
+          primary_transport_mode?: string | null
+          shop_id?: string
+          total_revenue?: number | null
+          total_shipments?: number | null
+          total_volume_cbm?: number | null
+          total_weight_kg?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       export_transport_legs: {
         Row: {
           actual_arrival: string | null
@@ -15429,6 +16095,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      export_vendor_scorecards: {
+        Row: {
+          cost_competitiveness: number | null
+          created_at: string | null
+          id: string
+          last_review_date: string | null
+          notes: string | null
+          on_time_delivery_pct: number | null
+          overall_score: number | null
+          quality_score: number | null
+          responsiveness_score: number | null
+          review_period: string | null
+          shop_id: string
+          total_orders: number | null
+          total_value: number | null
+          updated_at: string | null
+          vendor_name: string
+          vendor_type: string
+        }
+        Insert: {
+          cost_competitiveness?: number | null
+          created_at?: string | null
+          id?: string
+          last_review_date?: string | null
+          notes?: string | null
+          on_time_delivery_pct?: number | null
+          overall_score?: number | null
+          quality_score?: number | null
+          responsiveness_score?: number | null
+          review_period?: string | null
+          shop_id: string
+          total_orders?: number | null
+          total_value?: number | null
+          updated_at?: string | null
+          vendor_name: string
+          vendor_type?: string
+        }
+        Update: {
+          cost_competitiveness?: number | null
+          created_at?: string | null
+          id?: string
+          last_review_date?: string | null
+          notes?: string | null
+          on_time_delivery_pct?: number | null
+          overall_score?: number | null
+          quality_score?: number | null
+          responsiveness_score?: number | null
+          review_period?: string | null
+          shop_id?: string
+          total_orders?: number | null
+          total_value?: number | null
+          updated_at?: string | null
+          vendor_name?: string
+          vendor_type?: string
+        }
+        Relationships: []
       }
       export_warehouses: {
         Row: {
