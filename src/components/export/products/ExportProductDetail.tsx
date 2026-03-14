@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Edit, TrendingUp, TrendingDown, DollarSign, Package, Truck, Shield, BarChart3, Globe } from 'lucide-react';
 import { ProfitProtectionCard } from './ProfitProtectionCard';
+import { ProductVariantsManager } from './ProductVariantsManager';
+import { ProductIngredientsManager } from './ProductIngredientsManager';
 
 interface ExportProductDetailProps {
   product: any;
@@ -81,6 +83,12 @@ export function ExportProductDetail({ product: p, onBack, onEdit }: ExportProduc
           </div>
         </CardContent>
       </Card>
+
+      {/* Product Variants */}
+      <ProductVariantsManager productId={p.id} productName={p.name} />
+
+      {/* Ingredients */}
+      <ProductIngredientsManager productId={p.id} productName={p.name} />
 
       {/* Profit Protection */}
       <ProfitProtectionCard product={p} />
