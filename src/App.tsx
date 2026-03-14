@@ -1651,6 +1651,13 @@ function App() {
                   <Route path="/currency" element={<ExportCurrencyRates />} />
                   <Route path="/insurance" element={<ExportShippingInsurance />} />
                   <Route path="/activity" element={<ExportActivityLog />} />
+                  <Route path="/returns" element={<ExportReturns />} />
+                  <Route path="/quality" element={<ExportQualityControl />} />
+                  <Route path="/forwarders" element={<ExportFreightForwarders />} />
+                  <Route path="/letters-of-credit" element={<ExportLettersOfCredit />} />
+                  <Route path="/duty-drawbacks" element={<ExportDutyDrawbacks />} />
+                  <Route path="/compliance-calendar" element={<ExportComplianceCalendar />} />
+                  <Route path="/sanctions" element={<ExportSanctionsScreening />} />
                 </Routes>
               </ExportLayout>
             </AuthGate>
