@@ -415,6 +415,32 @@ const SepticInspections = lazy(() => import('@/pages/septic/SepticInspections'))
 const SepticDeveloper = lazy(() => import('@/pages/septic/SepticDeveloper'));
 import { SepticLayout } from '@/components/septic';
 
+// Export Company
+const ExportDashboard = lazy(() => import('@/pages/export/ExportDashboard'));
+const ExportOrders = lazy(() => import('@/pages/export/ExportOrders'));
+const ExportCustomers = lazy(() => import('@/pages/export/ExportCustomers'));
+const ExportProducts = lazy(() => import('@/pages/export/ExportProducts'));
+const ExportVehicles = lazy(() => import('@/pages/export/ExportVehicles'));
+const ExportShipments = lazy(() => import('@/pages/export/ExportShipments'));
+const ExportWarehouses = lazy(() => import('@/pages/export/ExportWarehouses'));
+const ExportInventory = lazy(() => import('@/pages/export/ExportInventory'));
+const ExportDocuments = lazy(() => import('@/pages/export/ExportDocuments'));
+const ExportTrucks = lazy(() => import('@/pages/export/ExportTrucks'));
+const ExportDrivers = lazy(() => import('@/pages/export/ExportDrivers'));
+const ExportRoutes = lazy(() => import('@/pages/export/ExportRoutes'));
+const ExportCompletions = lazy(() => import('@/pages/export/ExportCompletions'));
+const ExportInvoices = lazy(() => import('@/pages/export/ExportInvoices'));
+const ExportQuotes = lazy(() => import('@/pages/export/ExportQuotes'));
+const ExportPricing = lazy(() => import('@/pages/export/ExportPricing'));
+const ExportStaff = lazy(() => import('@/pages/export/ExportStaff'));
+const ExportEquipment = lazy(() => import('@/pages/export/ExportEquipment'));
+const ExportDriverApp = lazy(() => import('@/pages/export/ExportDriverApp'));
+const ExportProfile = lazy(() => import('@/pages/export/ExportProfile'));
+const ExportSettings = lazy(() => import('@/pages/export/ExportSettings'));
+const ExportStore = lazy(() => import('@/pages/export/ExportStore'));
+const ExportDeveloper = lazy(() => import('@/pages/export/ExportDeveloper'));
+import { ExportLayout } from '@/components/export';
+
 function App() {
   useEffect(() => {
     // Initialize auth monitoring
