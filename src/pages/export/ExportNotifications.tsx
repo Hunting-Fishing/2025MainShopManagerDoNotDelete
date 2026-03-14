@@ -66,35 +66,35 @@ export default function ExportNotifications() {
       // Overdue invoices
       const { data: invoices } = await supabase
         .from('export_invoices')
-        .select('id, invoice_number, total_amount, due_date, export_customers(company_name)')
+        .select('id, invoice_number, total, due_date, export_customers(company_name)')
         .eq('shop_id', shopId)
         .eq('status', 'sent')
         .lt('due_date', new Date().toISOString());
       (invoices || []).forEach(inv => {
-        const daysOverdue = Math.ceil((Date.now() - new Date(inv.due_date).getTime()) / (1000 * 60 * 60 * 24));
+        const daysOverdue = Math.ceil((Date.now() - new Date(inv.due_date!).getTime()) / (1000 * 60 * 60 * 24));
         newAlerts.push({
           id: `inv-${inv.id}`,
           type: 'overdue_payment',
           title: `Overdue: ${inv.invoice_number}`,
-          description: `$${Number(inv.total_amount).toLocaleString()} from ${(inv as any).export_customers?.company_name || 'Unknown'} — ${daysOverdue} days overdue`,
+          description: `$${Number(inv.total || 0).toLocaleString()} from ${(inv as any).export_customers?.company_name || 'Unknown'} — ${daysOverdue} days overdue`,
           severity: daysOverdue > 30 ? 'critical' : 'warning',
-          date: inv.due_date,
+          date: inv.due_date || undefined,
         });
       });
 
       // Delayed shipments
       const { data: shipments } = await supabase
         .from('export_shipments')
-        .select('id, tracking_number, eta, status')
+        .select('id, shipment_number, eta, status')
         .eq('shop_id', shopId)
         .in('status', ['in_transit', 'pending'])
         .lt('eta', new Date().toISOString());
       (shipments || []).forEach(s => {
-        const daysLate = Math.ceil((Date.now() - new Date(s.eta).getTime()) / (1000 * 60 * 60 * 24));
+        const daysLate = Math.ceil((Date.now() - new Date(s.eta!).getTime()) / (1000 * 60 * 60 * 24));
         newAlerts.push({
           id: `ship-${s.id}`,
           type: 'shipment_delay',
-          title: `Delayed: ${s.tracking_number || 'Shipment'}`,
+          title: `Delayed: ${s.shipment_number || 'Shipment'}`,
           description: `Expected ${daysLate} days ago, still ${s.status}`,
           severity: daysLate > 7 ? 'critical' : 'warning',
         });

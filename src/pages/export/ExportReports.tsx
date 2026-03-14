@@ -26,7 +26,7 @@ export default function ExportReports() {
     (async () => {
       setLoading(true);
       const [ordersRes, shipmentsRes, clientsRes, productsRes, paymentsRes] = await Promise.all([
-        supabase.from('export_orders').select('id, order_number, total_amount, status, export_customers(company_name)').eq('shop_id', shopId),
+        supabase.from('export_orders').select('id, order_number, total, status, export_customers(company_name)').eq('shop_id', shopId),
         supabase.from('export_shipments').select('id, status').eq('shop_id', shopId),
         supabase.from('export_customers').select('id, company_name').eq('shop_id', shopId),
         supabase.from('export_products').select('id, name').eq('shop_id', shopId),
