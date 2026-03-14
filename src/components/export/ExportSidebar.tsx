@@ -48,6 +48,7 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Dashboard', href: '/export', icon: LayoutDashboard, color: 'from-emerald-500 to-teal-600' },
       { title: 'Alerts', href: '/export/notifications', icon: Bell, color: 'from-red-500 to-rose-600' },
+      { title: 'Trade Alerts', href: '/export/trade-alerts', icon: BellRing, color: 'from-orange-500 to-red-500' },
       { title: 'Reports', href: '/export/reports', icon: BarChart3, color: 'from-cyan-500 to-blue-600' },
       { title: 'Activity Log', href: '/export/activity', icon: ClipboardCheck, color: 'from-slate-500 to-zinc-600' },
     ],
