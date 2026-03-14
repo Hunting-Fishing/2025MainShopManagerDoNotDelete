@@ -451,6 +451,11 @@ const ExportNotifications = lazy(() => import('@/pages/export/ExportNotification
 const ImportPurchaseOrders = lazy(() => import('@/pages/export/ImportPurchaseOrders'));
 const ImportReceiving = lazy(() => import('@/pages/export/ImportReceiving'));
 const ImportCustomsClearance = lazy(() => import('@/pages/export/ImportCustomsClearance'));
+const ExportContracts = lazy(() => import('@/pages/export/ExportContracts'));
+const ExportCurrencyRates = lazy(() => import('@/pages/export/ExportCurrencyRates'));
+const ImportInvoices = lazy(() => import('@/pages/export/ImportInvoices'));
+const ExportShippingInsurance = lazy(() => import('@/pages/export/ExportShippingInsurance'));
+const ExportActivityLog = lazy(() => import('@/pages/export/ExportActivityLog'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
