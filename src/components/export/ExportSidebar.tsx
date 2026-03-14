@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ClipboardCheck, Factory, Lock, MapPin, ArrowDownToLine, PackageCheck, ShieldCheck, Bell } from 'lucide-react';
+import { ClipboardCheck, Factory, Lock, MapPin, ArrowDownToLine, PackageCheck, ShieldCheck, Bell, RotateCcw, Landmark, CalendarDays, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
