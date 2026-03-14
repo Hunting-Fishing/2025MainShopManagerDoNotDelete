@@ -10676,6 +10676,87 @@ export type Database = {
           },
         ]
       }
+      export_ingredient_shipments: {
+        Row: {
+          batch_number: string | null
+          created_at: string | null
+          expiry_date: string | null
+          id: string
+          ingredient_id: string
+          lot_number: string | null
+          manufacturer_country: string | null
+          manufacturer_name: string | null
+          notes: string | null
+          quality_grade: string | null
+          quantity: number
+          shipment_date: string
+          shipping_cost: number | null
+          shop_id: string
+          status: string | null
+          supplier_name: string | null
+          total_cost: number | null
+          tracking_number: string | null
+          unit_cost: number | null
+        }
+        Insert: {
+          batch_number?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          ingredient_id: string
+          lot_number?: string | null
+          manufacturer_country?: string | null
+          manufacturer_name?: string | null
+          notes?: string | null
+          quality_grade?: string | null
+          quantity: number
+          shipment_date: string
+          shipping_cost?: number | null
+          shop_id: string
+          status?: string | null
+          supplier_name?: string | null
+          total_cost?: number | null
+          tracking_number?: string | null
+          unit_cost?: number | null
+        }
+        Update: {
+          batch_number?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          ingredient_id?: string
+          lot_number?: string | null
+          manufacturer_country?: string | null
+          manufacturer_name?: string | null
+          notes?: string | null
+          quality_grade?: string | null
+          quantity?: number
+          shipment_date?: string
+          shipping_cost?: number | null
+          shop_id?: string
+          status?: string | null
+          supplier_name?: string | null
+          total_cost?: number | null
+          tracking_number?: string | null
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_ingredient_shipments_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "export_product_ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_ingredient_shipments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_inventory: {
         Row: {
           created_at: string | null
@@ -11207,6 +11288,226 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "export_product_categories_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_product_ingredients: {
+        Row: {
+          avg_lead_time_days: number | null
+          cas_number: string | null
+          cost_per_unit: number | null
+          country_of_origin: string | null
+          created_at: string | null
+          current_stock: number | null
+          grade: string | null
+          id: string
+          ingredient_name: string
+          is_active: boolean | null
+          is_allergen: boolean | null
+          is_organic: boolean | null
+          last_shipment_cost: number | null
+          last_shipment_date: string | null
+          last_shipment_qty: number | null
+          notes: string | null
+          percentage: number | null
+          product_id: string
+          reorder_level: number | null
+          shop_id: string
+          supplier_contact: string | null
+          supplier_country: string | null
+          supplier_name: string | null
+          unit_of_measure: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avg_lead_time_days?: number | null
+          cas_number?: string | null
+          cost_per_unit?: number | null
+          country_of_origin?: string | null
+          created_at?: string | null
+          current_stock?: number | null
+          grade?: string | null
+          id?: string
+          ingredient_name: string
+          is_active?: boolean | null
+          is_allergen?: boolean | null
+          is_organic?: boolean | null
+          last_shipment_cost?: number | null
+          last_shipment_date?: string | null
+          last_shipment_qty?: number | null
+          notes?: string | null
+          percentage?: number | null
+          product_id: string
+          reorder_level?: number | null
+          shop_id: string
+          supplier_contact?: string | null
+          supplier_country?: string | null
+          supplier_name?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avg_lead_time_days?: number | null
+          cas_number?: string | null
+          cost_per_unit?: number | null
+          country_of_origin?: string | null
+          created_at?: string | null
+          current_stock?: number | null
+          grade?: string | null
+          id?: string
+          ingredient_name?: string
+          is_active?: boolean | null
+          is_allergen?: boolean | null
+          is_organic?: boolean | null
+          last_shipment_cost?: number | null
+          last_shipment_date?: string | null
+          last_shipment_qty?: number | null
+          notes?: string | null
+          percentage?: number | null
+          product_id?: string
+          reorder_level?: number | null
+          shop_id?: string
+          supplier_contact?: string | null
+          supplier_country?: string | null
+          supplier_name?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_product_ingredients_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "export_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_product_ingredients_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      export_product_variants: {
+        Row: {
+          batch_number: string | null
+          created_at: string | null
+          current_stock: number | null
+          customs_duty_per_unit: number | null
+          expiry_date: string | null
+          handling_fee_per_unit: number | null
+          id: string
+          inspection_cost_per_unit: number | null
+          insurance_cost_per_unit: number | null
+          is_active: boolean | null
+          landed_cost_per_unit: number | null
+          lot_number: string | null
+          manufacture_date: string | null
+          notes: string | null
+          packaging_cost_per_unit: number | null
+          packaging_option_id: string | null
+          packaging_type: string | null
+          product_id: string
+          profit_margin_pct: number | null
+          purchase_cost_per_unit: number | null
+          reorder_level: number | null
+          shipping_cost_per_unit: number | null
+          shop_id: string
+          sku: string | null
+          unit_of_measure: string | null
+          unit_price: number | null
+          units_per_package: number | null
+          updated_at: string | null
+          variant_name: string
+          weight_per_unit: number | null
+        }
+        Insert: {
+          batch_number?: string | null
+          created_at?: string | null
+          current_stock?: number | null
+          customs_duty_per_unit?: number | null
+          expiry_date?: string | null
+          handling_fee_per_unit?: number | null
+          id?: string
+          inspection_cost_per_unit?: number | null
+          insurance_cost_per_unit?: number | null
+          is_active?: boolean | null
+          landed_cost_per_unit?: number | null
+          lot_number?: string | null
+          manufacture_date?: string | null
+          notes?: string | null
+          packaging_cost_per_unit?: number | null
+          packaging_option_id?: string | null
+          packaging_type?: string | null
+          product_id: string
+          profit_margin_pct?: number | null
+          purchase_cost_per_unit?: number | null
+          reorder_level?: number | null
+          shipping_cost_per_unit?: number | null
+          shop_id: string
+          sku?: string | null
+          unit_of_measure?: string | null
+          unit_price?: number | null
+          units_per_package?: number | null
+          updated_at?: string | null
+          variant_name: string
+          weight_per_unit?: number | null
+        }
+        Update: {
+          batch_number?: string | null
+          created_at?: string | null
+          current_stock?: number | null
+          customs_duty_per_unit?: number | null
+          expiry_date?: string | null
+          handling_fee_per_unit?: number | null
+          id?: string
+          inspection_cost_per_unit?: number | null
+          insurance_cost_per_unit?: number | null
+          is_active?: boolean | null
+          landed_cost_per_unit?: number | null
+          lot_number?: string | null
+          manufacture_date?: string | null
+          notes?: string | null
+          packaging_cost_per_unit?: number | null
+          packaging_option_id?: string | null
+          packaging_type?: string | null
+          product_id?: string
+          profit_margin_pct?: number | null
+          purchase_cost_per_unit?: number | null
+          reorder_level?: number | null
+          shipping_cost_per_unit?: number | null
+          shop_id?: string
+          sku?: string | null
+          unit_of_measure?: string | null
+          unit_price?: number | null
+          units_per_package?: number | null
+          updated_at?: string | null
+          variant_name?: string
+          weight_per_unit?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_product_variants_packaging_option_id_fkey"
+            columns: ["packaging_option_id"]
+            isOneToOne: false
+            referencedRelation: "export_packaging_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "export_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "export_product_variants_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
