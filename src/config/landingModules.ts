@@ -69,6 +69,7 @@ import {
   Scale,
   Scissors,
   Shield,
+  Ship,
   Shirt,
   ShoppingBag,
   Shovel,
