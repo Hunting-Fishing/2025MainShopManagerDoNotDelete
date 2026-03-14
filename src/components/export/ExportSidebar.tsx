@@ -108,7 +108,9 @@ const navSections: NavSection[] = [
     title: 'Documents & Compliance',
     items: [
       { title: 'Documents', href: '/export/documents', icon: FileText, color: 'from-fuchsia-500 to-pink-600' },
+      { title: 'Doc Templates', href: '/export/doc-templates', icon: FileStack, color: 'from-pink-500 to-fuchsia-600' },
       { title: 'Customs', href: '/export/customs', icon: ShieldCheck, color: 'from-purple-500 to-violet-600' },
+      { title: 'Declarations', href: '/export/declarations', icon: FileBadge, color: 'from-violet-500 to-purple-600' },
       { title: 'Certificates', href: '/export/certificates', icon: FileCheck, color: 'from-emerald-500 to-teal-600' },
       { title: 'HS Codes', href: '/export/hs-codes', icon: Hash, color: 'from-indigo-500 to-blue-600' },
       { title: 'Country Reqs', href: '/export/country-requirements', icon: Globe2, color: 'from-sky-500 to-blue-600' },
