@@ -260,29 +260,13 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
 
       <TabsContent value="basic" className="space-y-3 mt-3">
         <F label="Product Name *"><Input value={form.name} onChange={u('name')} placeholder="e.g. Sea Salt Fine Grade" /></F>
+        <ExportCategoryPicker
+          categoryId={form.category_id}
+          subcategoryId={form.subcategory_id}
+          onCategoryChange={handleCategoryChange}
+          onSubcategoryChange={handleSubcategoryChange}
+        />
         <div className="grid grid-cols-2 gap-3">
-          <F label="Category">
-            {categories.length > 0 ? (
-              <Select value={form.category_id} onValueChange={handleCategoryChange}>
-                <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                <SelectContent>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="salt">Salt</SelectItem>
-                  <SelectItem value="dehydrated_food">Dehydrated Food</SelectItem>
-                  <SelectItem value="vehicle">Vehicle</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </F>
           <F label="SKU"><Input value={form.sku} onChange={u('sku')} placeholder="SALT-FG-001" /></F>
         </div>
         <div className="grid grid-cols-2 gap-3">
