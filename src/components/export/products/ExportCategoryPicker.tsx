@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Check, ChevronsUpDown, Tag, Loader2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Tag, Loader2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useExportProductCategories, ExportCategory } from '@/hooks/export/useExportProductCategories';
-import { useExportProductSubcategories } from '@/hooks/export/useExportProductSubcategories';
+import { useExportProductSubcategories, useCreateExportSubcategory } from '@/hooks/export/useExportProductSubcategories';
 
 interface ExportCategoryPickerProps {
   categoryId: string;
@@ -24,28 +25,25 @@ export function ExportCategoryPicker({
   onSubcategoryChange,
 }: ExportCategoryPickerProps) {
   const [open, setOpen] = useState(false);
+  const [newSubName, setNewSubName] = useState('');
+  const [showAddSub, setShowAddSub] = useState(false);
   const { data: categories = [], isLoading: catsLoading } = useExportProductCategories();
   const { data: subcategories = [], isLoading: subsLoading } = useExportProductSubcategories(categoryId || null);
+  const createSub = useCreateExportSubcategory();
 
   const selectedCategory = categories.find(c => c.id === categoryId);
 
-  // Group categories by group_name
   const grouped = useMemo(() => {
     const groups: Record<string, ExportCategory[]> = {};
     const order = ['Food & Agriculture', 'Industrial', 'Consumer Goods', 'Raw Materials', 'Other'];
-    
     categories.forEach(cat => {
       const group = cat.group_name || 'Other';
       if (!groups[group]) groups[group] = [];
       groups[group].push(cat);
     });
-
-    return order
-      .filter(g => groups[g]?.length)
-      .map(g => ({ group: g, items: groups[g] }));
+    return order.filter(g => groups[g]?.length).map(g => ({ group: g, items: groups[g] }));
   }, [categories]);
 
-  // Build a lookup map for quick selection by lowercased name
   const catByName = useMemo(() => {
     const map = new Map<string, ExportCategory>();
     categories.forEach(c => map.set(c.name.toLowerCase(), c));
@@ -57,8 +55,18 @@ export function ExportCategoryPicker({
     if (cat) {
       onCategoryChange(cat.id, cat.slug);
       onSubcategoryChange('');
+      setShowAddSub(false);
+      setNewSubName('');
     }
     setOpen(false);
+  };
+
+  const handleAddSubcategory = async () => {
+    if (!newSubName.trim() || !categoryId) return;
+    const result = await createSub.mutateAsync({ category_id: categoryId, name: newSubName.trim() });
+    onSubcategoryChange(result.id);
+    setNewSubName('');
+    setShowAddSub(false);
   };
 
   return (
@@ -121,8 +129,52 @@ export function ExportCategoryPicker({
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs font-medium text-muted-foreground">Subcategory</Label>
-        {!categoryId ? (
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-medium text-muted-foreground">Subcategory</Label>
+          {categoryId && !showAddSub && (
+            <button
+              type="button"
+              onClick={() => setShowAddSub(true)}
+              className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
+            >
+              <Plus className="h-3 w-3" /> Add new
+            </button>
+          )}
+        </div>
+
+        {showAddSub && categoryId ? (
+          <div className="flex gap-1.5">
+            <Input
+              value={newSubName}
+              onChange={e => setNewSubName(e.target.value)}
+              placeholder="New subcategory name..."
+              className="h-9 text-xs flex-1"
+              autoFocus
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); handleAddSubcategory(); }
+                if (e.key === 'Escape') { setShowAddSub(false); setNewSubName(''); }
+              }}
+            />
+            <Button
+              type="button"
+              size="sm"
+              className="h-9 px-2.5 text-xs"
+              onClick={handleAddSubcategory}
+              disabled={!newSubName.trim() || createSub.isPending}
+            >
+              {createSub.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-9 px-2 text-xs text-muted-foreground"
+              onClick={() => { setShowAddSub(false); setNewSubName(''); }}
+            >
+              ✕
+            </Button>
+          </div>
+        ) : !categoryId ? (
           <div className="flex items-center h-9 px-3 border rounded-md bg-muted/30">
             <span className="text-xs text-muted-foreground">Select category first</span>
           </div>
@@ -132,7 +184,7 @@ export function ExportCategoryPicker({
           </div>
         ) : subcategories.length === 0 ? (
           <div className="flex items-center h-9 px-3 border rounded-md bg-muted/30">
-            <span className="text-xs text-muted-foreground">No subcategories available</span>
+            <span className="text-xs text-muted-foreground">No subcategories — add one above</span>
           </div>
         ) : (
           <Select value={subcategoryId || undefined} onValueChange={onSubcategoryChange}>
