@@ -224,15 +224,15 @@ function MarginPreview({ form }: { form: ProductFormData }) {
 }
 
 export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
-  const { data: categories = [] } = useExportProductCategories();
   const u = (field: keyof ProductFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(p => ({ ...p, [field]: e.target.value }));
 
-  const handleCategoryChange = (catId: string) => {
-    const cat = categories.find(c => c.id === catId);
-    if (cat) {
-      setForm(p => ({ ...p, category: cat.slug, category_id: cat.id }));
-    }
+  const handleCategoryChange = (catId: string, catSlug: string) => {
+    setForm(p => ({ ...p, category: catSlug, category_id: catId, subcategory_id: '' }));
+  };
+
+  const handleSubcategoryChange = (subId: string) => {
+    setForm(p => ({ ...p, subcategory_id: subId }));
   };
 
   return (
