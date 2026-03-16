@@ -1651,6 +1651,17 @@ function App() {
               <ExportLayout>
                 <Routes>
                   <Route path="/" element={<ExportDashboard />} />
+                  <Route path="/hub/overview" element={<ExportOverviewHub />} />
+                  <Route path="/hub/orders" element={<ExportOrdersHub />} />
+                  <Route path="/hub/customers" element={<ExportCustomersHub />} />
+                  <Route path="/hub/logistics" element={<ExportLogisticsHub />} />
+                  <Route path="/hub/inventory" element={<ExportInventoryHub />} />
+                  <Route path="/hub/documents" element={<ExportDocumentsHub />} />
+                  <Route path="/hub/finance" element={<ExportFinanceHub />} />
+                  <Route path="/hub/analytics" element={<ExportAnalyticsHub />} />
+                  <Route path="/hub/communication" element={<ExportCommunicationHub />} />
+                  <Route path="/hub/import" element={<ExportImportHub />} />
+                  <Route path="/hub/config" element={<ExportConfigHub />} />
                   <Route path="/orders" element={<ExportOrders />} />
                   <Route path="/customers" element={<ExportCustomers />} />
                   <Route path="/products" element={<ExportProducts />} />
