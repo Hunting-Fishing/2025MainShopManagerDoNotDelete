@@ -50,7 +50,7 @@ export function useCreateExportCategory() {
       const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
       const { data: result, error } = await supabase
         .from('export_product_categories')
-        .insert({ shop_id: shopId, name: data.name, slug, description: data.description || null, icon: data.icon || null, is_system: false })
+        .insert({ shop_id: shopId, name: data.name, slug, description: data.description || null, icon: data.icon || null, is_system: false, main_category_id: data.main_category_id || null })
         .select()
         .single();
       if (error) throw error;
