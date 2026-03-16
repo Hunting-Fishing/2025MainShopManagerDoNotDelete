@@ -12,6 +12,7 @@ interface ProductFormData {
   name: string;
   category: string;
   category_id: string;
+  subcategory_id: string;
   sku: string;
   description: string;
   unit_of_measure: string;
