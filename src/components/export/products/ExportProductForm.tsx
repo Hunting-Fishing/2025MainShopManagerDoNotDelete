@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DollarSign, Package, Truck, Shield, BarChart3, Lock } from 'lucide-react';
-import { useExportProductCategories } from '@/hooks/export/useExportProductCategories';
+import { ExportCategoryPicker } from './ExportCategoryPicker';
 
 interface ProductFormData {
   name: string;
