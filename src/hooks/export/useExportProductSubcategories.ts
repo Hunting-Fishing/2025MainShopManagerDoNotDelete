@@ -3,14 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
 import { toast } from 'sonner';
 
-export interface ExportCategory {
+export interface ExportSubcategory {
   id: string;
   shop_id: string | null;
+  category_id: string;
   name: string;
   slug: string;
   description: string | null;
-  icon: string | null;
-  group_name: string | null;
   display_order: number;
   is_system: boolean;
   is_active: boolean;
@@ -18,62 +17,63 @@ export interface ExportCategory {
   updated_at: string;
 }
 
-export function useExportProductCategories() {
+export function useExportProductSubcategories(categoryId: string | null) {
   const { shopId } = useShopId();
 
   return useQuery({
-    queryKey: ['export-product-categories', shopId],
+    queryKey: ['export-product-subcategories', shopId, categoryId],
     queryFn: async () => {
-      if (!shopId) return [];
+      if (!shopId || !categoryId) return [];
       const { data, error } = await supabase
-        .from('export_product_categories')
+        .from('export_product_subcategories')
         .select('*')
+        .eq('category_id', categoryId)
         .or(`shop_id.eq.${shopId},shop_id.is.null`)
         .eq('is_active', true)
         .order('display_order')
         .order('name');
       if (error) throw error;
-      return data as ExportCategory[];
+      return (data || []) as ExportSubcategory[];
     },
-    enabled: !!shopId,
+    enabled: !!shopId && !!categoryId,
   });
 }
 
-export function useCreateExportCategory() {
+export function useCreateExportSubcategory() {
   const queryClient = useQueryClient();
   const { shopId } = useShopId();
 
   return useMutation({
-    mutationFn: async (data: { name: string; description?: string; icon?: string }) => {
+    mutationFn: async (data: { category_id: string; name: string; description?: string }) => {
       if (!shopId) throw new Error('No shop selected');
       const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
       const { data: result, error } = await supabase
-        .from('export_product_categories')
-        .insert({ shop_id: shopId, name: data.name, slug, description: data.description || null, icon: data.icon || null, is_system: false })
+        .from('export_product_subcategories')
+        .insert({ shop_id: shopId, category_id: data.category_id, name: data.name, slug, description: data.description || null, is_system: false })
         .select()
         .single();
       if (error) throw error;
-      return result as ExportCategory;
+      return result as ExportSubcategory;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['export-product-categories'] });
-      toast.success('Category created');
+      queryClient.invalidateQueries({ queryKey: ['export-product-subcategories'] });
+      toast.success('Subcategory created');
     },
     onError: (error: any) => toast.error(`Failed: ${error.message}`),
   });
 }
 
-export function useDeleteExportCategory() {
+export function useDeleteExportSubcategory() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('export_product_categories').update({ is_active: false }).eq('id', id);
+      const { error } = await supabase.from('export_product_subcategories').update({ is_active: false }).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['export-product-categories'] });
-      toast.success('Category removed');
+      queryClient.invalidateQueries({ queryKey: ['export-product-subcategories'] });
+      toast.success('Subcategory removed');
     },
     onError: (error: any) => toast.error(`Failed: ${error.message}`),
   });
