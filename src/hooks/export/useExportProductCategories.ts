@@ -11,6 +11,7 @@ export interface ExportCategory {
   description: string | null;
   icon: string | null;
   group_name: string | null;
+  main_category_id: string | null;
   display_order: number;
   is_system: boolean;
   is_active: boolean;
