@@ -491,6 +491,17 @@ const ExportCustomerPortal = lazy(() => import('@/pages/export/ExportCustomerPor
 const ExportEdiHub = lazy(() => import('@/pages/export/ExportEdiHub'));
 const ExportTradeLaneAnalytics = lazy(() => import('@/pages/export/ExportTradeLaneAnalytics'));
 const ExportKpiDashboard = lazy(() => import('@/pages/export/ExportKpiDashboard'));
+const ExportOverviewHub = lazy(() => import('@/pages/export/hubs/ExportOverviewHub'));
+const ExportOrdersHub = lazy(() => import('@/pages/export/hubs/ExportOrdersHub'));
+const ExportCustomersHub = lazy(() => import('@/pages/export/hubs/ExportCustomersHub'));
+const ExportLogisticsHub = lazy(() => import('@/pages/export/hubs/ExportLogisticsHub'));
+const ExportInventoryHub = lazy(() => import('@/pages/export/hubs/ExportInventoryHub'));
+const ExportDocumentsHub = lazy(() => import('@/pages/export/hubs/ExportDocumentsHub'));
+const ExportFinanceHub = lazy(() => import('@/pages/export/hubs/ExportFinanceHub'));
+const ExportAnalyticsHub = lazy(() => import('@/pages/export/hubs/ExportAnalyticsHub'));
+const ExportCommunicationHub = lazy(() => import('@/pages/export/hubs/ExportCommunicationHub'));
+const ExportImportHub = lazy(() => import('@/pages/export/hubs/ExportImportHub'));
+const ExportConfigHub = lazy(() => import('@/pages/export/hubs/ExportConfigHub'));
 import { ExportLayout } from '@/components/export';
 
 function App() {
@@ -1640,6 +1651,17 @@ function App() {
               <ExportLayout>
                 <Routes>
                   <Route path="/" element={<ExportDashboard />} />
+                  <Route path="/hub/overview" element={<ExportOverviewHub />} />
+                  <Route path="/hub/orders" element={<ExportOrdersHub />} />
+                  <Route path="/hub/customers" element={<ExportCustomersHub />} />
+                  <Route path="/hub/logistics" element={<ExportLogisticsHub />} />
+                  <Route path="/hub/inventory" element={<ExportInventoryHub />} />
+                  <Route path="/hub/documents" element={<ExportDocumentsHub />} />
+                  <Route path="/hub/finance" element={<ExportFinanceHub />} />
+                  <Route path="/hub/analytics" element={<ExportAnalyticsHub />} />
+                  <Route path="/hub/communication" element={<ExportCommunicationHub />} />
+                  <Route path="/hub/import" element={<ExportImportHub />} />
+                  <Route path="/hub/config" element={<ExportConfigHub />} />
                   <Route path="/orders" element={<ExportOrders />} />
                   <Route path="/customers" element={<ExportCustomers />} />
                   <Route path="/products" element={<ExportProducts />} />
