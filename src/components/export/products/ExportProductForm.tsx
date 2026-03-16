@@ -269,27 +269,35 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
         <div className="grid grid-cols-2 gap-3">
           <F label="SKU"><Input value={form.sku} onChange={u('sku')} placeholder="SALT-FG-001" /></F>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <F label="Selling Price ($)"><Input type="number" value={form.unit_price} onChange={u('unit_price')} placeholder="0.00" /></F>
-          <F label="Weight per Unit"><Input type="number" value={form.weight_per_unit} onChange={u('weight_per_unit')} placeholder="kg" /></F>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
+          <F label={`Weight per Unit${form.unit_of_measure ? ` (${({'g':'Grams','kg':'Kilograms','lb':'Pounds','oz':'Ounces','ton':'Metric Tons','ml':'Millilitres','L':'Litres','gal':'Gallons','bag':'Bags','pallet':'Pallets','container':'Containers','unit':'Units','pc':'Pieces','box':'Boxes','bbl':'Barrels'} as Record<string,string>)[form.unit_of_measure] || form.unit_of_measure})` : ''}`}>
+            <Input type="number" value={form.weight_per_unit} onChange={u('weight_per_unit')} placeholder={form.unit_of_measure ? `e.g. 25 ${form.unit_of_measure}` : 'e.g. 25'} />
+          </F>
           <F label="Unit of Measure">
             <Select value={form.unit_of_measure} onValueChange={v => setForm(p => ({ ...p, unit_of_measure: v }))}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
+                <SelectItem value="g">Gram (g)</SelectItem>
                 <SelectItem value="kg">Kilogram (kg)</SelectItem>
                 <SelectItem value="lb">Pound (lb)</SelectItem>
-                <SelectItem value="ton">Metric Ton</SelectItem>
+                <SelectItem value="oz">Ounce (oz)</SelectItem>
+                <SelectItem value="ton">Metric Ton (ton)</SelectItem>
+                <SelectItem value="ml">Millilitre (ml)</SelectItem>
+                <SelectItem value="L">Litre (L)</SelectItem>
+                <SelectItem value="gal">Gallon (gal)</SelectItem>
                 <SelectItem value="bag">Bag</SelectItem>
                 <SelectItem value="pallet">Pallet</SelectItem>
                 <SelectItem value="container">Container</SelectItem>
                 <SelectItem value="unit">Unit</SelectItem>
+                <SelectItem value="pc">Piece (pc)</SelectItem>
+                <SelectItem value="box">Box</SelectItem>
+                <SelectItem value="bbl">Barrel (bbl)</SelectItem>
               </SelectContent>
             </Select>
           </F>
-          <F label="Packaging Type"><Input value={form.packaging_type} onChange={u('packaging_type')} placeholder="25kg PP bags" /></F>
         </div>
+        <F label="Packaging Type"><Input value={form.packaging_type} onChange={u('packaging_type')} placeholder="25kg PP bags" /></F>
         <div className="grid grid-cols-2 gap-3">
           <F label="HS Code"><Input value={form.hs_code} onChange={u('hs_code')} placeholder="2501.00" /></F>
           <F label="Country of Origin"><Input value={form.country_of_origin} onChange={u('country_of_origin')} placeholder="Haiti" /></F>
