@@ -13286,6 +13286,53 @@ export type Database = {
           },
         ]
       }
+      export_main_categories: {
+        Row: {
+          created_at: string
+          display_order: number
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          shop_id: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name: string
+          shop_id?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name?: string
+          shop_id?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_main_categories_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_messaging_templates: {
         Row: {
           body: string
@@ -13952,6 +13999,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_system: boolean | null
+          main_category_id: string | null
           name: string
           shop_id: string | null
           slug: string
@@ -13966,6 +14014,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_system?: boolean | null
+          main_category_id?: string | null
           name: string
           shop_id?: string | null
           slug: string
@@ -13980,12 +14029,20 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_system?: boolean | null
+          main_category_id?: string | null
           name?: string
           shop_id?: string | null
           slug?: string
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "export_product_categories_main_category_id_fkey"
+            columns: ["main_category_id"]
+            isOneToOne: false
+            referencedRelation: "export_main_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "export_product_categories_shop_id_fkey"
             columns: ["shop_id"]
