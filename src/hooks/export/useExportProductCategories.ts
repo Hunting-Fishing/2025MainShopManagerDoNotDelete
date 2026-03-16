@@ -45,7 +45,7 @@ export function useCreateExportCategory() {
   const { shopId } = useShopId();
 
   return useMutation({
-    mutationFn: async (data: { name: string; description?: string; icon?: string }) => {
+    mutationFn: async (data: { name: string; description?: string; icon?: string; main_category_id?: string }) => {
       if (!shopId) throw new Error('No shop selected');
       const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
       const { data: result, error } = await supabase
