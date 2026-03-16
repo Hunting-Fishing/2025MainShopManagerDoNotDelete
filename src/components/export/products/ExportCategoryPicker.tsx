@@ -35,7 +35,7 @@ export function ExportCategoryPicker({
     const order = ['Food & Agriculture', 'Industrial', 'Consumer Goods', 'Raw Materials', 'Other'];
     
     categories.forEach(cat => {
-      const group = (cat as any).group_name || 'Other';
+      const group = cat.group_name || 'Other';
       if (!groups[group]) groups[group] = [];
       groups[group].push(cat);
     });
@@ -45,23 +45,40 @@ export function ExportCategoryPicker({
       .map(g => ({ group: g, items: groups[g] }));
   }, [categories]);
 
+  // Build a lookup map for quick selection by lowercased name
+  const catByName = useMemo(() => {
+    const map = new Map<string, ExportCategory>();
+    categories.forEach(c => map.set(c.name.toLowerCase(), c));
+    return map;
+  }, [categories]);
+
+  const handleSelect = (lowercasedName: string) => {
+    const cat = catByName.get(lowercasedName);
+    if (cat) {
+      onCategoryChange(cat.id, cat.slug);
+      onSubcategoryChange('');
+    }
+    setOpen(false);
+  };
+
   return (
     <div className="grid grid-cols-2 gap-3">
       <div className="space-y-1.5">
         <Label className="text-xs font-medium text-muted-foreground">Category</Label>
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={setOpen} modal={true}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               role="combobox"
               aria-expanded={open}
               className="w-full justify-between h-9 text-xs font-normal"
+              type="button"
             >
               {catsLoading ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : selectedCategory ? (
                 <span className="flex items-center gap-1.5 truncate">
-                  <Tag className="h-3 w-3 text-emerald-600 shrink-0" />
+                  <Tag className="h-3 w-3 text-primary shrink-0" />
                   {selectedCategory.name}
                 </span>
               ) : (
@@ -70,10 +87,10 @@ export function ExportCategoryPicker({
               <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[280px] p-0" align="start">
+          <PopoverContent className="w-[300px] p-0 pointer-events-auto" align="start" side="bottom" sideOffset={4}>
             <Command>
-              <CommandInput placeholder="Search categories..." className="h-8 text-xs" />
-              <CommandList>
+              <CommandInput placeholder="Search categories..." className="h-9 text-xs" />
+              <CommandList className="max-h-[250px]">
                 <CommandEmpty className="py-4 text-xs text-center text-muted-foreground">
                   No category found.
                 </CommandEmpty>
@@ -83,12 +100,8 @@ export function ExportCategoryPicker({
                       <CommandItem
                         key={cat.id}
                         value={cat.name}
-                        onSelect={() => {
-                          onCategoryChange(cat.id, cat.slug);
-                          onSubcategoryChange('');
-                          setOpen(false);
-                        }}
-                        className="text-xs"
+                        onSelect={handleSelect}
+                        className="text-xs cursor-pointer"
                       >
                         <Check className={cn('mr-1.5 h-3 w-3', categoryId === cat.id ? 'opacity-100' : 'opacity-0')} />
                         {cat.name}
@@ -110,27 +123,23 @@ export function ExportCategoryPicker({
       <div className="space-y-1.5">
         <Label className="text-xs font-medium text-muted-foreground">Subcategory</Label>
         {!categoryId ? (
-          <Select disabled>
-            <SelectTrigger className="h-9 text-xs">
-              <SelectValue placeholder="Select category first" />
-            </SelectTrigger>
-          </Select>
+          <div className="flex items-center h-9 px-3 border rounded-md bg-muted/30">
+            <span className="text-xs text-muted-foreground">Select category first</span>
+          </div>
         ) : subsLoading ? (
-          <div className="flex items-center h-9 px-3">
+          <div className="flex items-center h-9 px-3 border rounded-md">
             <Loader2 className="h-3 w-3 animate-spin" />
           </div>
         ) : subcategories.length === 0 ? (
-          <Select disabled>
-            <SelectTrigger className="h-9 text-xs">
-              <SelectValue placeholder="No subcategories" />
-            </SelectTrigger>
-          </Select>
+          <div className="flex items-center h-9 px-3 border rounded-md bg-muted/30">
+            <span className="text-xs text-muted-foreground">No subcategories available</span>
+          </div>
         ) : (
-          <Select value={subcategoryId} onValueChange={onSubcategoryChange}>
+          <Select value={subcategoryId || undefined} onValueChange={onSubcategoryChange}>
             <SelectTrigger className="h-9 text-xs">
               <SelectValue placeholder="Select subcategory..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="pointer-events-auto">
               {subcategories.map(sub => (
                 <SelectItem key={sub.id} value={sub.id} className="text-xs">
                   {sub.name}
