@@ -6,12 +6,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DollarSign, Package, Truck, Shield, BarChart3, Lock } from 'lucide-react';
-import { useExportProductCategories } from '@/hooks/export/useExportProductCategories';
+import { ExportCategoryPicker } from './ExportCategoryPicker';
 
 interface ProductFormData {
   name: string;
   category: string;
   category_id: string;
+  subcategory_id: string;
   sku: string;
   description: string;
   unit_of_measure: string;
@@ -65,7 +66,7 @@ interface ExportProductFormProps {
 }
 
 export const getEmptyForm = (): ProductFormData => ({
-  name: '', category: 'salt', category_id: '', sku: '', description: '', unit_of_measure: 'kg',
+  name: '', category: 'salt', category_id: '', subcategory_id: '', sku: '', description: '', unit_of_measure: 'kg',
   weight_per_unit: '', hs_code: '', country_of_origin: '', unit_price: '', packaging_type: '',
   purchase_cost_per_unit: '', shipping_cost_per_unit: '', customs_duty_rate: '',
   customs_duty_per_unit: '', insurance_cost_per_unit: '', handling_fee_per_unit: '',
@@ -86,6 +87,7 @@ export const formToInsert = (form: ProductFormData, shopId: string) => ({
   name: form.name,
   category: form.category,
   category_id: form.category_id || null,
+  subcategory_id: form.subcategory_id || null,
   sku: form.sku || null,
   description: form.description || null,
   unit_of_measure: form.unit_of_measure,
@@ -137,6 +139,7 @@ export const productToForm = (p: any): ProductFormData => ({
   name: p.name || '',
   category: p.category || 'salt',
   category_id: p.category_id || '',
+  subcategory_id: p.subcategory_id || '',
   sku: p.sku || '',
   description: p.description || '',
   unit_of_measure: p.unit_of_measure || 'kg',
@@ -221,15 +224,15 @@ function MarginPreview({ form }: { form: ProductFormData }) {
 }
 
 export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
-  const { data: categories = [] } = useExportProductCategories();
   const u = (field: keyof ProductFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(p => ({ ...p, [field]: e.target.value }));
 
-  const handleCategoryChange = (catId: string) => {
-    const cat = categories.find(c => c.id === catId);
-    if (cat) {
-      setForm(p => ({ ...p, category: cat.slug, category_id: cat.id }));
-    }
+  const handleCategoryChange = (catId: string, catSlug: string) => {
+    setForm(p => ({ ...p, category: catSlug, category_id: catId, subcategory_id: '' }));
+  };
+
+  const handleSubcategoryChange = (subId: string) => {
+    setForm(p => ({ ...p, subcategory_id: subId }));
   };
 
   return (
@@ -257,29 +260,13 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
 
       <TabsContent value="basic" className="space-y-3 mt-3">
         <F label="Product Name *"><Input value={form.name} onChange={u('name')} placeholder="e.g. Sea Salt Fine Grade" /></F>
+        <ExportCategoryPicker
+          categoryId={form.category_id}
+          subcategoryId={form.subcategory_id}
+          onCategoryChange={handleCategoryChange}
+          onSubcategoryChange={handleSubcategoryChange}
+        />
         <div className="grid grid-cols-2 gap-3">
-          <F label="Category">
-            {categories.length > 0 ? (
-              <Select value={form.category_id} onValueChange={handleCategoryChange}>
-                <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                <SelectContent>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="salt">Salt</SelectItem>
-                  <SelectItem value="dehydrated_food">Dehydrated Food</SelectItem>
-                  <SelectItem value="vehicle">Vehicle</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </F>
           <F label="SKU"><Input value={form.sku} onChange={u('sku')} placeholder="SALT-FG-001" /></F>
         </div>
         <div className="grid grid-cols-2 gap-3">
