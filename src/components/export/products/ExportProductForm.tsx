@@ -137,7 +137,7 @@ export const formToInsert = (form: ProductFormData, shopId: string) => ({
 
 export const productToForm = (p: any): ProductFormData => ({
   name: p.name || '',
-  category: p.category || 'salt',
+  category: p.category || '',
   category_id: p.category_id || '',
   subcategory_id: p.subcategory_id || '',
   sku: p.sku || '',
