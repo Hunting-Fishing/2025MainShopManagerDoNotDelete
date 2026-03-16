@@ -87,6 +87,7 @@ export const formToInsert = (form: ProductFormData, shopId: string) => ({
   name: form.name,
   category: form.category,
   category_id: form.category_id || null,
+  subcategory_id: form.subcategory_id || null,
   sku: form.sku || null,
   description: form.description || null,
   unit_of_measure: form.unit_of_measure,
