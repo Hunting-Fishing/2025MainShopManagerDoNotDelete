@@ -26,6 +26,8 @@ interface ProductFormData {
   country_of_origin: string;
   unit_price: string;
   packaging_type: string;
+  packaging_source_country: string;
+  packaging_supplier_name: string;
   purchase_cost_per_unit: string;
   shipping_cost_per_unit: string;
   customs_duty_rate: string;
