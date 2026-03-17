@@ -203,12 +203,12 @@ export const productToForm = (p: any): ProductFormData => ({
   tariff_classification: p.tariff_classification || '',
   anti_dumping_duty_pct: p.anti_dumping_duty_pct?.toString() || '0',
   countervailing_duty_pct: p.countervailing_duty_pct?.toString() || '0',
-  bulk_purchase_price: '',
-  bulk_purchase_currency: 'CAD',
-  bulk_quantity: '',
-  bulk_quantity_unit: 'kg',
-  bulk_qty_units: '1',
-  bulk_item_type: 'bag',
+  bulk_purchase_price: p.bulk_purchase_price?.toString() || '',
+  bulk_purchase_currency: p.bulk_purchase_currency || 'CAD',
+  bulk_quantity: p.bulk_quantity?.toString() || '',
+  bulk_quantity_unit: p.bulk_quantity_unit || 'kg',
+  bulk_qty_units: p.bulk_qty_units?.toString() || '1',
+  bulk_item_type: p.bulk_item_type || 'bag',
 });
 
 const UNIT_MAP: Record<string, string> = {
