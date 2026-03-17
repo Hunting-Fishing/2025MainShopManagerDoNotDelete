@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,11 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DollarSign, Package, Truck, Shield, BarChart3, Lock, Info, Plus } from 'lucide-react';
+import { DollarSign, Package, Truck, Shield, BarChart3, Lock, Info, Plus, Calculator } from 'lucide-react';
 import { ExportCategoryPicker } from './ExportCategoryPicker';
 import { useExportPackagingTypes } from '@/hooks/export/useExportPackagingTypes';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface ProductFormData {
   name: string;
@@ -52,6 +53,7 @@ interface ProductFormData {
   target_markets: string;
   preferred_incoterms: string;
   currency: string;
+  sale_currency: string;
   min_margin_threshold: string;
   max_discount_pct: string;
   cost_locked: boolean;
@@ -61,6 +63,10 @@ interface ProductFormData {
   tariff_classification: string;
   anti_dumping_duty_pct: string;
   countervailing_duty_pct: string;
+  bulk_purchase_price: string;
+  bulk_purchase_currency: string;
+  bulk_quantity: string;
+  bulk_quantity_unit: string;
 }
 
 interface ExportProductFormProps {
@@ -79,10 +85,11 @@ export const getEmptyForm = (): ProductFormData => ({
   moisture_content_pct: '', grade: '', grain_size: '',
   certifications: '', export_license_required: false, phytosanitary_required: false,
   fumigation_required: false, regulatory_notes: '',
-  target_markets: '', preferred_incoterms: 'FOB', currency: 'USD',
+  target_markets: '', preferred_incoterms: 'FOB', currency: 'USD', sale_currency: 'USD',
   min_margin_threshold: '10', max_discount_pct: '15', cost_locked: false,
   price_floor: '0', markup_pct: '0', cost_review_notes: '',
   tariff_classification: '', anti_dumping_duty_pct: '0', countervailing_duty_pct: '0',
+  bulk_purchase_price: '', bulk_purchase_currency: 'CAD', bulk_quantity: '', bulk_quantity_unit: 'kg',
 });
 
 export const formToInsert = (form: ProductFormData, shopId: string) => ({
@@ -177,6 +184,7 @@ export const productToForm = (p: any): ProductFormData => ({
   target_markets: (p.target_markets || []).join(', '),
   preferred_incoterms: p.preferred_incoterms || 'FOB',
   currency: p.currency || 'USD',
+  sale_currency: p.sale_currency || p.currency || 'USD',
   min_margin_threshold: p.min_margin_threshold?.toString() || '10',
   max_discount_pct: p.max_discount_pct?.toString() || '15',
   cost_locked: p.cost_locked || false,
@@ -186,6 +194,10 @@ export const productToForm = (p: any): ProductFormData => ({
   tariff_classification: p.tariff_classification || '',
   anti_dumping_duty_pct: p.anti_dumping_duty_pct?.toString() || '0',
   countervailing_duty_pct: p.countervailing_duty_pct?.toString() || '0',
+  bulk_purchase_price: '',
+  bulk_purchase_currency: 'CAD',
+  bulk_quantity: '',
+  bulk_quantity_unit: 'kg',
 });
 
 const UNIT_MAP: Record<string, string> = {
@@ -194,6 +206,39 @@ const UNIT_MAP: Record<string, string> = {
   bag: 'Bags', pallet: 'Pallets', container: 'Containers',
   unit: 'Units', pc: 'Pieces', box: 'Boxes', bbl: 'Barrels'
 };
+
+const CURRENCIES = [
+  { value: 'USD', label: 'USD — US Dollar' },
+  { value: 'CAD', label: 'CAD — Canadian Dollar' },
+  { value: 'EUR', label: 'EUR — Euro' },
+  { value: 'GBP', label: 'GBP — British Pound' },
+  { value: 'HTG', label: 'HTG — Haitian Gourde' },
+  { value: 'JPY', label: 'JPY — Japanese Yen' },
+  { value: 'CNY', label: 'CNY — Chinese Yuan' },
+  { value: 'AUD', label: 'AUD — Australian Dollar' },
+  { value: 'CHF', label: 'CHF — Swiss Franc' },
+  { value: 'MXN', label: 'MXN — Mexican Peso' },
+  { value: 'BRL', label: 'BRL — Brazilian Real' },
+  { value: 'INR', label: 'INR — Indian Rupee' },
+  { value: 'XOF', label: 'XOF — West African CFA' },
+  { value: 'XAF', label: 'XAF — Central African CFA' },
+  { value: 'DOP', label: 'DOP — Dominican Peso' },
+  { value: 'JMD', label: 'JMD — Jamaican Dollar' },
+  { value: 'TTD', label: 'TTD — Trinidad Dollar' },
+  { value: 'BBD', label: 'BBD — Barbados Dollar' },
+  { value: 'KYD', label: 'KYD — Cayman Dollar' },
+  { value: 'BSD', label: 'BSD — Bahamian Dollar' },
+];
+
+// Unit conversion to base unit (grams for weight, ml for volume)
+const TO_GRAMS: Record<string, number> = { g: 1, kg: 1000, lb: 453.592, oz: 28.3495, ton: 1000000 };
+const TO_ML: Record<string, number> = { ml: 1, L: 1000, gal: 3785.41 };
+
+function normalizeToBase(value: number, unit: string): number | null {
+  if (TO_GRAMS[unit]) return value * TO_GRAMS[unit];
+  if (TO_ML[unit]) return value * TO_ML[unit];
+  return null; // non-convertible units like bag, pallet
+}
 
 const F = ({ label, info, children }: { label: string; info?: string; children: React.ReactNode }) => (
   <div className="space-y-1.5">
@@ -213,6 +258,134 @@ const F = ({ label, info, children }: { label: string; info?: string; children: 
     {children}
   </div>
 );
+
+function CurrencySelect({ value, onValueChange }: { value: string; onValueChange: (v: string) => void }) {
+  return (
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger><SelectValue /></SelectTrigger>
+      <SelectContent>
+        {CURRENCIES.map(c => (
+          <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; setForm: React.Dispatch<React.SetStateAction<ProductFormData>> }) {
+  const breakdown = useMemo(() => {
+    const bulkPrice = Number(form.bulk_purchase_price) || 0;
+    const bulkQty = Number(form.bulk_quantity) || 0;
+    const sellingWeight = Number(form.weight_per_unit) || 0;
+    const sellingPrice = Number(form.unit_price) || 0;
+
+    if (bulkPrice <= 0 || bulkQty <= 0 || sellingWeight <= 0) return null;
+
+    const bulkBase = normalizeToBase(bulkQty, form.bulk_quantity_unit);
+    const sellBase = normalizeToBase(sellingWeight, form.unit_of_measure);
+
+    if (bulkBase === null || sellBase === null || sellBase <= 0) return null;
+
+    const yield_ = Math.floor(bulkBase / sellBase);
+    if (yield_ <= 0) return null;
+
+    const costPerUnit = bulkPrice / yield_;
+    const totalRevenue = yield_ * sellingPrice;
+    const grossProfit = totalRevenue - bulkPrice;
+    const marginPct = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+
+    return { yield: yield_, costPerUnit, totalRevenue, grossProfit, marginPct };
+  }, [form.bulk_purchase_price, form.bulk_quantity, form.bulk_quantity_unit, form.weight_per_unit, form.unit_of_measure, form.unit_price]);
+
+  const applyToPurchaseCost = () => {
+    if (breakdown) {
+      setForm(p => ({ ...p, purchase_cost_per_unit: breakdown.costPerUnit.toFixed(4) }));
+    }
+  };
+
+  return (
+    <Card className="border-dashed border-primary/30 bg-primary/5">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center gap-2 mb-1">
+          <Calculator className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold text-foreground">Bulk Purchase Breakdown</span>
+        </div>
+        <p className="text-xs text-muted-foreground">Enter bulk purchase details to calculate per-unit cost and speculative profit.</p>
+
+        <div className="grid grid-cols-2 gap-3">
+          <F label="Bulk Price" info="Total price you pay for the bulk purchase (e.g. $12 for the entire lot).">
+            <Input type="number" value={form.bulk_purchase_price} onChange={e => setForm(p => ({ ...p, bulk_purchase_price: e.target.value }))} placeholder="e.g. 12.00" />
+          </F>
+          <F label="Purchase Currency" info="Currency you're paying your supplier in for this bulk purchase.">
+            <CurrencySelect value={form.bulk_purchase_currency} onValueChange={v => setForm(p => ({ ...p, bulk_purchase_currency: v }))} />
+          </F>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <F label="Bulk Quantity" info="Total amount you're buying in bulk (e.g. 50 kg).">
+            <Input type="number" value={form.bulk_quantity} onChange={e => setForm(p => ({ ...p, bulk_quantity: e.target.value }))} placeholder="e.g. 50" />
+          </F>
+          <F label="Bulk Unit" info="The measurement unit for the bulk quantity.">
+            <Select value={form.bulk_quantity_unit} onValueChange={v => setForm(p => ({ ...p, bulk_quantity_unit: v }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="g">Gram (g)</SelectItem>
+                <SelectItem value="kg">Kilogram (kg)</SelectItem>
+                <SelectItem value="lb">Pound (lb)</SelectItem>
+                <SelectItem value="oz">Ounce (oz)</SelectItem>
+                <SelectItem value="ton">Metric Ton</SelectItem>
+                <SelectItem value="ml">Millilitre (ml)</SelectItem>
+                <SelectItem value="L">Litre (L)</SelectItem>
+                <SelectItem value="gal">Gallon (gal)</SelectItem>
+              </SelectContent>
+            </Select>
+          </F>
+        </div>
+
+        <div className="text-xs text-muted-foreground pt-1 border-t border-border/50">
+          Selling unit: <strong>{form.weight_per_unit || '—'} {form.unit_of_measure}</strong> per unit @ <strong>{form.sale_currency} {form.unit_price || '—'}</strong> each
+        </div>
+
+        {breakdown && (
+          <div className="space-y-2 pt-2">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Yield</span>
+                <span className="font-semibold text-foreground">{breakdown.yield.toLocaleString()} units</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Cost/unit</span>
+                <span className="font-semibold text-foreground">{form.bulk_purchase_currency} {breakdown.costPerUnit.toFixed(4)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Revenue</span>
+                <span className="font-semibold text-foreground">{form.sale_currency} {breakdown.totalRevenue.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Gross Profit</span>
+                <span className={`font-bold ${breakdown.grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}>
+                  {breakdown.grossProfit >= 0 ? '+' : ''}{breakdown.grossProfit.toFixed(2)}
+                </span>
+              </div>
+            </div>
+            <div className={`text-center py-2 rounded-md text-sm font-bold ${breakdown.marginPct >= 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
+              Speculative Margin: {breakdown.marginPct.toFixed(1)}%
+            </div>
+            <Button type="button" variant="outline" size="sm" className="w-full text-xs" onClick={applyToPurchaseCost}>
+              Apply {form.bulk_purchase_currency} {breakdown.costPerUnit.toFixed(4)} as Purchase Cost per Unit
+            </Button>
+          </div>
+        )}
+
+        {!breakdown && (form.bulk_purchase_price || form.bulk_quantity) && (
+          <p className="text-xs text-muted-foreground/70 italic">
+            Fill in bulk price, bulk quantity, and set weight per unit + selling price on the Basic tab to see breakdown.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function MarginPreview({ form }: { form: ProductFormData }) {
   const sell = Number(form.unit_price) || 0;
@@ -338,7 +511,7 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
             </F>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <F label="Selling Price ($)" info="The price per unit you charge buyers — used to calculate margin.">
+            <F label="Selling Price" info="The price per unit you charge buyers — used to calculate margin.">
               <Input type="number" value={form.unit_price} onChange={u('unit_price')} placeholder="0.00" />
             </F>
             <F label={`Weight per Unit${form.unit_of_measure ? ` (${UNIT_MAP[form.unit_of_measure] || form.unit_of_measure})` : ''}`} info="Net weight of one sellable unit — drives shipping cost estimates.">
@@ -365,6 +538,12 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
                   <SelectItem value="bbl">Barrel (bbl)</SelectItem>
                 </SelectContent>
               </Select>
+            </F>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <F label="Sale Currency" info="The currency you sell and quote this product in to your buyers.">
+              <CurrencySelect value={form.sale_currency} onValueChange={v => setForm(p => ({ ...p, sale_currency: v }))} />
             </F>
           </div>
 
@@ -402,6 +581,9 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
 
         <TabsContent value="costs" className="space-y-3 mt-3">
           <MarginPreview form={form} />
+
+          <BulkBreakdownCalculator form={form} setForm={setForm} />
+
           <p className="text-xs text-muted-foreground">All costs are per unit. Landed cost and margin are auto-calculated.</p>
           <div className="grid grid-cols-2 gap-3">
             <F label="Purchase Cost" info="What you pay your supplier per unit — the base of your landed cost calculation.">
@@ -436,16 +618,8 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
             </F>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <F label="Currency" info="The currency used for all pricing and cost fields on this product.">
-              <Select value={form.currency} onValueChange={v => setForm(p => ({ ...p, currency: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="GBP">GBP</SelectItem>
-                  <SelectItem value="HTG">HTG</SelectItem>
-                </SelectContent>
-              </Select>
+            <F label="Purchase Currency" info="The currency used for all cost fields — what you pay your supplier in.">
+              <CurrencySelect value={form.currency} onValueChange={v => setForm(p => ({ ...p, currency: v }))} />
             </F>
             <F label="Incoterms" info="International Commercial Terms — defines who pays for shipping, insurance, and duties (e.g. FOB = buyer pays freight).">
               <Select value={form.preferred_incoterms} onValueChange={v => setForm(p => ({ ...p, preferred_incoterms: v }))}>
