@@ -68,6 +68,7 @@ interface ProductFormData {
   bulk_quantity: string;
   bulk_quantity_unit: string;
   bulk_qty_units: string;
+  bulk_item_type: string;
 }
 
 interface ExportProductFormProps {
@@ -91,7 +92,7 @@ export const getEmptyForm = (): ProductFormData => ({
   price_floor: '0', markup_pct: '0', cost_review_notes: '',
   tariff_classification: '', anti_dumping_duty_pct: '0', countervailing_duty_pct: '0',
   bulk_purchase_price: '', bulk_purchase_currency: 'CAD', bulk_quantity: '', bulk_quantity_unit: 'kg',
-  bulk_qty_units: '1',
+  bulk_qty_units: '1', bulk_item_type: 'bag',
 });
 
 export const formToInsert = (form: ProductFormData, shopId: string) => ({
@@ -201,6 +202,7 @@ export const productToForm = (p: any): ProductFormData => ({
   bulk_quantity: '',
   bulk_quantity_unit: 'kg',
   bulk_qty_units: '1',
+  bulk_item_type: 'bag',
 });
 
 const UNIT_MAP: Record<string, string> = {
@@ -367,6 +369,22 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
   const bulkQty = Number(form.bulk_quantity) || 0;
   const bulkUnitsQty = Math.max(1, Math.floor(Number(form.bulk_qty_units) || 1));
 
+  const ITEM_TYPE_LABELS: Record<string, { singular: string; plural: string }> = {
+    bag: { singular: 'Bag', plural: 'Bags' },
+    barrel: { singular: 'Barrel', plural: 'Barrels' },
+    box: { singular: 'Box', plural: 'Boxes' },
+    crate: { singular: 'Crate', plural: 'Crates' },
+    pallet: { singular: 'Pallet', plural: 'Pallets' },
+    container: { singular: 'Container', plural: 'Containers' },
+    drum: { singular: 'Drum', plural: 'Drums' },
+    sack: { singular: 'Sack', plural: 'Sacks' },
+    tote: { singular: 'Tote', plural: 'Totes' },
+    unit: { singular: 'Unit', plural: 'Units' },
+  };
+  const itemLabel = ITEM_TYPE_LABELS[form.bulk_item_type] || ITEM_TYPE_LABELS['unit'];
+  const itemSingular = itemLabel.singular;
+  const itemPlural = itemLabel.plural;
+
   const totalBulkQty = bulkQty * bulkUnitsQty;
   const totalBulkCost = bulkPrice * bulkUnitsQty;
 
@@ -414,11 +432,28 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
         <p className="text-xs text-muted-foreground">Enter bulk purchase details, then add multiple package sizes to compare profitability.</p>
 
         {/* Bulk purchase inputs */}
-        <div className="grid grid-cols-3 gap-3">
-          <F label="Price per Unit" info="Price you pay for one bulk item/container (e.g. $12 per unit).">
+        <div className="grid grid-cols-4 gap-3">
+          <F label="Item Type" info="What type of bulk item are you purchasing? This updates labels below.">
+            <Select value={form.bulk_item_type} onValueChange={v => setForm(p => ({ ...p, bulk_item_type: v }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bag">Bag</SelectItem>
+                <SelectItem value="barrel">Barrel</SelectItem>
+                <SelectItem value="box">Box</SelectItem>
+                <SelectItem value="crate">Crate</SelectItem>
+                <SelectItem value="drum">Drum</SelectItem>
+                <SelectItem value="pallet">Pallet</SelectItem>
+                <SelectItem value="container">Container</SelectItem>
+                <SelectItem value="sack">Sack</SelectItem>
+                <SelectItem value="tote">Tote</SelectItem>
+                <SelectItem value="unit">Unit</SelectItem>
+              </SelectContent>
+            </Select>
+          </F>
+          <F label={`Price per ${itemSingular}`} info={`Price you pay for one ${itemSingular.toLowerCase()} (e.g. $12 per ${itemSingular.toLowerCase()}).`}>
             <Input type="number" value={form.bulk_purchase_price} onChange={e => setForm(p => ({ ...p, bulk_purchase_price: e.target.value }))} placeholder="e.g. 12.00" />
           </F>
-          <F label="Qty of Items" info="How many bulk items/containers you're purchasing at the unit price above.">
+          <F label={`Qty of ${itemPlural}`} info={`How many ${itemPlural.toLowerCase()} you're purchasing at the unit price above.`}>
             <Input type="number" min="1" value={form.bulk_qty_units} onChange={e => setForm(p => ({ ...p, bulk_qty_units: e.target.value }))} placeholder="e.g. 20" />
           </F>
           <F label="Purchase Currency" info="Currency you're paying your supplier in for this bulk purchase.">
@@ -426,7 +461,7 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
           </F>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <F label="Weight per Unit" info="How much product is in each bulk item/container (e.g. 50 kg per unit).">
+          <F label={`Weight per ${itemSingular}`} info={`How much product is in each ${itemSingular.toLowerCase()} (e.g. 50 kg per ${itemSingular.toLowerCase()}).`}>
             <Input type="number" value={form.bulk_quantity} onChange={e => setForm(p => ({ ...p, bulk_quantity: e.target.value }))} placeholder="e.g. 50" />
           </F>
           <F label="Bulk Unit" info="The measurement unit for the bulk quantity.">
@@ -450,7 +485,7 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
         {bulkQty > 0 && bulkPrice > 0 && (
           <div className="rounded-md bg-muted/50 px-3 py-2 text-xs text-foreground flex flex-wrap gap-x-4 gap-y-1">
             <span className="font-semibold">
-              Total Product: <span className="text-primary">{bulkUnitsQty} × {bulkQty}{form.bulk_quantity_unit} = {totalBulkQty.toLocaleString()}{form.bulk_quantity_unit}</span>
+              Total Product: <span className="text-primary">{bulkUnitsQty} {itemPlural.toLowerCase()} × {bulkQty}{form.bulk_quantity_unit} = {totalBulkQty.toLocaleString()}{form.bulk_quantity_unit}</span>
             </span>
             <span className="font-semibold">
               Total Cost: <span className="text-primary">{bulkUnitsQty} × {form.bulk_purchase_currency} {bulkPrice.toFixed(2)} = {form.bulk_purchase_currency} {totalBulkCost.toFixed(2)}</span>
