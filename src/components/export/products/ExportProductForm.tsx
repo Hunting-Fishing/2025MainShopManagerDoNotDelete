@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DollarSign, Package, Truck, Shield, BarChart3, Lock, Info, Plus, Calculator } from 'lucide-react';
+import { DollarSign, Package, Truck, Shield, BarChart3, Lock, Info, Plus, Calculator, Trash2, Star, TrendingUp } from 'lucide-react';
 import { ExportCategoryPicker } from './ExportCategoryPicker';
 import { useExportPackagingTypes } from '@/hooks/export/useExportPackagingTypes';
 import { Button } from '@/components/ui/button';
