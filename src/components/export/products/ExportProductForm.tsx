@@ -171,6 +171,8 @@ export const productToForm = (p: any): ProductFormData => ({
   country_of_origin: p.country_of_origin || '',
   unit_price: p.unit_price?.toString() || '',
   packaging_type: p.packaging_type || '',
+  packaging_source_country: p.packaging_source_country || '',
+  packaging_supplier_name: p.packaging_supplier_name || '',
   purchase_cost_per_unit: p.purchase_cost_per_unit?.toString() || '0',
   shipping_cost_per_unit: p.shipping_cost_per_unit?.toString() || '0',
   customs_duty_rate: p.customs_duty_rate?.toString() || '0',
