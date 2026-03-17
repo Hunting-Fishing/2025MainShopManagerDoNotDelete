@@ -415,10 +415,10 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
 
         {/* Bulk purchase inputs */}
         <div className="grid grid-cols-3 gap-3">
-          <F label="Price per Bag" info="Price you pay for one bulk bag/container (e.g. $12 per bag).">
+          <F label="Price per Unit" info="Price you pay for one bulk item/container (e.g. $12 per unit).">
             <Input type="number" value={form.bulk_purchase_price} onChange={e => setForm(p => ({ ...p, bulk_purchase_price: e.target.value }))} placeholder="e.g. 12.00" />
           </F>
-          <F label="Qty of Bags" info="How many bulk bags/containers you're purchasing at the unit price above.">
+          <F label="Qty of Items" info="How many bulk items/containers you're purchasing at the unit price above.">
             <Input type="number" min="1" value={form.bulk_qty_units} onChange={e => setForm(p => ({ ...p, bulk_qty_units: e.target.value }))} placeholder="e.g. 20" />
           </F>
           <F label="Purchase Currency" info="Currency you're paying your supplier in for this bulk purchase.">
@@ -426,7 +426,7 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
           </F>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <F label="Weight per Bag" info="How much product is in each bulk bag/container (e.g. 50 kg per bag).">
+          <F label="Weight per Unit" info="How much product is in each bulk item/container (e.g. 50 kg per unit).">
             <Input type="number" value={form.bulk_quantity} onChange={e => setForm(p => ({ ...p, bulk_quantity: e.target.value }))} placeholder="e.g. 50" />
           </F>
           <F label="Bulk Unit" info="The measurement unit for the bulk quantity.">
