@@ -323,6 +323,36 @@ export function ProductVariantsManager({ productId, productName }: ProductVarian
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={addPkgOpen} onOpenChange={setAddPkgOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Add Packaging Type</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={newPkgName}
+            onChange={e => setNewPkgName(e.target.value)}
+            placeholder="e.g. Vacuum Sealed Bag"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button
+              size="sm"
+              disabled={!newPkgName.trim()}
+              onClick={async () => {
+                const result = await addType(newPkgName.trim());
+                if (result) {
+                  setForm(p => ({ ...p, packaging_type: result.name }));
+                  setNewPkgName('');
+                  setAddPkgOpen(false);
+                }
+              }}
+            >
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
