@@ -45,8 +45,11 @@ export function ProductVariantsManager({ productId, productName }: ProductVarian
   const { data: variants = [], isLoading } = useExportProductVariants(productId);
   const createVariant = useCreateExportVariant();
   const deleteVariant = useDeleteExportVariant();
+  const { types: packagingTypes, isLoading: packagingLoading, addType } = useExportPackagingTypes();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [form, setForm] = useState(emptyVariant);
+  const [addPkgOpen, setAddPkgOpen] = useState(false);
+  const [newPkgName, setNewPkgName] = useState('');
 
   const u = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(p => ({ ...p, [field]: e.target.value }));
