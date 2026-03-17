@@ -145,6 +145,12 @@ export const formToInsert = (form: ProductFormData, shopId: string) => ({
   tariff_classification: form.tariff_classification || null,
   anti_dumping_duty_pct: Number(form.anti_dumping_duty_pct) || 0,
   countervailing_duty_pct: Number(form.countervailing_duty_pct) || 0,
+  bulk_purchase_price: Number(form.bulk_purchase_price) || 0,
+  bulk_purchase_currency: form.bulk_purchase_currency || 'CAD',
+  bulk_quantity: Number(form.bulk_quantity) || 0,
+  bulk_quantity_unit: form.bulk_quantity_unit || 'kg',
+  bulk_qty_units: Number(form.bulk_qty_units) || 1,
+  bulk_item_type: form.bulk_item_type || 'bag',
 });
 
 export const productToForm = (p: any): ProductFormData => ({
