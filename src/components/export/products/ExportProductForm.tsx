@@ -369,6 +369,22 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
   const bulkQty = Number(form.bulk_quantity) || 0;
   const bulkUnitsQty = Math.max(1, Math.floor(Number(form.bulk_qty_units) || 1));
 
+  const ITEM_TYPE_LABELS: Record<string, { singular: string; plural: string }> = {
+    bag: { singular: 'Bag', plural: 'Bags' },
+    barrel: { singular: 'Barrel', plural: 'Barrels' },
+    box: { singular: 'Box', plural: 'Boxes' },
+    crate: { singular: 'Crate', plural: 'Crates' },
+    pallet: { singular: 'Pallet', plural: 'Pallets' },
+    container: { singular: 'Container', plural: 'Containers' },
+    drum: { singular: 'Drum', plural: 'Drums' },
+    sack: { singular: 'Sack', plural: 'Sacks' },
+    tote: { singular: 'Tote', plural: 'Totes' },
+    unit: { singular: 'Unit', plural: 'Units' },
+  };
+  const itemLabel = ITEM_TYPE_LABELS[form.bulk_item_type] || ITEM_TYPE_LABELS['unit'];
+  const itemSingular = itemLabel.singular;
+  const itemPlural = itemLabel.plural;
+
   const totalBulkQty = bulkQty * bulkUnitsQty;
   const totalBulkCost = bulkPrice * bulkUnitsQty;
 
