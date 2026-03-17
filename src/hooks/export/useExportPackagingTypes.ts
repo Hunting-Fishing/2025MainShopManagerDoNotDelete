@@ -15,10 +15,14 @@ export function useExportPackagingTypes() {
 
   const fetchTypes = useCallback(async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('shop_id')
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (!profile?.shop_id) return;
 
