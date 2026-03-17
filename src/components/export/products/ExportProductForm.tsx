@@ -68,6 +68,7 @@ interface ProductFormData {
   bulk_quantity: string;
   bulk_quantity_unit: string;
   bulk_qty_units: string;
+  bulk_item_type: string;
 }
 
 interface ExportProductFormProps {
