@@ -202,6 +202,7 @@ export const productToForm = (p: any): ProductFormData => ({
   bulk_quantity: '',
   bulk_quantity_unit: 'kg',
   bulk_qty_units: '1',
+  bulk_item_type: 'bag',
 });
 
 const UNIT_MAP: Record<string, string> = {
