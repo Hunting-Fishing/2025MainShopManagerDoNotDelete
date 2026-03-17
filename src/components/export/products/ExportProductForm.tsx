@@ -300,25 +300,29 @@ function calcScenario(
   scenario: PackageScenario,
   bulkPrice: number,
   bulkQty: number,
-  bulkUnit: string
+  bulkUnit: string,
+  bulkUnitsQty: number = 1
 ): ScenarioResult | null {
   const weight = Number(scenario.weight) || 0;
   const price = Number(scenario.sellingPrice) || 0;
-  if (bulkPrice <= 0 || bulkQty <= 0 || weight <= 0) return null;
+  if (bulkPrice <= 0 || bulkQty <= 0 || weight <= 0 || bulkUnitsQty <= 0) return null;
 
   const bulkBase = normalizeToBase(bulkQty, bulkUnit);
   const sellBase = normalizeToBase(weight, scenario.unit);
   if (bulkBase === null || sellBase === null || sellBase <= 0) return null;
 
-  const yield_ = Math.floor(bulkBase / sellBase);
+  const totalBulkBase = bulkBase * bulkUnitsQty;
+  const totalBulkCost = bulkPrice * bulkUnitsQty;
+
+  const yield_ = Math.floor(totalBulkBase / sellBase);
   if (yield_ <= 0) return null;
 
   const productUsed = yield_ * sellBase;
-  const costPerUnit = bulkPrice / yield_;
+  const costPerUnit = totalBulkCost / yield_;
   const totalRevenue = yield_ * price;
-  const grossProfit = totalRevenue - bulkPrice;
+  const grossProfit = totalRevenue - totalBulkCost;
   const marginPct = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
-  const roiPct = bulkPrice > 0 ? (grossProfit / bulkPrice) * 100 : 0;
+  const roiPct = totalBulkCost > 0 ? (grossProfit / totalBulkCost) * 100 : 0;
 
   // Determine display unit for product used
   const isVolume = !!TO_ML[bulkUnit];
