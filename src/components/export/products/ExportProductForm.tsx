@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DollarSign, Package, Truck, Shield, BarChart3, Lock, Info, Plus, Calculator } from 'lucide-react';
+import { DollarSign, Package, Truck, Shield, BarChart3, Lock, Info, Plus, Calculator, Trash2, Star, TrendingUp } from 'lucide-react';
 import { ExportCategoryPicker } from './ExportCategoryPicker';
 import { useExportPackagingTypes } from '@/hooks/export/useExportPackagingTypes';
 import { Button } from '@/components/ui/button';
@@ -272,36 +272,126 @@ function CurrencySelect({ value, onValueChange }: { value: string; onValueChange
   );
 }
 
-function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; setForm: React.Dispatch<React.SetStateAction<ProductFormData>> }) {
-  const breakdown = useMemo(() => {
-    const bulkPrice = Number(form.bulk_purchase_price) || 0;
-    const bulkQty = Number(form.bulk_quantity) || 0;
-    const sellingWeight = Number(form.weight_per_unit) || 0;
-    const sellingPrice = Number(form.unit_price) || 0;
+interface PackageScenario {
+  id: string;
+  weight: string;
+  unit: string;
+  sellingPrice: string;
+  currency: string;
+  label: string;
+}
 
-    if (bulkPrice <= 0 || bulkQty <= 0 || sellingWeight <= 0) return null;
+interface ScenarioResult {
+  scenario: PackageScenario;
+  yield: number;
+  productUsed: number;
+  productUsedUnit: string;
+  costPerUnit: number;
+  totalRevenue: number;
+  grossProfit: number;
+  marginPct: number;
+  roiPct: number;
+}
 
-    const bulkBase = normalizeToBase(bulkQty, form.bulk_quantity_unit);
-    const sellBase = normalizeToBase(sellingWeight, form.unit_of_measure);
+function calcScenario(
+  scenario: PackageScenario,
+  bulkPrice: number,
+  bulkQty: number,
+  bulkUnit: string
+): ScenarioResult | null {
+  const weight = Number(scenario.weight) || 0;
+  const price = Number(scenario.sellingPrice) || 0;
+  if (bulkPrice <= 0 || bulkQty <= 0 || weight <= 0) return null;
 
-    if (bulkBase === null || sellBase === null || sellBase <= 0) return null;
+  const bulkBase = normalizeToBase(bulkQty, bulkUnit);
+  const sellBase = normalizeToBase(weight, scenario.unit);
+  if (bulkBase === null || sellBase === null || sellBase <= 0) return null;
 
-    const yield_ = Math.floor(bulkBase / sellBase);
-    if (yield_ <= 0) return null;
+  const yield_ = Math.floor(bulkBase / sellBase);
+  if (yield_ <= 0) return null;
 
-    const costPerUnit = bulkPrice / yield_;
-    const totalRevenue = yield_ * sellingPrice;
-    const grossProfit = totalRevenue - bulkPrice;
-    const marginPct = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+  const productUsed = yield_ * sellBase;
+  const costPerUnit = bulkPrice / yield_;
+  const totalRevenue = yield_ * price;
+  const grossProfit = totalRevenue - bulkPrice;
+  const marginPct = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+  const roiPct = bulkPrice > 0 ? (grossProfit / bulkPrice) * 100 : 0;
 
-    return { yield: yield_, costPerUnit, totalRevenue, grossProfit, marginPct };
-  }, [form.bulk_purchase_price, form.bulk_quantity, form.bulk_quantity_unit, form.weight_per_unit, form.unit_of_measure, form.unit_price]);
+  // Determine display unit for product used
+  const isVolume = !!TO_ML[bulkUnit];
+  const productUsedDisplay = isVolume ? productUsed / 1000 : productUsed / 1000;
+  const productUsedUnit = isVolume ? 'L' : 'kg';
 
-  const applyToPurchaseCost = () => {
-    if (breakdown) {
-      setForm(p => ({ ...p, purchase_cost_per_unit: breakdown.costPerUnit.toFixed(4) }));
-    }
+  return {
+    scenario,
+    yield: yield_,
+    productUsed: productUsedDisplay,
+    productUsedUnit,
+    costPerUnit,
+    totalRevenue,
+    grossProfit,
+    marginPct,
+    roiPct,
   };
+}
+
+function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; setForm: React.Dispatch<React.SetStateAction<ProductFormData>> }) {
+  const [scenarios, setScenarios] = useState<PackageScenario[]>(() => [{
+    id: 'primary',
+    weight: form.weight_per_unit || '',
+    unit: form.unit_of_measure || 'g',
+    sellingPrice: form.unit_price || '',
+    currency: form.sale_currency || 'USD',
+    label: 'Primary',
+  }]);
+
+  // Sync primary scenario with form values
+  const syncedScenarios = useMemo(() => {
+    return scenarios.map(s => s.id === 'primary' ? {
+      ...s,
+      weight: form.weight_per_unit || s.weight,
+      unit: form.unit_of_measure || s.unit,
+      sellingPrice: form.unit_price || s.sellingPrice,
+      currency: form.sale_currency || s.currency,
+    } : s);
+  }, [scenarios, form.weight_per_unit, form.unit_of_measure, form.unit_price, form.sale_currency]);
+
+  const bulkPrice = Number(form.bulk_purchase_price) || 0;
+  const bulkQty = Number(form.bulk_quantity) || 0;
+
+  const results = useMemo(() => {
+    return syncedScenarios
+      .map(s => calcScenario(s, bulkPrice, bulkQty, form.bulk_quantity_unit))
+      .filter((r): r is ScenarioResult => r !== null);
+  }, [syncedScenarios, bulkPrice, bulkQty, form.bulk_quantity_unit]);
+
+  const bestScenario = useMemo(() => {
+    if (results.length === 0) return null;
+    return results.reduce((best, r) => r.grossProfit > best.grossProfit ? r : best, results[0]);
+  }, [results]);
+
+  const addScenario = useCallback(() => {
+    setScenarios(prev => [...prev, {
+      id: crypto.randomUUID(),
+      weight: '',
+      unit: 'g',
+      sellingPrice: '',
+      currency: form.sale_currency || 'USD',
+      label: `Size ${prev.length}`,
+    }]);
+  }, [form.sale_currency]);
+
+  const removeScenario = useCallback((id: string) => {
+    setScenarios(prev => prev.filter(s => s.id !== id));
+  }, []);
+
+  const updateScenario = useCallback((id: string, field: keyof PackageScenario, value: string) => {
+    setScenarios(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+  }, []);
+
+  const applyToPurchaseCost = useCallback((costPerUnit: number) => {
+    setForm(p => ({ ...p, purchase_cost_per_unit: costPerUnit.toFixed(4) }));
+  }, [setForm]);
 
   return (
     <Card className="border-dashed border-primary/30 bg-primary/5">
@@ -310,8 +400,9 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
           <Calculator className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">Bulk Purchase Breakdown</span>
         </div>
-        <p className="text-xs text-muted-foreground">Enter bulk purchase details to calculate per-unit cost and speculative profit.</p>
+        <p className="text-xs text-muted-foreground">Enter bulk purchase details, then add multiple package sizes to compare profitability.</p>
 
+        {/* Bulk purchase inputs */}
         <div className="grid grid-cols-2 gap-3">
           <F label="Bulk Price" info="Total price you pay for the bulk purchase (e.g. $12 for the entire lot).">
             <Input type="number" value={form.bulk_purchase_price} onChange={e => setForm(p => ({ ...p, bulk_purchase_price: e.target.value }))} placeholder="e.g. 12.00" />
@@ -320,7 +411,6 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
             <CurrencySelect value={form.bulk_purchase_currency} onValueChange={v => setForm(p => ({ ...p, bulk_purchase_currency: v }))} />
           </F>
         </div>
-
         <div className="grid grid-cols-2 gap-3">
           <F label="Bulk Quantity" info="Total amount you're buying in bulk (e.g. 50 kg).">
             <Input type="number" value={form.bulk_quantity} onChange={e => setForm(p => ({ ...p, bulk_quantity: e.target.value }))} placeholder="e.g. 50" />
@@ -342,44 +432,183 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
           </F>
         </div>
 
-        <div className="text-xs text-muted-foreground pt-1 border-t border-border/50">
-          Selling unit: <strong>{form.weight_per_unit || '—'} {form.unit_of_measure}</strong> per unit @ <strong>{form.sale_currency} {form.unit_price || '—'}</strong> each
+        {/* Package Scenarios */}
+        <div className="border-t border-border/50 pt-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <Package className="h-3.5 w-3.5 text-primary" /> Package Sizes
+            </span>
+            <Button type="button" variant="outline" size="xs" onClick={addScenario} className="gap-1">
+              <Plus className="h-3 w-3" /> Add Size
+            </Button>
+          </div>
+
+          {syncedScenarios.map((scenario, idx) => (
+            <div key={scenario.id} className="rounded-md border border-border/60 bg-background/60 p-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  {scenario.id === 'primary' && <Star className="h-3 w-3 text-amber-500" />}
+                  <span className="text-xs font-medium text-foreground">{scenario.label}</span>
+                  {scenario.id === 'primary' && <span className="text-[10px] text-muted-foreground">(from Basic tab)</span>}
+                </div>
+                {scenario.id !== 'primary' && (
+                  <Button type="button" variant="ghost" size="xs" onClick={() => removeScenario(scenario.id)} className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive">
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Label</Label>
+                  <Input
+                    value={scenario.label}
+                    onChange={e => updateScenario(scenario.id, 'label', e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="e.g. 454g Bag"
+                    disabled={scenario.id === 'primary'}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Weight</Label>
+                  <Input
+                    type="number"
+                    value={scenario.id === 'primary' ? form.weight_per_unit : scenario.weight}
+                    onChange={e => scenario.id === 'primary'
+                      ? setForm(p => ({ ...p, weight_per_unit: e.target.value }))
+                      : updateScenario(scenario.id, 'weight', e.target.value)
+                    }
+                    className="h-8 text-xs"
+                    placeholder="454"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Unit</Label>
+                  <Select
+                    value={scenario.id === 'primary' ? form.unit_of_measure : scenario.unit}
+                    onValueChange={v => scenario.id === 'primary'
+                      ? setForm(p => ({ ...p, unit_of_measure: v }))
+                      : updateScenario(scenario.id, 'unit', v)
+                    }
+                  >
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="g">g</SelectItem>
+                      <SelectItem value="kg">kg</SelectItem>
+                      <SelectItem value="lb">lb</SelectItem>
+                      <SelectItem value="oz">oz</SelectItem>
+                      <SelectItem value="ml">ml</SelectItem>
+                      <SelectItem value="L">L</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Price</Label>
+                  <Input
+                    type="number"
+                    value={scenario.id === 'primary' ? form.unit_price : scenario.sellingPrice}
+                    onChange={e => scenario.id === 'primary'
+                      ? setForm(p => ({ ...p, unit_price: e.target.value }))
+                      : updateScenario(scenario.id, 'sellingPrice', e.target.value)
+                    }
+                    className="h-8 text-xs"
+                    placeholder="4.00"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {breakdown && (
-          <div className="space-y-2 pt-2">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Yield</span>
-                <span className="font-semibold text-foreground">{breakdown.yield.toLocaleString()} units</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Cost/unit</span>
-                <span className="font-semibold text-foreground">{form.bulk_purchase_currency} {breakdown.costPerUnit.toFixed(4)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Revenue</span>
-                <span className="font-semibold text-foreground">{form.sale_currency} {breakdown.totalRevenue.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Gross Profit</span>
-                <span className={`font-bold ${breakdown.grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}>
-                  {breakdown.grossProfit >= 0 ? '+' : ''}{breakdown.grossProfit.toFixed(2)}
-                </span>
+        {/* Results Comparison */}
+        {results.length > 0 && (
+          <div className="border-t border-border/50 pt-3 space-y-2">
+            <div className="flex items-center gap-1.5">
+              <TrendingUp className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-foreground">Profitability Comparison</span>
+            </div>
+
+            <div className="overflow-x-auto -mx-1">
+              <div className="flex gap-2 px-1 pb-1" style={{ minWidth: results.length > 2 ? `${results.length * 200}px` : undefined }}>
+                {results.map(r => {
+                  const isBest = bestScenario && r.scenario.id === bestScenario.scenario.id && results.length > 1;
+                  return (
+                    <div
+                      key={r.scenario.id}
+                      className={`flex-1 min-w-[180px] rounded-lg border p-3 space-y-2 ${
+                        isBest
+                          ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-600'
+                          : 'border-border/60 bg-muted/30'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-foreground truncate">{r.scenario.label}</span>
+                        {isBest && (
+                          <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            Best ROI
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {r.scenario.weight}{r.scenario.unit} @ {r.scenario.currency} {Number(r.scenario.sellingPrice).toFixed(2)}
+                      </div>
+
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Yield</span>
+                          <span className="font-semibold text-foreground">{r.yield.toLocaleString()} units</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Product Used</span>
+                          <span className="font-medium text-foreground">{r.productUsed.toFixed(2)} {r.productUsedUnit}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Cost/Unit</span>
+                          <span className="font-semibold text-foreground">{form.bulk_purchase_currency} {r.costPerUnit.toFixed(4)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Revenue</span>
+                          <span className="font-semibold text-foreground">{r.scenario.currency} {r.totalRevenue.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-border/40 pt-1">
+                          <span className="text-muted-foreground">Gross Profit</span>
+                          <span className={`font-bold ${r.grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}>
+                            {r.grossProfit >= 0 ? '+' : ''}{r.grossProfit.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Margin</span>
+                          <span className={`font-bold ${r.marginPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}>
+                            {r.marginPct.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">ROI</span>
+                          <span className={`font-bold ${r.roiPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}>
+                            {r.roiPct.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        className="w-full text-[10px] mt-1"
+                        onClick={() => applyToPurchaseCost(r.costPerUnit)}
+                      >
+                        Apply {form.bulk_purchase_currency} {r.costPerUnit.toFixed(4)} as Cost
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-            <div className={`text-center py-2 rounded-md text-sm font-bold ${breakdown.marginPct >= 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
-              Speculative Margin: {breakdown.marginPct.toFixed(1)}%
-            </div>
-            <Button type="button" variant="outline" size="sm" className="w-full text-xs" onClick={applyToPurchaseCost}>
-              Apply {form.bulk_purchase_currency} {breakdown.costPerUnit.toFixed(4)} as Purchase Cost per Unit
-            </Button>
           </div>
         )}
 
-        {!breakdown && (form.bulk_purchase_price || form.bulk_quantity) && (
+        {results.length === 0 && (form.bulk_purchase_price || form.bulk_quantity) && (
           <p className="text-xs text-muted-foreground/70 italic">
-            Fill in bulk price, bulk quantity, and set weight per unit + selling price on the Basic tab to see breakdown.
+            Fill in bulk price, bulk quantity, and set weight + selling price for at least one package size to see breakdown.
           </p>
         )}
       </CardContent>
