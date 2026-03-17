@@ -67,6 +67,7 @@ interface ProductFormData {
   bulk_purchase_currency: string;
   bulk_quantity: string;
   bulk_quantity_unit: string;
+  bulk_qty_units: string;
 }
 
 interface ExportProductFormProps {
