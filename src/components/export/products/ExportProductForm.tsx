@@ -112,6 +112,8 @@ export const formToInsert = (form: ProductFormData, shopId: string) => ({
   country_of_origin: form.country_of_origin || null,
   unit_price: form.unit_price ? Number(form.unit_price) : 0,
   packaging_type: form.packaging_type || null,
+  packaging_source_country: form.packaging_source_country || null,
+  packaging_supplier_name: form.packaging_supplier_name || null,
   purchase_cost_per_unit: Number(form.purchase_cost_per_unit) || 0,
   shipping_cost_per_unit: Number(form.shipping_cost_per_unit) || 0,
   customs_duty_rate: Number(form.customs_duty_rate) || 0,
