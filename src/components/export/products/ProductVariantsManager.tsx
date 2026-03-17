@@ -7,8 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Package, TrendingUp, TrendingDown, Loader2, Trash2, Edit, AlertTriangle, Boxes } from 'lucide-react';
 import { useExportProductVariants, useCreateExportVariant, useDeleteExportVariant, ExportProductVariant } from '@/hooks/export/useExportProductVariants';
+import { useExportPackagingTypes } from '@/hooks/export/useExportPackagingTypes';
 
 interface ProductVariantsManagerProps {
   productId: string;
