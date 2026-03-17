@@ -91,6 +91,7 @@ export const getEmptyForm = (): ProductFormData => ({
   price_floor: '0', markup_pct: '0', cost_review_notes: '',
   tariff_classification: '', anti_dumping_duty_pct: '0', countervailing_duty_pct: '0',
   bulk_purchase_price: '', bulk_purchase_currency: 'CAD', bulk_quantity: '', bulk_quantity_unit: 'kg',
+  bulk_qty_units: '1',
 });
 
 export const formToInsert = (form: ProductFormData, shopId: string) => ({
