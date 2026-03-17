@@ -414,16 +414,19 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
         <p className="text-xs text-muted-foreground">Enter bulk purchase details, then add multiple package sizes to compare profitability.</p>
 
         {/* Bulk purchase inputs */}
-        <div className="grid grid-cols-2 gap-3">
-          <F label="Bulk Price" info="Total price you pay for the bulk purchase (e.g. $12 for the entire lot).">
+        <div className="grid grid-cols-3 gap-3">
+          <F label="Price per Bag" info="Price you pay for one bulk bag/container (e.g. $12 per bag).">
             <Input type="number" value={form.bulk_purchase_price} onChange={e => setForm(p => ({ ...p, bulk_purchase_price: e.target.value }))} placeholder="e.g. 12.00" />
+          </F>
+          <F label="Qty of Bags" info="How many bulk bags/containers you're purchasing at the unit price above.">
+            <Input type="number" min="1" value={form.bulk_qty_units} onChange={e => setForm(p => ({ ...p, bulk_qty_units: e.target.value }))} placeholder="e.g. 20" />
           </F>
           <F label="Purchase Currency" info="Currency you're paying your supplier in for this bulk purchase.">
             <CurrencySelect value={form.bulk_purchase_currency} onValueChange={v => setForm(p => ({ ...p, bulk_purchase_currency: v }))} />
           </F>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <F label="Bulk Quantity" info="Total amount you're buying in bulk (e.g. 50 kg).">
+          <F label="Weight per Bag" info="How much product is in each bulk bag/container (e.g. 50 kg per bag).">
             <Input type="number" value={form.bulk_quantity} onChange={e => setForm(p => ({ ...p, bulk_quantity: e.target.value }))} placeholder="e.g. 50" />
           </F>
           <F label="Bulk Unit" info="The measurement unit for the bulk quantity.">
@@ -442,6 +445,18 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
             </Select>
           </F>
         </div>
+
+        {/* Total summary line */}
+        {bulkQty > 0 && bulkPrice > 0 && (
+          <div className="rounded-md bg-muted/50 px-3 py-2 text-xs text-foreground flex flex-wrap gap-x-4 gap-y-1">
+            <span className="font-semibold">
+              Total Product: <span className="text-primary">{bulkUnitsQty} × {bulkQty}{form.bulk_quantity_unit} = {totalBulkQty.toLocaleString()}{form.bulk_quantity_unit}</span>
+            </span>
+            <span className="font-semibold">
+              Total Cost: <span className="text-primary">{bulkUnitsQty} × {form.bulk_purchase_currency} {bulkPrice.toFixed(2)} = {form.bulk_purchase_currency} {totalBulkCost.toFixed(2)}</span>
+            </span>
+          </div>
+        )}
 
         {/* Package Scenarios */}
         <div className="border-t border-border/50 pt-3 space-y-3">
