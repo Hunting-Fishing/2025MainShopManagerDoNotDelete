@@ -365,12 +365,16 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
 
   const bulkPrice = Number(form.bulk_purchase_price) || 0;
   const bulkQty = Number(form.bulk_quantity) || 0;
+  const bulkUnitsQty = Math.max(1, Math.floor(Number(form.bulk_qty_units) || 1));
+
+  const totalBulkQty = bulkQty * bulkUnitsQty;
+  const totalBulkCost = bulkPrice * bulkUnitsQty;
 
   const results = useMemo(() => {
     return syncedScenarios
-      .map(s => calcScenario(s, bulkPrice, bulkQty, form.bulk_quantity_unit))
+      .map(s => calcScenario(s, bulkPrice, bulkQty, form.bulk_quantity_unit, bulkUnitsQty))
       .filter((r): r is ScenarioResult => r !== null);
-  }, [syncedScenarios, bulkPrice, bulkQty, form.bulk_quantity_unit]);
+  }, [syncedScenarios, bulkPrice, bulkQty, form.bulk_quantity_unit, bulkUnitsQty]);
 
   const bestScenario = useMemo(() => {
     if (results.length === 0) return null;
