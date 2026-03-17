@@ -14368,6 +14368,12 @@ export type Database = {
         Row: {
           anti_dumping_duty_pct: number | null
           avg_monthly_volume: number | null
+          bulk_item_type: string | null
+          bulk_purchase_currency: string | null
+          bulk_purchase_price: number | null
+          bulk_qty_units: number | null
+          bulk_quantity: number | null
+          bulk_quantity_unit: string | null
           category: string
           category_id: string | null
           certifications: string[] | null
@@ -14437,6 +14443,12 @@ export type Database = {
         Insert: {
           anti_dumping_duty_pct?: number | null
           avg_monthly_volume?: number | null
+          bulk_item_type?: string | null
+          bulk_purchase_currency?: string | null
+          bulk_purchase_price?: number | null
+          bulk_qty_units?: number | null
+          bulk_quantity?: number | null
+          bulk_quantity_unit?: string | null
           category?: string
           category_id?: string | null
           certifications?: string[] | null
@@ -14506,6 +14518,12 @@ export type Database = {
         Update: {
           anti_dumping_duty_pct?: number | null
           avg_monthly_volume?: number | null
+          bulk_item_type?: string | null
+          bulk_purchase_currency?: string | null
+          bulk_purchase_price?: number | null
+          bulk_qty_units?: number | null
+          bulk_quantity?: number | null
+          bulk_quantity_unit?: string | null
           category?: string
           category_id?: string | null
           certifications?: string[] | null
