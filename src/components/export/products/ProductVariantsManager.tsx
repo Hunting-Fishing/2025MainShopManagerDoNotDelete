@@ -7,8 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Package, TrendingUp, TrendingDown, Loader2, Trash2, Edit, AlertTriangle, Boxes } from 'lucide-react';
 import { useExportProductVariants, useCreateExportVariant, useDeleteExportVariant, ExportProductVariant } from '@/hooks/export/useExportProductVariants';
+import { useExportPackagingTypes } from '@/hooks/export/useExportPackagingTypes';
 
 interface ProductVariantsManagerProps {
   productId: string;
@@ -43,8 +45,11 @@ export function ProductVariantsManager({ productId, productName }: ProductVarian
   const { data: variants = [], isLoading } = useExportProductVariants(productId);
   const createVariant = useCreateExportVariant();
   const deleteVariant = useDeleteExportVariant();
+  const { types: packagingTypes, isLoading: packagingLoading, addType } = useExportPackagingTypes();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [form, setForm] = useState(emptyVariant);
+  const [addPkgOpen, setAddPkgOpen] = useState(false);
+  const [newPkgName, setNewPkgName] = useState('');
 
   const u = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(p => ({ ...p, [field]: e.target.value }));
@@ -177,7 +182,19 @@ export function ProductVariantsManager({ productId, productName }: ProductVarian
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Packaging</Label>
-                <Input value={form.packaging_type} onChange={u('packaging_type')} placeholder="25kg PP bag" />
+                <div className="flex gap-1.5">
+                  <Select value={form.packaging_type} onValueChange={v => setForm(p => ({ ...p, packaging_type: v }))}>
+                    <SelectTrigger className="flex-1"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      {packagingTypes.map(t => (
+                        <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" size="icon" variant="outline" className="h-9 w-9 shrink-0" onClick={() => setAddPkgOpen(true)}>
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -306,6 +323,36 @@ export function ProductVariantsManager({ productId, productName }: ProductVarian
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={addPkgOpen} onOpenChange={setAddPkgOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Add Packaging Type</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={newPkgName}
+            onChange={e => setNewPkgName(e.target.value)}
+            placeholder="e.g. Vacuum Sealed Bag"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button
+              size="sm"
+              disabled={!newPkgName.trim()}
+              onClick={async () => {
+                const result = await addType(newPkgName.trim());
+                if (result) {
+                  setForm(p => ({ ...p, packaging_type: result.name }));
+                  setNewPkgName('');
+                  setAddPkgOpen(false);
+                }
+              }}
+            >
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
