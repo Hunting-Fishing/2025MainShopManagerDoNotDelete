@@ -67,6 +67,7 @@ interface ProductFormData {
   bulk_purchase_currency: string;
   bulk_quantity: string;
   bulk_quantity_unit: string;
+  bulk_qty_units: string;
 }
 
 interface ExportProductFormProps {
@@ -90,6 +91,7 @@ export const getEmptyForm = (): ProductFormData => ({
   price_floor: '0', markup_pct: '0', cost_review_notes: '',
   tariff_classification: '', anti_dumping_duty_pct: '0', countervailing_duty_pct: '0',
   bulk_purchase_price: '', bulk_purchase_currency: 'CAD', bulk_quantity: '', bulk_quantity_unit: 'kg',
+  bulk_qty_units: '1',
 });
 
 export const formToInsert = (form: ProductFormData, shopId: string) => ({
@@ -198,6 +200,7 @@ export const productToForm = (p: any): ProductFormData => ({
   bulk_purchase_currency: 'CAD',
   bulk_quantity: '',
   bulk_quantity_unit: 'kg',
+  bulk_qty_units: '1',
 });
 
 const UNIT_MAP: Record<string, string> = {
@@ -297,25 +300,29 @@ function calcScenario(
   scenario: PackageScenario,
   bulkPrice: number,
   bulkQty: number,
-  bulkUnit: string
+  bulkUnit: string,
+  bulkUnitsQty: number = 1
 ): ScenarioResult | null {
   const weight = Number(scenario.weight) || 0;
   const price = Number(scenario.sellingPrice) || 0;
-  if (bulkPrice <= 0 || bulkQty <= 0 || weight <= 0) return null;
+  if (bulkPrice <= 0 || bulkQty <= 0 || weight <= 0 || bulkUnitsQty <= 0) return null;
 
   const bulkBase = normalizeToBase(bulkQty, bulkUnit);
   const sellBase = normalizeToBase(weight, scenario.unit);
   if (bulkBase === null || sellBase === null || sellBase <= 0) return null;
 
-  const yield_ = Math.floor(bulkBase / sellBase);
+  const totalBulkBase = bulkBase * bulkUnitsQty;
+  const totalBulkCost = bulkPrice * bulkUnitsQty;
+
+  const yield_ = Math.floor(totalBulkBase / sellBase);
   if (yield_ <= 0) return null;
 
   const productUsed = yield_ * sellBase;
-  const costPerUnit = bulkPrice / yield_;
+  const costPerUnit = totalBulkCost / yield_;
   const totalRevenue = yield_ * price;
-  const grossProfit = totalRevenue - bulkPrice;
+  const grossProfit = totalRevenue - totalBulkCost;
   const marginPct = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
-  const roiPct = bulkPrice > 0 ? (grossProfit / bulkPrice) * 100 : 0;
+  const roiPct = totalBulkCost > 0 ? (grossProfit / totalBulkCost) * 100 : 0;
 
   // Determine display unit for product used
   const isVolume = !!TO_ML[bulkUnit];
@@ -358,12 +365,16 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
 
   const bulkPrice = Number(form.bulk_purchase_price) || 0;
   const bulkQty = Number(form.bulk_quantity) || 0;
+  const bulkUnitsQty = Math.max(1, Math.floor(Number(form.bulk_qty_units) || 1));
+
+  const totalBulkQty = bulkQty * bulkUnitsQty;
+  const totalBulkCost = bulkPrice * bulkUnitsQty;
 
   const results = useMemo(() => {
     return syncedScenarios
-      .map(s => calcScenario(s, bulkPrice, bulkQty, form.bulk_quantity_unit))
+      .map(s => calcScenario(s, bulkPrice, bulkQty, form.bulk_quantity_unit, bulkUnitsQty))
       .filter((r): r is ScenarioResult => r !== null);
-  }, [syncedScenarios, bulkPrice, bulkQty, form.bulk_quantity_unit]);
+  }, [syncedScenarios, bulkPrice, bulkQty, form.bulk_quantity_unit, bulkUnitsQty]);
 
   const bestScenario = useMemo(() => {
     if (results.length === 0) return null;
@@ -403,16 +414,19 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
         <p className="text-xs text-muted-foreground">Enter bulk purchase details, then add multiple package sizes to compare profitability.</p>
 
         {/* Bulk purchase inputs */}
-        <div className="grid grid-cols-2 gap-3">
-          <F label="Bulk Price" info="Total price you pay for the bulk purchase (e.g. $12 for the entire lot).">
+        <div className="grid grid-cols-3 gap-3">
+          <F label="Price per Bag" info="Price you pay for one bulk bag/container (e.g. $12 per bag).">
             <Input type="number" value={form.bulk_purchase_price} onChange={e => setForm(p => ({ ...p, bulk_purchase_price: e.target.value }))} placeholder="e.g. 12.00" />
+          </F>
+          <F label="Qty of Bags" info="How many bulk bags/containers you're purchasing at the unit price above.">
+            <Input type="number" min="1" value={form.bulk_qty_units} onChange={e => setForm(p => ({ ...p, bulk_qty_units: e.target.value }))} placeholder="e.g. 20" />
           </F>
           <F label="Purchase Currency" info="Currency you're paying your supplier in for this bulk purchase.">
             <CurrencySelect value={form.bulk_purchase_currency} onValueChange={v => setForm(p => ({ ...p, bulk_purchase_currency: v }))} />
           </F>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <F label="Bulk Quantity" info="Total amount you're buying in bulk (e.g. 50 kg).">
+          <F label="Weight per Bag" info="How much product is in each bulk bag/container (e.g. 50 kg per bag).">
             <Input type="number" value={form.bulk_quantity} onChange={e => setForm(p => ({ ...p, bulk_quantity: e.target.value }))} placeholder="e.g. 50" />
           </F>
           <F label="Bulk Unit" info="The measurement unit for the bulk quantity.">
@@ -431,6 +445,18 @@ function BulkBreakdownCalculator({ form, setForm }: { form: ProductFormData; set
             </Select>
           </F>
         </div>
+
+        {/* Total summary line */}
+        {bulkQty > 0 && bulkPrice > 0 && (
+          <div className="rounded-md bg-muted/50 px-3 py-2 text-xs text-foreground flex flex-wrap gap-x-4 gap-y-1">
+            <span className="font-semibold">
+              Total Product: <span className="text-primary">{bulkUnitsQty} × {bulkQty}{form.bulk_quantity_unit} = {totalBulkQty.toLocaleString()}{form.bulk_quantity_unit}</span>
+            </span>
+            <span className="font-semibold">
+              Total Cost: <span className="text-primary">{bulkUnitsQty} × {form.bulk_purchase_currency} {bulkPrice.toFixed(2)} = {form.bulk_purchase_currency} {totalBulkCost.toFixed(2)}</span>
+            </span>
+          </div>
+        )}
 
         {/* Package Scenarios */}
         <div className="border-t border-border/50 pt-3 space-y-3">
