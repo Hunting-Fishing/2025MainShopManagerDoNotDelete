@@ -81,6 +81,7 @@ interface ExportProductFormProps {
 export const getEmptyForm = (): ProductFormData => ({
   name: '', category: '', category_id: '', subcategory_id: '', sku: '', description: '', unit_of_measure: 'kg',
   weight_per_unit: '', hs_code: '', country_of_origin: '', unit_price: '', packaging_type: '',
+  packaging_source_country: '', packaging_supplier_name: '',
   purchase_cost_per_unit: '', shipping_cost_per_unit: '', customs_duty_rate: '',
   customs_duty_per_unit: '', insurance_cost_per_unit: '', handling_fee_per_unit: '',
   packaging_cost_per_unit: '', inspection_cost_per_unit: '',
