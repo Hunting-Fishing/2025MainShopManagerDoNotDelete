@@ -200,6 +200,7 @@ export const productToForm = (p: any): ProductFormData => ({
   bulk_purchase_currency: 'CAD',
   bulk_quantity: '',
   bulk_quantity_unit: 'kg',
+  bulk_qty_units: '1',
 });
 
 const UNIT_MAP: Record<string, string> = {
