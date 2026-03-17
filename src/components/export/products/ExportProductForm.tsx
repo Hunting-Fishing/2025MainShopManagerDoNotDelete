@@ -26,6 +26,8 @@ interface ProductFormData {
   country_of_origin: string;
   unit_price: string;
   packaging_type: string;
+  packaging_source_country: string;
+  packaging_supplier_name: string;
   purchase_cost_per_unit: string;
   shipping_cost_per_unit: string;
   customs_duty_rate: string;
@@ -79,6 +81,7 @@ interface ExportProductFormProps {
 export const getEmptyForm = (): ProductFormData => ({
   name: '', category: '', category_id: '', subcategory_id: '', sku: '', description: '', unit_of_measure: 'kg',
   weight_per_unit: '', hs_code: '', country_of_origin: '', unit_price: '', packaging_type: '',
+  packaging_source_country: '', packaging_supplier_name: '',
   purchase_cost_per_unit: '', shipping_cost_per_unit: '', customs_duty_rate: '',
   customs_duty_per_unit: '', insurance_cost_per_unit: '', handling_fee_per_unit: '',
   packaging_cost_per_unit: '', inspection_cost_per_unit: '',
@@ -109,6 +112,8 @@ export const formToInsert = (form: ProductFormData, shopId: string) => ({
   country_of_origin: form.country_of_origin || null,
   unit_price: form.unit_price ? Number(form.unit_price) : 0,
   packaging_type: form.packaging_type || null,
+  packaging_source_country: form.packaging_source_country || null,
+  packaging_supplier_name: form.packaging_supplier_name || null,
   purchase_cost_per_unit: Number(form.purchase_cost_per_unit) || 0,
   shipping_cost_per_unit: Number(form.shipping_cost_per_unit) || 0,
   customs_duty_rate: Number(form.customs_duty_rate) || 0,
@@ -166,6 +171,8 @@ export const productToForm = (p: any): ProductFormData => ({
   country_of_origin: p.country_of_origin || '',
   unit_price: p.unit_price?.toString() || '',
   packaging_type: p.packaging_type || '',
+  packaging_source_country: p.packaging_source_country || '',
+  packaging_supplier_name: p.packaging_supplier_name || '',
   purchase_cost_per_unit: p.purchase_cost_per_unit?.toString() || '0',
   shipping_cost_per_unit: p.shipping_cost_per_unit?.toString() || '0',
   customs_duty_rate: p.customs_duty_rate?.toString() || '0',
@@ -861,6 +868,15 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
               </Button>
             </div>
           </F>
+
+          <div className="grid grid-cols-2 gap-3">
+            <F label="Packaging Source" info="Country where the packaging materials are manufactured or sourced from.">
+              <Input value={form.packaging_source_country} onChange={u('packaging_source_country')} placeholder="e.g. China, USA" />
+            </F>
+            <F label="Packaging Supplier" info="Name of the company or vendor supplying the packaging materials.">
+              <Input value={form.packaging_supplier_name} onChange={u('packaging_supplier_name')} placeholder="e.g. PackCo Ltd." />
+            </F>
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <F label="HS Code" info="Harmonized System code used by customs worldwide to classify goods and determine import duties.">

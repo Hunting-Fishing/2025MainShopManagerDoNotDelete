@@ -14410,6 +14410,8 @@ export type Database = {
           name: string
           packaging_cost_per_unit: number | null
           packaging_option_id: string | null
+          packaging_source_country: string | null
+          packaging_supplier_name: string | null
           packaging_type: string | null
           phytosanitary_required: boolean | null
           preferred_incoterms: string | null
@@ -14485,6 +14487,8 @@ export type Database = {
           name: string
           packaging_cost_per_unit?: number | null
           packaging_option_id?: string | null
+          packaging_source_country?: string | null
+          packaging_supplier_name?: string | null
           packaging_type?: string | null
           phytosanitary_required?: boolean | null
           preferred_incoterms?: string | null
@@ -14560,6 +14564,8 @@ export type Database = {
           name?: string
           packaging_cost_per_unit?: number | null
           packaging_option_id?: string | null
+          packaging_source_country?: string | null
+          packaging_supplier_name?: string | null
           packaging_type?: string | null
           phytosanitary_required?: boolean | null
           preferred_incoterms?: string | null
