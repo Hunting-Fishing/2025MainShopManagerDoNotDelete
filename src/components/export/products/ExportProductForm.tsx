@@ -870,6 +870,15 @@ export function ExportProductForm({ form, setForm }: ExportProductFormProps) {
           </F>
 
           <div className="grid grid-cols-2 gap-3">
+            <F label="Packaging Source" info="Country where the packaging materials are manufactured or sourced from.">
+              <Input value={form.packaging_source_country} onChange={u('packaging_source_country')} placeholder="e.g. China, USA" />
+            </F>
+            <F label="Packaging Supplier" info="Name of the company or vendor supplying the packaging materials.">
+              <Input value={form.packaging_supplier_name} onChange={u('packaging_supplier_name')} placeholder="e.g. PackCo Ltd." />
+            </F>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <F label="HS Code" info="Harmonized System code used by customs worldwide to classify goods and determine import duties.">
               <Input value={form.hs_code} onChange={u('hs_code')} placeholder="2501.00" />
             </F>
