@@ -307,11 +307,12 @@ export default function PTPortalDashboard() {
 
       <div className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{upcomingSessions.length}</p><p className="text-xs text-muted-foreground">Upcoming Sessions</p></CardContent></Card>
           <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{programs.length}</p><p className="text-xs text-muted-foreground">Active Programs</p></CardContent></Card>
           <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{packages.reduce((s: number, p: any) => s + (p.remaining_sessions || 0), 0)}</p><p className="text-xs text-muted-foreground">Sessions Left</p></CardContent></Card>
           <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{packages.length}</p><p className="text-xs text-muted-foreground">Active Packages</p></CardContent></Card>
+          <Card className={workoutStreak > 0 ? 'border-orange-500/50' : ''}><CardContent className="p-4 text-center"><p className="text-2xl font-bold flex items-center justify-center gap-1">{workoutStreak > 0 && <Flame className="h-5 w-5 text-orange-500" />}{workoutStreak}</p><p className="text-xs text-muted-foreground">Day Streak</p></CardContent></Card>
         </div>
 
         <Tabs defaultValue="workouts">
