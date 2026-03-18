@@ -387,6 +387,7 @@ import { WaterDeliveryLayout } from '@/components/water-delivery';
 const PersonalTrainerDashboard = lazy(() => import('@/pages/personal-trainer/PersonalTrainerDashboard'));
 const PersonalTrainerClients = lazy(() => import('@/pages/personal-trainer/PersonalTrainerClients'));
 const PersonalTrainerClientDetail = lazy(() => import('@/pages/personal-trainer/PersonalTrainerClientDetail'));
+const PersonalTrainerWorkoutBuilder = lazy(() => import('@/pages/personal-trainer/PersonalTrainerWorkoutBuilder'));
 const PersonalTrainerPrograms = lazy(() => import('@/pages/personal-trainer/PersonalTrainerPrograms'));
 const PersonalTrainerExercises = lazy(() => import('@/pages/personal-trainer/PersonalTrainerExercises'));
 const PersonalTrainerSessions = lazy(() => import('@/pages/personal-trainer/PersonalTrainerSessions'));
