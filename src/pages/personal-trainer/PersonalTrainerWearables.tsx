@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Watch, Loader2, Link, Unlink, RefreshCw, Activity } from 'lucide-react';
+import { Watch, Loader2, Link, Unlink, RefreshCw, Activity, Sparkles } from 'lucide-react';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useSaveBiometricSnapshot } from '@/hooks/usePTAIInsights';
 
 const PROVIDERS = [
   { id: 'fitbit', name: 'Fitbit', color: 'bg-teal-100 text-teal-800' },
@@ -23,6 +24,7 @@ export default function PersonalTrainerWearables() {
   const { shopId } = useShopId();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const saveBiometric = useSaveBiometricSnapshot();
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [connectDialog, setConnectDialog] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState('');
@@ -147,6 +149,22 @@ export default function PersonalTrainerWearables() {
                             <Button size="sm" variant="outline" className="flex-1" onClick={() => syncDevice.mutate(conn.id)} disabled={syncDevice.isPending}>
                               <RefreshCw className="h-3 w-3 mr-1" />Sync
                             </Button>
+                            {syncData && shopId && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => saveBiometric.mutate({
+                                  clientId: selectedClient,
+                                  shopId,
+                                  syncData: { steps: syncData.steps, heart_rate: syncData.heart_rate, calories_burned: syncData.calories_burned },
+                                  source: conn.provider,
+                                })}
+                                disabled={saveBiometric.isPending}
+                              >
+                                <Sparkles className="h-3 w-3 mr-1" />Profile
+                              </Button>
+                            )}
                             <Button size="sm" variant="outline" className="text-destructive" onClick={() => disconnectDevice.mutate(conn.id)}>
                               <Unlink className="h-3 w-3" />
                             </Button>

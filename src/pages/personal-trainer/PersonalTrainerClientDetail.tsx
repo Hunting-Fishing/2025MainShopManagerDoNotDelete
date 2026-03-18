@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles } from 'lucide-react';
+import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles, Brain } from 'lucide-react';
 import FitnessInterestIntake from '@/components/personal-trainer/FitnessInterestIntake';
 import FitnessProfileScores from '@/components/personal-trainer/FitnessProfileScores';
+import AIInsightsPanel from '@/components/personal-trainer/AIInsightsPanel';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -187,12 +188,13 @@ export default function PersonalTrainerClientDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="programs">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="programs" className="text-xs"><ClipboardList className="h-3 w-3 mr-1" />Programs</TabsTrigger>
           <TabsTrigger value="sessions" className="text-xs"><Calendar className="h-3 w-3 mr-1" />Sessions</TabsTrigger>
           <TabsTrigger value="metrics" className="text-xs"><Activity className="h-3 w-3 mr-1" />Metrics</TabsTrigger>
           <TabsTrigger value="checkins" className="text-xs"><ClipboardCheck className="h-3 w-3 mr-1" />Check-ins</TabsTrigger>
           <TabsTrigger value="fitness-profile" className="text-xs"><Sparkles className="h-3 w-3 mr-1" />Interests</TabsTrigger>
+          <TabsTrigger value="ai-insights" className="text-xs"><Brain className="h-3 w-3 mr-1" />AI Insights</TabsTrigger>
           <TabsTrigger value="nutrition" className="text-xs"><Utensils className="h-3 w-3 mr-1" />Nutrition</TabsTrigger>
           <TabsTrigger value="billing" className="text-xs"><CreditCard className="h-3 w-3 mr-1" />Billing</TabsTrigger>
         </TabsList>
@@ -200,6 +202,10 @@ export default function PersonalTrainerClientDetail() {
         <TabsContent value="fitness-profile" className="mt-4 space-y-4">
           {id && shopId && <FitnessProfileScores clientId={id} shopId={shopId} />}
           {id && shopId && <FitnessInterestIntake clientId={id} shopId={shopId} embedded />}
+        </TabsContent>
+
+        <TabsContent value="ai-insights" className="mt-4">
+          {id && shopId && <AIInsightsPanel clientId={id} shopId={shopId} />}
         </TabsContent>
 
         <TabsContent value="programs" className="mt-4 space-y-3">
