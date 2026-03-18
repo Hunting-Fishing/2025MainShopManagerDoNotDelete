@@ -1658,6 +1658,7 @@ function App() {
                   <Route path="/referrals" element={<PersonalTrainerReferrals />} />
                   <Route path="/branding" element={<PersonalTrainerBranding />} />
                   <Route path="/nutrition" element={<PersonalTrainerNutrition />} />
+                  <Route path="/wearables" element={<PersonalTrainerWearables />} />
                 </Routes>
               </PersonalTrainerLayout>
             </AuthGate>

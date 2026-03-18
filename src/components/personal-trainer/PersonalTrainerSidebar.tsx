@@ -75,6 +75,12 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: 'Integrations',
+    items: [
+      { title: 'Wearables', href: '/personal-trainer/wearables', icon: Activity, color: 'from-cyan-500 to-blue-500' },
+    ],
+  },
+  {
     title: 'Scheduling',
     items: [
       { title: 'Sessions', href: '/personal-trainer/sessions', icon: Calendar, color: 'from-sky-500 to-blue-600' },
