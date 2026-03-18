@@ -25,6 +25,7 @@ export default function PersonalTrainerWearables() {
   const { shopId } = useShopId();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const saveBiometric = useSaveBiometricSnapshot();
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [connectDialog, setConnectDialog] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState('');
