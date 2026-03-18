@@ -4,6 +4,10 @@ import { cn } from '@/lib/utils';
 import {
   Dumbbell,
   LayoutDashboard,
+  MessageSquare,
+  ClipboardCheck,
+  BarChart3 as BarChartIcon,
+  UserCog,
   Users,
   Calendar,
   ClipboardList,
