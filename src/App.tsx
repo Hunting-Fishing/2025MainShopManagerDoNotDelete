@@ -386,6 +386,7 @@ import { WaterDeliveryLayout } from '@/components/water-delivery';
 // Personal Trainer
 const PersonalTrainerDashboard = lazy(() => import('@/pages/personal-trainer/PersonalTrainerDashboard'));
 const PersonalTrainerClients = lazy(() => import('@/pages/personal-trainer/PersonalTrainerClients'));
+const PersonalTrainerClientDetail = lazy(() => import('@/pages/personal-trainer/PersonalTrainerClientDetail'));
 const PersonalTrainerPrograms = lazy(() => import('@/pages/personal-trainer/PersonalTrainerPrograms'));
 const PersonalTrainerExercises = lazy(() => import('@/pages/personal-trainer/PersonalTrainerExercises'));
 const PersonalTrainerSessions = lazy(() => import('@/pages/personal-trainer/PersonalTrainerSessions'));
@@ -393,6 +394,10 @@ const PersonalTrainerMetrics = lazy(() => import('@/pages/personal-trainer/Perso
 const PersonalTrainerPackages = lazy(() => import('@/pages/personal-trainer/PersonalTrainerPackages'));
 const PersonalTrainerBilling = lazy(() => import('@/pages/personal-trainer/PersonalTrainerBilling'));
 const PersonalTrainerSettings = lazy(() => import('@/pages/personal-trainer/PersonalTrainerSettings'));
+const PersonalTrainerTrainers = lazy(() => import('@/pages/personal-trainer/PersonalTrainerTrainers'));
+const PersonalTrainerCheckIns = lazy(() => import('@/pages/personal-trainer/PersonalTrainerCheckIns'));
+const PersonalTrainerMessages = lazy(() => import('@/pages/personal-trainer/PersonalTrainerMessages'));
+const PersonalTrainerReports = lazy(() => import('@/pages/personal-trainer/PersonalTrainerReports'));
 import { PersonalTrainerLayout } from '@/components/personal-trainer';
 
 // Personal Trainer Portal
