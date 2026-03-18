@@ -8,12 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Users, Plus, Search, Phone, Mail } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export default function PersonalTrainerClients() {
+  const navigate = useNavigate();
   const { shopId } = useShopId();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -124,7 +126,7 @@ export default function PersonalTrainerClients() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((client: any) => (
-            <Card key={client.id} className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card key={client.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/personal-trainer/clients/${client.id}`)}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div>

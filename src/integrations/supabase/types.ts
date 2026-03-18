@@ -37448,6 +37448,7 @@ export type Database = {
           hips_cm: number | null
           id: string
           notes: string | null
+          progress_photos_url: string | null
           recorded_by: string | null
           recorded_date: string
           thigh_cm: number | null
@@ -37463,6 +37464,7 @@ export type Database = {
           hips_cm?: number | null
           id?: string
           notes?: string | null
+          progress_photos_url?: string | null
           recorded_by?: string | null
           recorded_date?: string
           thigh_cm?: number | null
@@ -37478,6 +37480,7 @@ export type Database = {
           hips_cm?: number | null
           id?: string
           notes?: string | null
+          progress_photos_url?: string | null
           recorded_by?: string | null
           recorded_date?: string
           thigh_cm?: number | null
@@ -37490,6 +37493,91 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_check_ins: {
+        Row: {
+          check_in_date: string
+          client_id: string
+          created_at: string | null
+          energy_level: number | null
+          id: string
+          mood: string | null
+          notes: string | null
+          nutrition_compliance: number | null
+          photos: string[] | null
+          shop_id: string
+          sleep_hours: number | null
+          status: string | null
+          stress_level: number | null
+          trainer_feedback: string | null
+          trainer_id: string | null
+          updated_at: string | null
+          weight: number | null
+          workout_compliance: number | null
+        }
+        Insert: {
+          check_in_date?: string
+          client_id: string
+          created_at?: string | null
+          energy_level?: number | null
+          id?: string
+          mood?: string | null
+          notes?: string | null
+          nutrition_compliance?: number | null
+          photos?: string[] | null
+          shop_id: string
+          sleep_hours?: number | null
+          status?: string | null
+          stress_level?: number | null
+          trainer_feedback?: string | null
+          trainer_id?: string | null
+          updated_at?: string | null
+          weight?: number | null
+          workout_compliance?: number | null
+        }
+        Update: {
+          check_in_date?: string
+          client_id?: string
+          created_at?: string | null
+          energy_level?: number | null
+          id?: string
+          mood?: string | null
+          notes?: string | null
+          nutrition_compliance?: number | null
+          photos?: string[] | null
+          shop_id?: string
+          sleep_hours?: number | null
+          status?: string | null
+          stress_level?: number | null
+          trainer_feedback?: string | null
+          trainer_id?: string | null
+          updated_at?: string | null
+          weight?: number | null
+          workout_compliance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_check_ins_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_check_ins_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_check_ins_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "pt_trainers"
             referencedColumns: ["id"]
           },
         ]
@@ -37559,6 +37647,7 @@ export type Database = {
           program_id: string
           start_date: string
           status: string | null
+          trainer_id: string | null
         }
         Insert: {
           assigned_by?: string | null
@@ -37570,6 +37659,7 @@ export type Database = {
           program_id: string
           start_date?: string
           status?: string | null
+          trainer_id?: string | null
         }
         Update: {
           assigned_by?: string | null
@@ -37581,6 +37671,7 @@ export type Database = {
           program_id?: string
           start_date?: string
           status?: string | null
+          trainer_id?: string | null
         }
         Relationships: [
           {
@@ -37597,6 +37688,13 @@ export type Database = {
             referencedRelation: "pt_workout_programs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pt_client_programs_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "pt_trainers"
+            referencedColumns: ["id"]
+          },
         ]
       }
       pt_clients: {
@@ -37605,8 +37703,10 @@ export type Database = {
           created_at: string | null
           date_of_birth: string | null
           email: string | null
+          emergency_contact: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          emergency_phone: string | null
           first_name: string
           fitness_level: string | null
           gender: string | null
@@ -37614,6 +37714,7 @@ export type Database = {
           health_conditions: string | null
           height_cm: number | null
           id: string
+          injuries: string | null
           join_date: string | null
           last_name: string
           membership_status: string | null
@@ -37622,6 +37723,7 @@ export type Database = {
           phone: string | null
           profile_photo_url: string | null
           shop_id: string
+          trainer_id: string | null
           updated_at: string | null
           user_id: string | null
           weight_kg: number | null
@@ -37631,8 +37733,10 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
+          emergency_contact?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          emergency_phone?: string | null
           first_name: string
           fitness_level?: string | null
           gender?: string | null
@@ -37640,6 +37744,7 @@ export type Database = {
           health_conditions?: string | null
           height_cm?: number | null
           id?: string
+          injuries?: string | null
           join_date?: string | null
           last_name: string
           membership_status?: string | null
@@ -37648,6 +37753,7 @@ export type Database = {
           phone?: string | null
           profile_photo_url?: string | null
           shop_id: string
+          trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
           weight_kg?: number | null
@@ -37657,8 +37763,10 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
+          emergency_contact?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          emergency_phone?: string | null
           first_name?: string
           fitness_level?: string | null
           gender?: string | null
@@ -37666,6 +37774,7 @@ export type Database = {
           health_conditions?: string | null
           height_cm?: number | null
           id?: string
+          injuries?: string | null
           join_date?: string | null
           last_name?: string
           membership_status?: string | null
@@ -37674,11 +37783,20 @@ export type Database = {
           phone?: string | null
           profile_photo_url?: string | null
           shop_id?: string
+          trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
           weight_kg?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pt_clients_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "pt_trainers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pt_exercises: {
         Row: {
@@ -37724,6 +37842,146 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: []
+      }
+      pt_invoices: {
+        Row: {
+          amount: number
+          client_id: string
+          client_package_id: string | null
+          created_at: string | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issue_date: string | null
+          notes: string | null
+          paid_date: string | null
+          payment_method: string | null
+          shop_id: string
+          status: string | null
+          tax: number | null
+          total: number
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          client_id: string
+          client_package_id?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string | null
+          notes?: string | null
+          paid_date?: string | null
+          payment_method?: string | null
+          shop_id: string
+          status?: string | null
+          tax?: number | null
+          total?: number
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          client_package_id?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string | null
+          notes?: string | null
+          paid_date?: string | null
+          payment_method?: string | null
+          shop_id?: string
+          status?: string | null
+          tax?: number | null
+          total?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_invoices_client_package_id_fkey"
+            columns: ["client_package_id"]
+            isOneToOne: false
+            referencedRelation: "pt_client_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_invoices_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_messages: {
+        Row: {
+          attachment_url: string | null
+          client_id: string
+          content: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message_type: string | null
+          sender_id: string
+          shop_id: string
+          trainer_id: string | null
+        }
+        Insert: {
+          attachment_url?: string | null
+          client_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_type?: string | null
+          sender_id: string
+          shop_id: string
+          trainer_id?: string | null
+        }
+        Update: {
+          attachment_url?: string | null
+          client_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_type?: string | null
+          sender_id?: string
+          shop_id?: string
+          trainer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_messages_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_messages_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "pt_trainers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pt_packages: {
         Row: {
@@ -37821,6 +38079,54 @@ export type Database = {
           },
         ]
       }
+      pt_progress_photos: {
+        Row: {
+          category: string | null
+          client_id: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          photo_date: string | null
+          photo_url: string
+          shop_id: string
+        }
+        Insert: {
+          category?: string | null
+          client_id: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          photo_date?: string | null
+          photo_url: string
+          shop_id: string
+        }
+        Update: {
+          category?: string | null
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          photo_date?: string | null
+          photo_url?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_progress_photos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_progress_photos_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_sessions: {
         Row: {
           attendance: string | null
@@ -37832,6 +38138,7 @@ export type Database = {
           location: string | null
           notes: string | null
           session_date: string
+          session_notes: string | null
           session_type: string | null
           shop_id: string
           status: string | null
@@ -37848,6 +38155,7 @@ export type Database = {
           location?: string | null
           notes?: string | null
           session_date: string
+          session_notes?: string | null
           session_type?: string | null
           shop_id: string
           status?: string | null
@@ -37864,6 +38172,7 @@ export type Database = {
           location?: string | null
           notes?: string | null
           session_date?: string
+          session_notes?: string | null
           session_type?: string | null
           shop_id?: string
           status?: string | null
@@ -37876,6 +38185,189 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_trainers: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          certifications: Json | null
+          created_at: string | null
+          email: string | null
+          first_name: string
+          hire_date: string | null
+          hourly_rate: number | null
+          id: string
+          is_active: boolean | null
+          last_name: string
+          phone: string | null
+          shop_id: string
+          specializations: string[] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          certifications?: Json | null
+          created_at?: string | null
+          email?: string | null
+          first_name: string
+          hire_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_name: string
+          phone?: string | null
+          shop_id: string
+          specializations?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          certifications?: Json | null
+          created_at?: string | null
+          email?: string | null
+          first_name?: string
+          hire_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_name?: string
+          phone?: string | null
+          shop_id?: string
+          specializations?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_trainers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_workout_day_exercises: {
+        Row: {
+          created_at: string | null
+          exercise_id: string
+          id: string
+          notes: string | null
+          reps: string | null
+          rest_seconds: number | null
+          sets: number | null
+          shop_id: string
+          sort_order: number | null
+          tempo: string | null
+          workout_day_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          exercise_id: string
+          id?: string
+          notes?: string | null
+          reps?: string | null
+          rest_seconds?: number | null
+          sets?: number | null
+          shop_id: string
+          sort_order?: number | null
+          tempo?: string | null
+          workout_day_id: string
+        }
+        Update: {
+          created_at?: string | null
+          exercise_id?: string
+          id?: string
+          notes?: string | null
+          reps?: string | null
+          rest_seconds?: number | null
+          sets?: number | null
+          shop_id?: string
+          sort_order?: number | null
+          tempo?: string | null
+          workout_day_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_workout_day_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "pt_exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_workout_day_exercises_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_workout_day_exercises_workout_day_id_fkey"
+            columns: ["workout_day_id"]
+            isOneToOne: false
+            referencedRelation: "pt_workout_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_workout_days: {
+        Row: {
+          created_at: string | null
+          day_number: number
+          focus_area: string | null
+          id: string
+          name: string
+          notes: string | null
+          program_id: string
+          shop_id: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_number: number
+          focus_area?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          program_id: string
+          shop_id: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_number?: number
+          focus_area?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          program_id?: string
+          shop_id?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_workout_days_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "pt_workout_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_workout_days_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
