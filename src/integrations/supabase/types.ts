@@ -37507,9 +37507,11 @@ export type Database = {
           mood: string | null
           notes: string | null
           nutrition_compliance: number | null
+          pain_issues: string | null
           photos: string[] | null
           shop_id: string
           sleep_hours: number | null
+          soreness_level: number | null
           status: string | null
           stress_level: number | null
           trainer_feedback: string | null
@@ -37527,9 +37529,11 @@ export type Database = {
           mood?: string | null
           notes?: string | null
           nutrition_compliance?: number | null
+          pain_issues?: string | null
           photos?: string[] | null
           shop_id: string
           sleep_hours?: number | null
+          soreness_level?: number | null
           status?: string | null
           stress_level?: number | null
           trainer_feedback?: string | null
@@ -37547,9 +37551,11 @@ export type Database = {
           mood?: string | null
           notes?: string | null
           nutrition_compliance?: number | null
+          pain_issues?: string | null
           photos?: string[] | null
           shop_id?: string
           sleep_hours?: number | null
+          soreness_level?: number | null
           status?: string | null
           stress_level?: number | null
           trainer_feedback?: string | null
@@ -37700,6 +37706,8 @@ export type Database = {
       pt_clients: {
         Row: {
           body_fat_percent: number | null
+          calorie_target: number | null
+          carb_target_g: number | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
@@ -37707,22 +37715,29 @@ export type Database = {
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           emergency_phone: string | null
+          fat_target_g: number | null
           first_name: string
           fitness_level: string | null
+          food_habits: string | null
           gender: string | null
           goals: string | null
           health_conditions: string | null
           height_cm: number | null
+          hydration_target_ml: number | null
           id: string
           injuries: string | null
           join_date: string | null
           last_name: string
+          meal_guidance: string | null
           membership_status: string | null
           membership_type: string | null
           notes: string | null
           phone: string | null
+          preferred_workout_days: string[] | null
           profile_photo_url: string | null
+          protein_target_g: number | null
           shop_id: string
+          supplement_notes: string | null
           trainer_id: string | null
           updated_at: string | null
           user_id: string | null
@@ -37730,6 +37745,8 @@ export type Database = {
         }
         Insert: {
           body_fat_percent?: number | null
+          calorie_target?: number | null
+          carb_target_g?: number | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
@@ -37737,22 +37754,29 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_phone?: string | null
+          fat_target_g?: number | null
           first_name: string
           fitness_level?: string | null
+          food_habits?: string | null
           gender?: string | null
           goals?: string | null
           health_conditions?: string | null
           height_cm?: number | null
+          hydration_target_ml?: number | null
           id?: string
           injuries?: string | null
           join_date?: string | null
           last_name: string
+          meal_guidance?: string | null
           membership_status?: string | null
           membership_type?: string | null
           notes?: string | null
           phone?: string | null
+          preferred_workout_days?: string[] | null
           profile_photo_url?: string | null
+          protein_target_g?: number | null
           shop_id: string
+          supplement_notes?: string | null
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -37760,6 +37784,8 @@ export type Database = {
         }
         Update: {
           body_fat_percent?: number | null
+          calorie_target?: number | null
+          carb_target_g?: number | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
@@ -37767,22 +37793,29 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_phone?: string | null
+          fat_target_g?: number | null
           first_name?: string
           fitness_level?: string | null
+          food_habits?: string | null
           gender?: string | null
           goals?: string | null
           health_conditions?: string | null
           height_cm?: number | null
+          hydration_target_ml?: number | null
           id?: string
           injuries?: string | null
           join_date?: string | null
           last_name?: string
+          meal_guidance?: string | null
           membership_status?: string | null
           membership_type?: string | null
           notes?: string | null
           phone?: string | null
+          preferred_workout_days?: string[] | null
           profile_photo_url?: string | null
+          protein_target_g?: number | null
           shop_id?: string
+          supplement_notes?: string | null
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null

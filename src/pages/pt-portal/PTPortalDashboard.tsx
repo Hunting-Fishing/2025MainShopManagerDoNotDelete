@@ -15,13 +15,13 @@ import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dumbbell, LogOut, Calendar, Activity, Loader2, ClipboardList, CheckCircle2,
-  MessageSquare, Send, ClipboardCheck, Package, CreditCard
+  MessageSquare, Send, ClipboardCheck, Package, CreditCard, User, Utensils
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-interface ClientData { id: string; first_name: string; last_name: string; email: string; fitness_level: string; goals: string | null; shop_id: string; }
+interface ClientData { id: string; first_name: string; last_name: string; email: string; fitness_level: string; goals: string | null; shop_id: string; [key: string]: any; }
 
 export default function PTPortalDashboard() {
   const navigate = useNavigate();
@@ -39,10 +39,15 @@ export default function PTPortalDashboard() {
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
   const [loggingExercise, setLoggingExercise] = useState<string | null>(null);
   const [logWeight, setLogWeight] = useState('');
+  const [trainers, setTrainers] = useState<any[]>([]);
 
   // Check-in state
-  const [checkInForm, setCheckInForm] = useState({ weight: '', mood: 'good', energy_level: [7], sleep_hours: '', notes: '' });
+  const [checkInForm, setCheckInForm] = useState({ weight: '', mood: 'good', energy_level: [7], sleep_hours: '', notes: '', workout_compliance: [7], soreness_level: [3], pain_issues: '' });
   const [submittingCheckIn, setSubmittingCheckIn] = useState(false);
+
+  // Booking state
+  const [bookingForm, setBookingForm] = useState({ session_date: '', duration_minutes: 60, session_type: 'personal_training', trainer_id: '' });
+  const [bookingSession, setBookingSession] = useState(false);
 
   // Messages state
   const [messages, setMessages] = useState<any[]>([]);
@@ -65,7 +70,7 @@ export default function PTPortalDashboard() {
       setCurrentUserId(session.user.id);
 
       const { data: cl } = await (supabase as any)
-        .from('pt_clients').select('id, first_name, last_name, email, fitness_level, goals, shop_id').eq('user_id', session.user.id).maybeSingle();
+        .from('pt_clients').select('*').eq('user_id', session.user.id).maybeSingle();
       if (!cl) {
         await supabase.auth.signOut();
         toast({ title: "Access Denied", description: "No client account found.", variant: "destructive" });
@@ -73,15 +78,14 @@ export default function PTPortalDashboard() {
       }
       setClient(cl);
 
-      // Parallel data loading
-      const [sessRes, metRes, progRes, pkgRes, msgRes, logRes] = await Promise.all([
+      const [sessRes, metRes, progRes, pkgRes, msgRes, logRes, trainerRes] = await Promise.all([
         (supabase as any).from('pt_sessions').select('id, session_date, duration_minutes, session_type, status, location')
           .eq('client_id', cl.id).order('session_date', { ascending: false }).limit(20),
         (supabase as any).from('pt_body_metrics').select('id, recorded_date, weight_kg, body_fat_percent, chest_cm, waist_cm')
           .eq('client_id', cl.id).order('recorded_date', { ascending: false }).limit(20),
         (supabase as any).from('pt_client_programs').select('*, pt_workout_programs(id, name, description, duration_weeks, difficulty, goal)')
           .eq('client_id', cl.id).eq('status', 'active'),
-        (supabase as any).from('pt_client_packages').select('*, pt_packages(name, price, session_count)')
+        (supabase as any).from('pt_client_packages').select('*, pt_packages(name, price, sessions_included)')
           .eq('client_id', cl.id).eq('status', 'active'),
         (supabase as any).from('pt_messages').select('*')
           .eq('client_id', cl.id).order('created_at', { ascending: true }).limit(100),
@@ -89,6 +93,8 @@ export default function PTPortalDashboard() {
           .eq('client_id', cl.id)
           .gte('completed_at', new Date().toISOString().split('T')[0] + 'T00:00:00')
           .lte('completed_at', new Date().toISOString().split('T')[0] + 'T23:59:59'),
+        (supabase as any).from('pt_trainers').select('id, first_name, last_name')
+          .eq('shop_id', cl.shop_id).eq('is_active', true),
       ]);
 
       setSessions(sessRes.data || []);
@@ -97,13 +103,13 @@ export default function PTPortalDashboard() {
       setPrograms(progs);
       setPackages(pkgRes.data || []);
       setMessages(msgRes.data || []);
+      setTrainers(trainerRes.data || []);
       setCompletedExercises(new Set((logRes.data || []).map((l: any) => `${l.workout_day_id}_${l.exercise_id}`)));
     } catch (err) {
       console.error(err);
     } finally { setLoading(false); }
   };
 
-  // Load workout days for selected program
   useEffect(() => {
     if (!selectedProgramId || !client) return;
     const loadDays = async () => {
@@ -122,7 +128,6 @@ export default function PTPortalDashboard() {
     loadDays();
   }, [selectedProgramId, client]);
 
-  // Refresh messages periodically
   useEffect(() => {
     if (!client) return;
     const interval = setInterval(async () => {
@@ -163,13 +168,39 @@ export default function PTPortalDashboard() {
         weight: checkInForm.weight ? parseFloat(checkInForm.weight) : null,
         mood: checkInForm.mood, energy_level: checkInForm.energy_level[0],
         sleep_hours: checkInForm.sleep_hours ? parseFloat(checkInForm.sleep_hours) : null,
+        workout_compliance: checkInForm.workout_compliance[0],
+        soreness_level: checkInForm.soreness_level[0],
+        pain_issues: checkInForm.pain_issues || null,
         notes: checkInForm.notes || null, status: 'submitted',
       });
       if (error) throw error;
       toast({ title: 'Check-in submitted! ✅' });
-      setCheckInForm({ weight: '', mood: 'good', energy_level: [7], sleep_hours: '', notes: '' });
+      setCheckInForm({ weight: '', mood: 'good', energy_level: [7], sleep_hours: '', notes: '', workout_compliance: [7], soreness_level: [3], pain_issues: '' });
     } catch (e: any) { toast({ title: 'Error', description: e.message, variant: 'destructive' }); }
     finally { setSubmittingCheckIn(false); }
+  };
+
+  const bookSession = async () => {
+    if (!client || !bookingForm.session_date) return;
+    setBookingSession(true);
+    try {
+      const { error } = await (supabase as any).from('pt_sessions').insert({
+        client_id: client.id, shop_id: client.shop_id,
+        session_date: bookingForm.session_date,
+        duration_minutes: bookingForm.duration_minutes,
+        session_type: bookingForm.session_type,
+        trainer_id: bookingForm.trainer_id || null,
+        status: 'scheduled',
+      });
+      if (error) throw error;
+      toast({ title: 'Session booked! 📅' });
+      setBookingForm({ session_date: '', duration_minutes: 60, session_type: 'personal_training', trainer_id: '' });
+      // Refresh sessions
+      const { data } = await (supabase as any).from('pt_sessions').select('id, session_date, duration_minutes, session_type, status, location')
+        .eq('client_id', client.id).order('session_date', { ascending: false }).limit(20);
+      if (data) setSessions(data);
+    } catch (e: any) { toast({ title: 'Error', description: e.message, variant: 'destructive' }); }
+    finally { setBookingSession(false); }
   };
 
   const sendMessage = async () => {
@@ -194,8 +225,6 @@ export default function PTPortalDashboard() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>;
 
   const upcomingSessions = sessions.filter(s => new Date(s.session_date) >= new Date() && s.status === 'scheduled');
-
-  // Progress chart data (reverse for chronological order)
   const chartData = [...metrics].reverse().map((m: any) => ({
     date: format(new Date(m.recorded_date), 'MMM d'),
     weight: m.weight_kg, bodyFat: m.body_fat_percent, waist: m.waist_cm,
@@ -219,7 +248,7 @@ export default function PTPortalDashboard() {
       </header>
 
       <div className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
-        {/* Quick Stats + Package Balance */}
+        {/* Quick Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{upcomingSessions.length}</p><p className="text-xs text-muted-foreground">Upcoming Sessions</p></CardContent></Card>
           <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{programs.length}</p><p className="text-xs text-muted-foreground">Active Programs</p></CardContent></Card>
@@ -228,13 +257,15 @@ export default function PTPortalDashboard() {
         </div>
 
         <Tabs defaultValue="workouts">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8">
             <TabsTrigger value="workouts" className="text-xs"><Dumbbell className="h-3 w-3 mr-1" />Workouts</TabsTrigger>
             <TabsTrigger value="checkin" className="text-xs"><ClipboardCheck className="h-3 w-3 mr-1" />Check-In</TabsTrigger>
             <TabsTrigger value="messages" className="text-xs"><MessageSquare className="h-3 w-3 mr-1" />Messages</TabsTrigger>
             <TabsTrigger value="progress" className="text-xs"><Activity className="h-3 w-3 mr-1" />Progress</TabsTrigger>
-            <TabsTrigger value="sessions" className="text-xs"><Calendar className="h-3 w-3 mr-1" />Sessions</TabsTrigger>
+            <TabsTrigger value="calendar" className="text-xs"><Calendar className="h-3 w-3 mr-1" />Book</TabsTrigger>
             <TabsTrigger value="packages" className="text-xs"><Package className="h-3 w-3 mr-1" />Packages</TabsTrigger>
+            <TabsTrigger value="nutrition" className="text-xs"><Utensils className="h-3 w-3 mr-1" />Nutrition</TabsTrigger>
+            <TabsTrigger value="profile" className="text-xs"><User className="h-3 w-3 mr-1" />Profile</TabsTrigger>
           </TabsList>
 
           {/* Workouts Tab */}
@@ -304,7 +335,7 @@ export default function PTPortalDashboard() {
             )}
           </TabsContent>
 
-          {/* Weekly Check-In Tab */}
+          {/* Check-In Tab */}
           <TabsContent value="checkin" className="mt-4">
             <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><ClipboardCheck className="h-5 w-5 text-orange-500" />Weekly Check-In</CardTitle></CardHeader>
@@ -326,11 +357,11 @@ export default function PTPortalDashboard() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Energy Level: {checkInForm.energy_level[0]}/10</Label>
-                  <Slider value={checkInForm.energy_level} onValueChange={v => setCheckInForm(f => ({ ...f, energy_level: v }))} min={1} max={10} step={1} className="mt-2" />
-                </div>
-                <div><Label>Notes</Label><Textarea value={checkInForm.notes} onChange={e => setCheckInForm(f => ({ ...f, notes: e.target.value }))} placeholder="How was your week? Any challenges?" /></div>
+                <div><Label>Energy Level: {checkInForm.energy_level[0]}/10</Label><Slider value={checkInForm.energy_level} onValueChange={v => setCheckInForm(f => ({ ...f, energy_level: v }))} min={1} max={10} step={1} className="mt-2" /></div>
+                <div><Label>Workout Compliance: {checkInForm.workout_compliance[0]}/10</Label><Slider value={checkInForm.workout_compliance} onValueChange={v => setCheckInForm(f => ({ ...f, workout_compliance: v }))} min={1} max={10} step={1} className="mt-2" /></div>
+                <div><Label>Soreness Level: {checkInForm.soreness_level[0]}/10</Label><Slider value={checkInForm.soreness_level} onValueChange={v => setCheckInForm(f => ({ ...f, soreness_level: v }))} min={1} max={10} step={1} className="mt-2" /></div>
+                <div><Label>Pain Issues</Label><Input value={checkInForm.pain_issues} onChange={e => setCheckInForm(f => ({ ...f, pain_issues: e.target.value }))} placeholder="Any pain or injuries?" /></div>
+                <div><Label>Notes</Label><Textarea value={checkInForm.notes} onChange={e => setCheckInForm(f => ({ ...f, notes: e.target.value }))} placeholder="How was your week?" /></div>
                 <Button className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white" disabled={submittingCheckIn} onClick={submitCheckIn}>
                   {submittingCheckIn ? 'Submitting...' : 'Submit Check-In'}
                 </Button>
@@ -364,7 +395,7 @@ export default function PTPortalDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Progress Tab with Charts */}
+          {/* Progress Tab */}
           <TabsContent value="progress" className="space-y-4 mt-4">
             {chartData.length >= 2 && (
               <Card>
@@ -415,22 +446,61 @@ export default function PTPortalDashboard() {
             ))}
           </TabsContent>
 
-          {/* Sessions Tab */}
-          <TabsContent value="sessions" className="space-y-3 mt-4">
-            {sessions.length === 0 ? (
-              <Card><CardContent className="py-8 text-center text-muted-foreground">No sessions scheduled yet.</CardContent></Card>
-            ) : sessions.map(s => (
-              <Card key={s.id}>
-                <CardContent className="p-4 flex items-center justify-between">
+          {/* Calendar / Booking Tab */}
+          <TabsContent value="calendar" className="mt-4 space-y-4">
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Calendar className="h-5 w-5 text-blue-500" />Book a Session</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div><Label>Date & Time *</Label><Input type="datetime-local" value={bookingForm.session_date} onChange={e => setBookingForm(f => ({ ...f, session_date: e.target.value }))} /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Duration (min)</Label><Input type="number" value={bookingForm.duration_minutes} onChange={e => setBookingForm(f => ({ ...f, duration_minutes: parseInt(e.target.value) || 60 }))} /></div>
                   <div>
-                    <p className="font-medium">{format(new Date(s.session_date), 'EEEE, MMM d, yyyy')}</p>
-                    <p className="text-sm text-muted-foreground">{format(new Date(s.session_date), 'h:mm a')} · {s.duration_minutes}min · {s.session_type?.replace('_', ' ')}</p>
-                    {s.location && <p className="text-xs text-muted-foreground mt-1">📍 {s.location}</p>}
+                    <Label>Type</Label>
+                    <Select value={bookingForm.session_type} onValueChange={v => setBookingForm(f => ({ ...f, session_type: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="personal_training">Personal Training</SelectItem>
+                        <SelectItem value="group_class">Group Class</SelectItem>
+                        <SelectItem value="assessment">Assessment</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Badge variant={s.status === 'completed' ? 'default' : s.status === 'canceled' ? 'destructive' : 'secondary'}>{s.status}</Badge>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+                {trainers.length > 0 && (
+                  <div>
+                    <Label>Preferred Trainer</Label>
+                    <Select value={bookingForm.trainer_id} onValueChange={v => setBookingForm(f => ({ ...f, trainer_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Any available" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Any Available</SelectItem>
+                        {trainers.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <Button className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 text-white" disabled={!bookingForm.session_date || bookingSession} onClick={bookSession}>
+                  {bookingSession ? 'Booking...' : 'Book Session'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Upcoming sessions */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-sm">Your Sessions</h3>
+              {sessions.length === 0 ? (
+                <Card><CardContent className="py-6 text-center text-muted-foreground text-sm">No sessions yet</CardContent></Card>
+              ) : sessions.map(s => (
+                <Card key={s.id}>
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">{format(new Date(s.session_date), 'EEEE, MMM d')}</p>
+                      <p className="text-xs text-muted-foreground">{format(new Date(s.session_date), 'h:mm a')} · {s.duration_minutes}min · {s.session_type?.replace('_', ' ')}</p>
+                    </div>
+                    <Badge variant={s.status === 'completed' ? 'default' : s.status === 'canceled' ? 'destructive' : 'secondary'}>{s.status}</Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </TabsContent>
 
           {/* Packages Tab */}
@@ -445,23 +515,71 @@ export default function PTPortalDashboard() {
                     <Badge variant="default">Active</Badge>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="p-2 rounded-lg bg-muted/50 text-center">
-                      <p className="text-lg font-bold">{pkg.remaining_sessions}</p>
-                      <p className="text-xs text-muted-foreground">Sessions Left</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-muted/50 text-center">
-                      <p className="text-lg font-bold">{pkg.pt_packages?.session_count || 0}</p>
-                      <p className="text-xs text-muted-foreground">Total Sessions</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-muted/50 text-center">
-                      <p className="text-lg font-bold">${pkg.pt_packages?.price || 0}</p>
-                      <p className="text-xs text-muted-foreground">Package Price</p>
-                    </div>
+                    <div className="p-2 rounded-lg bg-muted/50 text-center"><p className="text-lg font-bold">{pkg.remaining_sessions}</p><p className="text-xs text-muted-foreground">Sessions Left</p></div>
+                    <div className="p-2 rounded-lg bg-muted/50 text-center"><p className="text-lg font-bold">{pkg.pt_packages?.sessions_included || 0}</p><p className="text-xs text-muted-foreground">Total</p></div>
+                    <div className="p-2 rounded-lg bg-muted/50 text-center"><p className="text-lg font-bold">${pkg.pt_packages?.price || 0}</p><p className="text-xs text-muted-foreground">Price</p></div>
                   </div>
                   {pkg.end_date && <p className="text-xs text-muted-foreground mt-3">Expires: {format(new Date(pkg.end_date), 'MMM d, yyyy')}</p>}
                 </CardContent>
               </Card>
             ))}
+          </TabsContent>
+
+          {/* Nutrition Tab */}
+          <TabsContent value="nutrition" className="mt-4">
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Utensils className="h-5 w-5 text-green-500" />My Nutrition Plan</CardTitle></CardHeader>
+              <CardContent>
+                {(!client?.calorie_target && !client?.protein_target_g && !client?.meal_guidance) ? (
+                  <p className="text-center text-muted-foreground py-8">Your trainer hasn't set up a nutrition plan yet. Check back soon!</p>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {client?.calorie_target && <div className="p-3 rounded-lg bg-muted/50 text-center"><p className="text-2xl font-bold">{client.calorie_target}</p><p className="text-xs text-muted-foreground">Calories</p></div>}
+                      {client?.protein_target_g && <div className="p-3 rounded-lg bg-muted/50 text-center"><p className="text-2xl font-bold">{client.protein_target_g}g</p><p className="text-xs text-muted-foreground">Protein</p></div>}
+                      {client?.carb_target_g && <div className="p-3 rounded-lg bg-muted/50 text-center"><p className="text-2xl font-bold">{client.carb_target_g}g</p><p className="text-xs text-muted-foreground">Carbs</p></div>}
+                      {client?.fat_target_g && <div className="p-3 rounded-lg bg-muted/50 text-center"><p className="text-2xl font-bold">{client.fat_target_g}g</p><p className="text-xs text-muted-foreground">Fat</p></div>}
+                    </div>
+                    {client?.hydration_target_ml && <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-center"><p className="text-lg font-bold">💧 {client.hydration_target_ml}ml</p><p className="text-xs text-muted-foreground">Daily Hydration Target</p></div>}
+                    {client?.meal_guidance && <div><p className="text-xs font-medium text-muted-foreground mb-1">Meal Guidance</p><p className="text-sm bg-muted/30 p-3 rounded-lg">{client.meal_guidance}</p></div>}
+                    {client?.supplement_notes && <div><p className="text-xs font-medium text-muted-foreground mb-1">Supplements</p><p className="text-sm bg-muted/30 p-3 rounded-lg">{client.supplement_notes}</p></div>}
+                    {client?.food_habits && <div><p className="text-xs font-medium text-muted-foreground mb-1">Dietary Preferences</p><p className="text-sm bg-muted/30 p-3 rounded-lg">{client.food_habits}</p></div>}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="mt-4">
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><User className="h-5 w-5 text-violet-500" />My Profile</CardTitle></CardHeader>
+              <CardContent>
+                {client && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><p className="text-xs text-muted-foreground">Name</p><p className="font-medium">{client.first_name} {client.last_name}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Email</p><p className="font-medium">{client.email}</p></div>
+                      {client.phone && <div><p className="text-xs text-muted-foreground">Phone</p><p className="font-medium">{client.phone}</p></div>}
+                      {client.gender && <div><p className="text-xs text-muted-foreground">Sex</p><p className="font-medium capitalize">{client.gender}</p></div>}
+                      {client.date_of_birth && <div><p className="text-xs text-muted-foreground">Date of Birth</p><p className="font-medium">{format(new Date(client.date_of_birth), 'MMM d, yyyy')}</p></div>}
+                      {client.height_cm && <div><p className="text-xs text-muted-foreground">Height</p><p className="font-medium">{client.height_cm} cm</p></div>}
+                      <div><p className="text-xs text-muted-foreground">Fitness Level</p><Badge variant="secondary">{client.fitness_level}</Badge></div>
+                      <div><p className="text-xs text-muted-foreground">Membership</p><Badge variant={client.membership_status === 'active' ? 'default' : 'destructive'}>{client.membership_status}</Badge></div>
+                    </div>
+                    {client.goals && <div><p className="text-xs text-muted-foreground mb-1">Goals</p><p className="text-sm bg-muted/30 p-3 rounded-lg">{client.goals}</p></div>}
+                    {client.injuries && <div><p className="text-xs text-muted-foreground mb-1">Injuries / Limitations</p><p className="text-sm bg-red-50 dark:bg-red-950/20 p-3 rounded-lg text-red-700 dark:text-red-400">{client.injuries}</p></div>}
+                    {client.health_conditions && <div><p className="text-xs text-muted-foreground mb-1">Health Conditions</p><p className="text-sm bg-muted/30 p-3 rounded-lg">{client.health_conditions}</p></div>}
+                    {client.emergency_contact && (
+                      <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg">
+                        <p className="text-xs font-medium text-amber-600 mb-1">Emergency Contact</p>
+                        <p className="text-sm">{client.emergency_contact} {client.emergency_phone && `· ${client.emergency_phone}`}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
