@@ -406,6 +406,7 @@ const PersonalTrainerBranding = lazy(() => import('@/pages/personal-trainer/Pers
 const PersonalTrainerNutrition = lazy(() => import('@/pages/personal-trainer/PersonalTrainerNutrition'));
 const PersonalTrainerWearables = lazy(() => import('@/pages/personal-trainer/PersonalTrainerWearables'));
 const PersonalTrainerAutomations = lazy(() => import('@/pages/personal-trainer/PersonalTrainerAutomations'));
+const PersonalTrainerAIChat = lazy(() => import('@/components/personal-trainer/PTAIChatPage'));
 import { PersonalTrainerLayout } from '@/components/personal-trainer';
 
 // Personal Trainer Portal
@@ -1661,6 +1662,7 @@ function App() {
                   <Route path="/nutrition" element={<PersonalTrainerNutrition />} />
                   <Route path="/wearables" element={<PersonalTrainerWearables />} />
                   <Route path="/automations" element={<PersonalTrainerAutomations />} />
+                  <Route path="/ai-chat" element={<PersonalTrainerAIChat />} />
                 </Routes>
               </PersonalTrainerLayout>
             </AuthGate>
