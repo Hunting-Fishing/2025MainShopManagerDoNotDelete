@@ -307,7 +307,32 @@ export default function PTPortalDashboard() {
               {client && <p className="text-xs text-muted-foreground">Welcome, {client.first_name}!</p>}
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleSignOut}><LogOut className="h-4 w-4 mr-2" />Sign Out</Button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Button variant="ghost" size="icon" onClick={() => setShowNotifications(!showNotifications)} className="relative">
+                <Bell className="h-4 w-4" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                    {notifications.length}
+                  </span>
+                )}
+              </Button>
+              {showNotifications && notifications.length > 0 && (
+                <div className="absolute right-0 top-10 w-72 bg-background border rounded-lg shadow-xl z-50 p-2 space-y-1 max-h-60 overflow-auto">
+                  {notifications.map((n: any) => (
+                    <div key={n.id} className="p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer" onClick={async () => {
+                      await (supabase as any).from('pt_notifications').update({ is_read: true, read_at: new Date().toISOString() }).eq('id', n.id);
+                      setNotifications(prev => prev.filter(p => p.id !== n.id));
+                    }}>
+                      <p className="text-xs font-medium">{n.title}</p>
+                      <p className="text-[10px] text-muted-foreground line-clamp-2">{n.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}><LogOut className="h-4 w-4 mr-2" />Sign Out</Button>
+          </div>
         </div>
       </header>
 
