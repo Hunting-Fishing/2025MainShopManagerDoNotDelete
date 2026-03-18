@@ -39,6 +39,8 @@ export interface ClientFitnessProfile {
   preferred_session_length: string | null;
   training_frequency: string | null;
   interest_intensity: Record<string, number>;
+  interest_experience_levels: Record<string, string>;
+  commitment_level: string | null;
   intake_completed: boolean;
   intake_completed_at: string | null;
 }
