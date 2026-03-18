@@ -37742,6 +37742,69 @@ export type Database = {
           },
         ]
       }
+      pt_client_fitness_profiles: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          equipment_access: string[] | null
+          experience_level: string | null
+          goal_tags: string[] | null
+          id: string
+          injuries_limitations: string | null
+          intake_completed: boolean | null
+          intake_completed_at: string | null
+          interest_intensity: Json | null
+          motivation_style: string | null
+          preferred_session_length: string | null
+          primary_interests: string[] | null
+          shop_id: string
+          specific_interests: string[] | null
+          training_environment: string[] | null
+          training_frequency: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          equipment_access?: string[] | null
+          experience_level?: string | null
+          goal_tags?: string[] | null
+          id?: string
+          injuries_limitations?: string | null
+          intake_completed?: boolean | null
+          intake_completed_at?: string | null
+          interest_intensity?: Json | null
+          motivation_style?: string | null
+          preferred_session_length?: string | null
+          primary_interests?: string[] | null
+          shop_id: string
+          specific_interests?: string[] | null
+          training_environment?: string[] | null
+          training_frequency?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          equipment_access?: string[] | null
+          experience_level?: string | null
+          goal_tags?: string[] | null
+          id?: string
+          injuries_limitations?: string | null
+          intake_completed?: boolean | null
+          intake_completed_at?: string | null
+          interest_intensity?: Json | null
+          motivation_style?: string | null
+          preferred_session_length?: string | null
+          primary_interests?: string[] | null
+          shop_id?: string
+          specific_interests?: string[] | null
+          training_environment?: string[] | null
+          training_frequency?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       pt_client_packages: {
         Row: {
           amount_paid: number | null
@@ -38091,6 +38154,101 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: []
+      }
+      pt_fitness_categories: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      pt_fitness_goals: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      pt_fitness_subcategories: {
+        Row: {
+          category_id: string
+          created_at: string | null
+          display_order: number
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_fitness_subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "pt_fitness_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pt_group_members: {
         Row: {
