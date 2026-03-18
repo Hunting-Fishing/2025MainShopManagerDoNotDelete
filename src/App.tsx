@@ -383,6 +383,24 @@ const WaterDeliveryPartsInventory = lazy(() => import('@/pages/water-delivery/Wa
 const WaterDeliveryStore = lazy(() => import('@/pages/water-delivery/WaterDeliveryStore'));
 import { WaterDeliveryLayout } from '@/components/water-delivery';
 
+// Personal Trainer
+const PersonalTrainerDashboard = lazy(() => import('@/pages/personal-trainer/PersonalTrainerDashboard'));
+const PersonalTrainerClients = lazy(() => import('@/pages/personal-trainer/PersonalTrainerClients'));
+const PersonalTrainerPrograms = lazy(() => import('@/pages/personal-trainer/PersonalTrainerPrograms'));
+const PersonalTrainerExercises = lazy(() => import('@/pages/personal-trainer/PersonalTrainerExercises'));
+const PersonalTrainerSessions = lazy(() => import('@/pages/personal-trainer/PersonalTrainerSessions'));
+const PersonalTrainerMetrics = lazy(() => import('@/pages/personal-trainer/PersonalTrainerMetrics'));
+const PersonalTrainerPackages = lazy(() => import('@/pages/personal-trainer/PersonalTrainerPackages'));
+const PersonalTrainerBilling = lazy(() => import('@/pages/personal-trainer/PersonalTrainerBilling'));
+const PersonalTrainerSettings = lazy(() => import('@/pages/personal-trainer/PersonalTrainerSettings'));
+import { PersonalTrainerLayout } from '@/components/personal-trainer';
+
+// Personal Trainer Portal
+const PTPortalLanding = lazy(() => import('@/pages/pt-portal/PTPortalLanding'));
+const PTPortalLogin = lazy(() => import('@/pages/pt-portal/PTPortalLogin'));
+const PTPortalRegister = lazy(() => import('@/pages/pt-portal/PTPortalRegister'));
+const PTPortalDashboard = lazy(() => import('@/pages/pt-portal/PTPortalDashboard'));
+
 // Septic Services
 const SepticDashboard = lazy(() => import('@/pages/septic/SepticDashboard'));
 const SepticOrders = lazy(() => import('@/pages/septic/SepticOrders'));
