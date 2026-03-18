@@ -7,12 +7,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Phone, Mail } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+const WORKOUT_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function PersonalTrainerClients() {
   const navigate = useNavigate();
@@ -24,6 +26,18 @@ export default function PersonalTrainerClients() {
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', phone: '', gender: '',
     fitness_level: 'beginner', goals: '', health_conditions: '', membership_type: 'standard',
+    date_of_birth: '', height_cm: '', weight_kg: '', injuries: '',
+    emergency_contact: '', emergency_phone: '', preferred_workout_days: [] as string[],
+  });
+
+  const { data: trainers = [] } = useQuery({
+    queryKey: ['pt-trainers-list', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data } = await (supabase as any).from('pt_trainers').select('id, first_name, last_name').eq('shop_id', shopId).eq('is_active', true);
+      return data || [];
+    },
+    enabled: !!shopId,
   });
 
   const { data: clients = [], isLoading } = useQuery({
@@ -37,20 +51,52 @@ export default function PersonalTrainerClients() {
     enabled: !!shopId,
   });
 
+  const [assignTrainer, setAssignTrainer] = useState('');
+
   const addClient = useMutation({
     mutationFn: async () => {
       if (!shopId) throw new Error('No shop');
-      const { error } = await (supabase as any).from('pt_clients').insert({ ...form, shop_id: shopId });
+      const payload: any = {
+        shop_id: shopId,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        email: form.email || null,
+        phone: form.phone || null,
+        gender: form.gender || null,
+        fitness_level: form.fitness_level,
+        goals: form.goals || null,
+        health_conditions: form.health_conditions || null,
+        membership_type: form.membership_type,
+        date_of_birth: form.date_of_birth || null,
+        height_cm: form.height_cm ? parseFloat(form.height_cm) : null,
+        weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
+        injuries: form.injuries || null,
+        emergency_contact: form.emergency_contact || null,
+        emergency_phone: form.emergency_phone || null,
+        preferred_workout_days: form.preferred_workout_days.length > 0 ? form.preferred_workout_days : null,
+        trainer_id: assignTrainer || null,
+      };
+      const { error } = await (supabase as any).from('pt_clients').insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pt-clients'] });
       toast({ title: 'Client added successfully' });
       setDialogOpen(false);
-      setForm({ first_name: '', last_name: '', email: '', phone: '', gender: '', fitness_level: 'beginner', goals: '', health_conditions: '', membership_type: 'standard' });
+      setForm({ first_name: '', last_name: '', email: '', phone: '', gender: '', fitness_level: 'beginner', goals: '', health_conditions: '', membership_type: 'standard', date_of_birth: '', height_cm: '', weight_kg: '', injuries: '', emergency_contact: '', emergency_phone: '', preferred_workout_days: [] });
+      setAssignTrainer('');
     },
     onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
+
+  const toggleDay = (day: string) => {
+    setForm(f => ({
+      ...f,
+      preferred_workout_days: f.preferred_workout_days.includes(day)
+        ? f.preferred_workout_days.filter(d => d !== day)
+        : [...f.preferred_workout_days, day],
+    }));
+  };
 
   const filtered = clients.filter((c: any) =>
     `${c.first_name} ${c.last_name} ${c.email}`.toLowerCase().includes(search.toLowerCase())
@@ -69,9 +115,11 @@ export default function PersonalTrainerClients() {
               <Plus className="h-4 w-4 mr-2" />Add Client
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Add New Client</DialogTitle></DialogHeader>
             <div className="space-y-4">
+              {/* Basic Info */}
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Personal Info</p>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} /></div>
                 <div><Label>Last Name *</Label><Input value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} /></div>
@@ -80,7 +128,23 @@ export default function PersonalTrainerClients() {
                 <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
                 <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
               </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(f => ({ ...f, date_of_birth: e.target.value }))} /></div>
+                <div>
+                  <Label>Sex</Label>
+                  <Select value={form.gender} onValueChange={v => setForm(f => ({ ...f, gender: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Height (cm)</Label><Input type="number" value={form.height_cm} onChange={e => setForm(f => ({ ...f, height_cm: e.target.value }))} /></div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
+                <div><Label>Weight (kg)</Label><Input type="number" value={form.weight_kg} onChange={e => setForm(f => ({ ...f, weight_kg: e.target.value }))} /></div>
                 <div>
                   <Label>Fitness Level</Label>
                   <Select value={form.fitness_level} onValueChange={v => setForm(f => ({ ...f, fitness_level: v }))}>
@@ -92,8 +156,13 @@ export default function PersonalTrainerClients() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Membership & Trainer */}
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide pt-2">Membership</p>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Membership</Label>
+                  <Label>Membership Type</Label>
                   <Select value={form.membership_type} onValueChange={v => setForm(f => ({ ...f, membership_type: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -103,9 +172,45 @@ export default function PersonalTrainerClients() {
                     </SelectContent>
                   </Select>
                 </div>
+                {trainers.length > 0 && (
+                  <div>
+                    <Label>Assign Trainer</Label>
+                    <Select value={assignTrainer} onValueChange={setAssignTrainer}>
+                      <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {trainers.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
+
+              {/* Preferred Workout Days */}
+              <div>
+                <Label>Preferred Workout Days</Label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {WORKOUT_DAYS.map(day => (
+                    <Button key={day} type="button" size="sm" variant={form.preferred_workout_days.includes(day) ? 'default' : 'outline'} className="text-xs h-7" onClick={() => toggleDay(day)}>
+                      {day.slice(0, 3)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Goals & Health */}
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide pt-2">Health & Goals</p>
               <div><Label>Goals</Label><Textarea value={form.goals} onChange={e => setForm(f => ({ ...f, goals: e.target.value }))} placeholder="Weight loss, muscle gain, etc." /></div>
-              <div><Label>Health Conditions</Label><Textarea value={form.health_conditions} onChange={e => setForm(f => ({ ...f, health_conditions: e.target.value }))} placeholder="Any injuries, conditions..." /></div>
+              <div><Label>Injuries / Limitations</Label><Textarea value={form.injuries} onChange={e => setForm(f => ({ ...f, injuries: e.target.value }))} placeholder="Knee injury, lower back issues..." /></div>
+              <div><Label>Medical Warnings / Health Conditions</Label><Textarea value={form.health_conditions} onChange={e => setForm(f => ({ ...f, health_conditions: e.target.value }))} placeholder="Asthma, diabetes, heart conditions..." /></div>
+
+              {/* Emergency Contact */}
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide pt-2">Emergency Contact</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Contact Name</Label><Input value={form.emergency_contact} onChange={e => setForm(f => ({ ...f, emergency_contact: e.target.value }))} /></div>
+                <div><Label>Contact Phone</Label><Input value={form.emergency_phone} onChange={e => setForm(f => ({ ...f, emergency_phone: e.target.value }))} /></div>
+              </div>
+
               <Button className="w-full" disabled={!form.first_name || !form.last_name || addClient.isPending} onClick={() => addClient.mutate()}>
                 {addClient.isPending ? 'Adding...' : 'Add Client'}
               </Button>
@@ -120,7 +225,7 @@ export default function PersonalTrainerClients() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" /></div>
+        <div className="text-center py-12"><Loader2 className="h-8 w-8 animate-spin mx-auto" /></div>
       ) : filtered.length === 0 ? (
         <Card className="border-dashed"><CardContent className="py-12 text-center text-muted-foreground"><Users className="h-10 w-10 mx-auto mb-3 opacity-30" /><p>No clients yet. Add your first client!</p></CardContent></Card>
       ) : (
