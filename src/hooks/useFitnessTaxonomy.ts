@@ -229,26 +229,23 @@ export const useSaveFitnessProfile = () => {
         }
       }
 
-      // 3. Write normalized goals
-      if (profile.goal_tags) {
+      // 3. Write normalized goals (use _goalNames if provided, otherwise goal_tags as fallback)
+      const goalNames: string[] = (profile as any)._goalNames || profile.goal_tags || [];
+      if (goalNames.length > 0) {
         await (supabase as any)
           .from('pt_user_fitness_goals')
           .delete()
           .eq('client_id', profile.client_id)
           .eq('shop_id', profile.shop_id);
 
-        // We store goal names, but goal_tags contains IDs - look up names would require categories
-        // For the scoring engine, store goal names directly
-        const goalRows = (profile.goal_tags || []).map((goalId, idx) => ({
+        const goalRows = goalNames.map((name, idx) => ({
           client_id: profile.client_id,
           shop_id: profile.shop_id,
-          goal_name: goalId, // Will be resolved to name in the component
+          goal_name: name,
           priority_rank: idx + 1,
         }));
 
-        if (goalRows.length > 0) {
-          await (supabase as any).from('pt_user_fitness_goals').insert(goalRows);
-        }
+        await (supabase as any).from('pt_user_fitness_goals').insert(goalRows);
       }
 
       // 4. Write training context
