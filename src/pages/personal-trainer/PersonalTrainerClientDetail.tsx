@@ -186,14 +186,19 @@ export default function PersonalTrainerClientDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="programs">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="programs" className="text-xs"><ClipboardList className="h-3 w-3 mr-1" />Programs</TabsTrigger>
           <TabsTrigger value="sessions" className="text-xs"><Calendar className="h-3 w-3 mr-1" />Sessions</TabsTrigger>
           <TabsTrigger value="metrics" className="text-xs"><Activity className="h-3 w-3 mr-1" />Metrics</TabsTrigger>
           <TabsTrigger value="checkins" className="text-xs"><ClipboardCheck className="h-3 w-3 mr-1" />Check-ins</TabsTrigger>
+          <TabsTrigger value="fitness-profile" className="text-xs"><Sparkles className="h-3 w-3 mr-1" />Interests</TabsTrigger>
           <TabsTrigger value="nutrition" className="text-xs"><Utensils className="h-3 w-3 mr-1" />Nutrition</TabsTrigger>
           <TabsTrigger value="billing" className="text-xs"><CreditCard className="h-3 w-3 mr-1" />Billing</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="fitness-profile" className="mt-4">
+          {id && shopId && <FitnessInterestIntake clientId={id} shopId={shopId} embedded />}
+        </TabsContent>
 
         <TabsContent value="programs" className="mt-4 space-y-3">
           {programs.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">No programs assigned</p> : programs.map((p: any) => (
