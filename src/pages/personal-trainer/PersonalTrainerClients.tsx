@@ -126,7 +126,7 @@ export default function PersonalTrainerClients() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((client: any) => (
-            <Card key={client.id} className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card key={client.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/personal-trainer/clients/${client.id}`)}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div>
