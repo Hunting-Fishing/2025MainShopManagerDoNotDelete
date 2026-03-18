@@ -37438,6 +37438,490 @@ export type Database = {
         }
         Relationships: []
       }
+      pt_body_metrics: {
+        Row: {
+          arm_cm: number | null
+          body_fat_percent: number | null
+          chest_cm: number | null
+          client_id: string
+          created_at: string | null
+          hips_cm: number | null
+          id: string
+          notes: string | null
+          recorded_by: string | null
+          recorded_date: string
+          thigh_cm: number | null
+          waist_cm: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          arm_cm?: number | null
+          body_fat_percent?: number | null
+          chest_cm?: number | null
+          client_id: string
+          created_at?: string | null
+          hips_cm?: number | null
+          id?: string
+          notes?: string | null
+          recorded_by?: string | null
+          recorded_date?: string
+          thigh_cm?: number | null
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          arm_cm?: number | null
+          body_fat_percent?: number | null
+          chest_cm?: number | null
+          client_id?: string
+          created_at?: string | null
+          hips_cm?: number | null
+          id?: string
+          notes?: string | null
+          recorded_by?: string | null
+          recorded_date?: string
+          thigh_cm?: number | null
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_body_metrics_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_client_packages: {
+        Row: {
+          amount_paid: number | null
+          client_id: string
+          created_at: string | null
+          expiry_date: string | null
+          id: string
+          package_id: string
+          payment_method: string | null
+          purchase_date: string | null
+          sessions_remaining: number | null
+          status: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          client_id: string
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          package_id: string
+          payment_method?: string | null
+          purchase_date?: string | null
+          sessions_remaining?: number | null
+          status?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          client_id?: string
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          package_id?: string
+          payment_method?: string | null
+          purchase_date?: string | null
+          sessions_remaining?: number | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_client_packages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_client_packages_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "pt_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_client_programs: {
+        Row: {
+          assigned_by: string | null
+          client_id: string
+          created_at: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          program_id: string
+          start_date: string
+          status: string | null
+        }
+        Insert: {
+          assigned_by?: string | null
+          client_id: string
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          program_id: string
+          start_date?: string
+          status?: string | null
+        }
+        Update: {
+          assigned_by?: string | null
+          client_id?: string
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          program_id?: string
+          start_date?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_client_programs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_client_programs_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "pt_workout_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_clients: {
+        Row: {
+          body_fat_percent: number | null
+          created_at: string | null
+          date_of_birth: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          first_name: string
+          fitness_level: string | null
+          gender: string | null
+          goals: string | null
+          health_conditions: string | null
+          height_cm: number | null
+          id: string
+          join_date: string | null
+          last_name: string
+          membership_status: string | null
+          membership_type: string | null
+          notes: string | null
+          phone: string | null
+          profile_photo_url: string | null
+          shop_id: string
+          updated_at: string | null
+          user_id: string | null
+          weight_kg: number | null
+        }
+        Insert: {
+          body_fat_percent?: number | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name: string
+          fitness_level?: string | null
+          gender?: string | null
+          goals?: string | null
+          health_conditions?: string | null
+          height_cm?: number | null
+          id?: string
+          join_date?: string | null
+          last_name: string
+          membership_status?: string | null
+          membership_type?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_photo_url?: string | null
+          shop_id: string
+          updated_at?: string | null
+          user_id?: string | null
+          weight_kg?: number | null
+        }
+        Update: {
+          body_fat_percent?: number | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name?: string
+          fitness_level?: string | null
+          gender?: string | null
+          goals?: string | null
+          health_conditions?: string | null
+          height_cm?: number | null
+          id?: string
+          join_date?: string | null
+          last_name?: string
+          membership_status?: string | null
+          membership_type?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_photo_url?: string | null
+          shop_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      pt_exercises: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          equipment: string | null
+          id: string
+          is_custom: boolean | null
+          muscle_group: string | null
+          name: string
+          shop_id: string
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          equipment?: string | null
+          id?: string
+          is_custom?: boolean | null
+          muscle_group?: string | null
+          name: string
+          shop_id: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          equipment?: string | null
+          id?: string
+          is_custom?: boolean | null
+          muscle_group?: string | null
+          name?: string
+          shop_id?: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      pt_packages: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          duration_days: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          package_type: string | null
+          price: number
+          sessions_included: number | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          duration_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          package_type?: string | null
+          price?: number
+          sessions_included?: number | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          duration_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          package_type?: string | null
+          price?: number
+          sessions_included?: number | null
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      pt_program_exercises: {
+        Row: {
+          created_at: string | null
+          day_of_week: number | null
+          exercise_id: string
+          id: string
+          notes: string | null
+          program_id: string
+          reps: string | null
+          rest_seconds: number | null
+          sets: number | null
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week?: number | null
+          exercise_id: string
+          id?: string
+          notes?: string | null
+          program_id: string
+          reps?: string | null
+          rest_seconds?: number | null
+          sets?: number | null
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number | null
+          exercise_id?: string
+          id?: string
+          notes?: string | null
+          program_id?: string
+          reps?: string | null
+          rest_seconds?: number | null
+          sets?: number | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_program_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "pt_exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_program_exercises_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "pt_workout_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_sessions: {
+        Row: {
+          attendance: string | null
+          canceled_reason: string | null
+          client_id: string
+          created_at: string | null
+          duration_minutes: number | null
+          id: string
+          location: string | null
+          notes: string | null
+          session_date: string
+          session_type: string | null
+          shop_id: string
+          status: string | null
+          trainer_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          attendance?: string | null
+          canceled_reason?: string | null
+          client_id: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          session_date: string
+          session_type?: string | null
+          shop_id: string
+          status?: string | null
+          trainer_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          attendance?: string | null
+          canceled_reason?: string | null
+          client_id?: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          session_date?: string
+          session_type?: string | null
+          shop_id?: string
+          status?: string | null
+          trainer_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_workout_programs: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          difficulty: string | null
+          duration_weeks: number | null
+          goal: string | null
+          id: string
+          is_template: boolean | null
+          name: string
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string | null
+          duration_weeks?: number | null
+          goal?: string | null
+          id?: string
+          is_template?: boolean | null
+          name: string
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string | null
+          duration_weeks?: number | null
+          goal?: string | null
+          id?: string
+          is_template?: boolean | null
+          name?: string
+          shop_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       pto_balances: {
         Row: {
           created_at: string | null
