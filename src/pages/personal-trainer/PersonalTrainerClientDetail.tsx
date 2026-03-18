@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles } from 'lucide-react';
 import FitnessInterestIntake from '@/components/personal-trainer/FitnessInterestIntake';
+import FitnessProfileScores from '@/components/personal-trainer/FitnessProfileScores';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -196,7 +197,8 @@ export default function PersonalTrainerClientDetail() {
           <TabsTrigger value="billing" className="text-xs"><CreditCard className="h-3 w-3 mr-1" />Billing</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="fitness-profile" className="mt-4">
+        <TabsContent value="fitness-profile" className="mt-4 space-y-4">
+          {id && shopId && <FitnessProfileScores clientId={id} shopId={shopId} />}
           {id && shopId && <FitnessInterestIntake clientId={id} shopId={shopId} embedded />}
         </TabsContent>
 
