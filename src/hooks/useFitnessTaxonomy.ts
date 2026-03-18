@@ -8,6 +8,8 @@ export interface FitnessCategory {
   icon: string | null;
   color: string | null;
   description: string | null;
+  slug: string | null;
+  parent_id: string | null;
 }
 
 export interface FitnessSubcategory {
@@ -15,6 +17,11 @@ export interface FitnessSubcategory {
   category_id: string;
   name: string;
   display_order: number;
+  slug: string | null;
+  description: string | null;
+  difficulty_hint: string | null;
+  equipment_level: string | null;
+  training_style: string | null;
 }
 
 export interface FitnessGoal {
@@ -43,6 +50,21 @@ export interface ClientFitnessProfile {
   commitment_level: string | null;
   intake_completed: boolean;
   intake_completed_at: string | null;
+}
+
+export interface FitnessScores {
+  id: string;
+  client_id: string;
+  shop_id: string;
+  strength_affinity: number;
+  endurance_affinity: number;
+  aesthetics_affinity: number;
+  competition_affinity: number;
+  recovery_need: number;
+  beginner_support_need: number;
+  equipment_richness: number;
+  coaching_intensity: number;
+  computed_at: string;
 }
 
 export const useFitnessCategories = () => {
@@ -114,6 +136,23 @@ export const useClientFitnessProfile = (clientId?: string, shopId?: string) => {
   });
 };
 
+export const useFitnessScores = (clientId?: string, shopId?: string) => {
+  return useQuery({
+    queryKey: ['pt-fitness-scores', clientId, shopId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('pt_client_fitness_scores')
+        .select('*')
+        .eq('client_id', clientId)
+        .eq('shop_id', shopId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as FitnessScores | null;
+    },
+    enabled: !!clientId && !!shopId,
+  });
+};
+
 export const useSaveFitnessProfile = () => {
   const queryClient = useQueryClient();
   
@@ -124,6 +163,7 @@ export const useSaveFitnessProfile = () => {
         updated_at: new Date().toISOString(),
       };
 
+      // 1. Save to legacy monolithic profile
       const { data: existing } = await (supabase as any)
         .from('pt_client_fitness_profiles')
         .select('id')
@@ -131,6 +171,7 @@ export const useSaveFitnessProfile = () => {
         .eq('shop_id', profile.shop_id)
         .maybeSingle();
 
+      let savedProfile;
       if (existing) {
         const { data, error } = await (supabase as any)
           .from('pt_client_fitness_profiles')
@@ -139,7 +180,7 @@ export const useSaveFitnessProfile = () => {
           .select()
           .single();
         if (error) throw error;
-        return data;
+        savedProfile = data;
       } else {
         const { data, error } = await (supabase as any)
           .from('pt_client_fitness_profiles')
@@ -147,11 +188,111 @@ export const useSaveFitnessProfile = () => {
           .select()
           .single();
         if (error) throw error;
-        return data;
+        savedProfile = data;
       }
+
+      // 2. Write normalized interests
+      if (profile.primary_interests || profile.specific_interests) {
+        // Delete old interests
+        await (supabase as any)
+          .from('pt_user_fitness_interests')
+          .delete()
+          .eq('client_id', profile.client_id)
+          .eq('shop_id', profile.shop_id);
+
+        const interests: any[] = [];
+        (profile.primary_interests || []).forEach((id, idx) => {
+          interests.push({
+            client_id: profile.client_id,
+            shop_id: profile.shop_id,
+            interest_id: id,
+            interest_type: 'category',
+            interest_rank: idx + 1,
+            experience_level: profile.interest_experience_levels?.[id] || 'curious',
+            commitment_level: profile.commitment_level || 'exploring',
+          });
+        });
+        (profile.specific_interests || []).forEach((id, idx) => {
+          interests.push({
+            client_id: profile.client_id,
+            shop_id: profile.shop_id,
+            interest_id: id,
+            interest_type: 'subcategory',
+            interest_rank: idx + 1,
+            experience_level: profile.interest_experience_levels?.[id] || 'curious',
+            commitment_level: profile.commitment_level || 'exploring',
+          });
+        });
+
+        if (interests.length > 0) {
+          await (supabase as any).from('pt_user_fitness_interests').insert(interests);
+        }
+      }
+
+      // 3. Write normalized goals
+      if (profile.goal_tags) {
+        await (supabase as any)
+          .from('pt_user_fitness_goals')
+          .delete()
+          .eq('client_id', profile.client_id)
+          .eq('shop_id', profile.shop_id);
+
+        // We store goal names, but goal_tags contains IDs - look up names would require categories
+        // For the scoring engine, store goal names directly
+        const goalRows = (profile.goal_tags || []).map((goalId, idx) => ({
+          client_id: profile.client_id,
+          shop_id: profile.shop_id,
+          goal_name: goalId, // Will be resolved to name in the component
+          priority_rank: idx + 1,
+        }));
+
+        if (goalRows.length > 0) {
+          await (supabase as any).from('pt_user_fitness_goals').insert(goalRows);
+        }
+      }
+
+      // 4. Write training context
+      const contextPayload = {
+        client_id: profile.client_id,
+        shop_id: profile.shop_id,
+        environment_preference: profile.training_environment || [],
+        equipment_access: profile.equipment_access || [],
+        session_length: profile.preferred_session_length || null,
+        weekly_frequency: profile.training_frequency || null,
+        injury_notes: profile.injuries_limitations || null,
+        motivation_style: profile.motivation_style ? [profile.motivation_style] : [],
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data: existingCtx } = await (supabase as any)
+        .from('pt_user_training_context')
+        .select('id')
+        .eq('client_id', profile.client_id)
+        .eq('shop_id', profile.shop_id)
+        .maybeSingle();
+
+      if (existingCtx) {
+        await (supabase as any)
+          .from('pt_user_training_context')
+          .update(contextPayload)
+          .eq('id', existingCtx.id);
+      } else {
+        await (supabase as any)
+          .from('pt_user_training_context')
+          .insert(contextPayload);
+      }
+
+      // 5. Compute fitness scores via RPC
+      await (supabase as any).rpc('compute_fitness_profile_scores', {
+        p_client_id: profile.client_id,
+        p_shop_id: profile.shop_id,
+      });
+
+      return savedProfile;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pt-client-fitness-profile', variables.client_id, variables.shop_id] });
+      queryClient.invalidateQueries({ queryKey: ['pt-fitness-scores', variables.client_id, variables.shop_id] });
     },
   });
 };

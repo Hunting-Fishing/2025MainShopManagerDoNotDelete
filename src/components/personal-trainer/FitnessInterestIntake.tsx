@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Loader2, Check, ChevronRight, ChevronLeft, Search, Sparkles, Target, Dumbbell, Heart, Zap, Footprints, Mountain, Trophy, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -43,7 +42,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 };
 
 const INTEREST_EXPERIENCE_LEVELS = [
-  { value: 'curious', label: 'Curious', desc: 'Haven\'t tried yet', emoji: '🔍' },
+  { value: 'curious', label: 'Curious', desc: "Haven't tried yet", emoji: '🔍' },
   { value: 'beginner', label: 'Beginner', desc: 'Just starting out', emoji: '🌱' },
   { value: 'intermediate', label: 'Intermediate', desc: 'Comfortable & consistent', emoji: '💪' },
   { value: 'advanced', label: 'Advanced', desc: 'Highly experienced', emoji: '🔥' },
@@ -66,33 +65,29 @@ const EXPERIENCE_LEVELS = [
   { value: 'elite', label: 'Elite / Competitive', desc: 'Competition level' },
 ];
 
-const TRAINING_ENVIRONMENTS = [
-  'Commercial Gym', 'Home Gym', 'Outdoor', 'Studio', 'CrossFit Box',
-  'Swimming Pool', 'Track / Field', 'Park', 'Office / Workplace',
+// ─── Spec-defined tag sets ────────────────────────────────────
+const ENVIRONMENT_TAGS = [
+  'Home', 'Garage gym', 'Commercial gym', 'Boutique studio',
+  'Outdoors', 'Pool', 'Track', 'Trail',
 ];
 
-const EQUIPMENT_OPTIONS = [
-  'No Equipment', 'Dumbbells', 'Barbell & Plates', 'Kettlebells', 'Resistance Bands',
-  'Pull-Up Bar', 'Cable Machine', 'Rowing Machine', 'Treadmill', 'Bike / Spin Bike',
-  'TRX / Suspension', 'Gymnastics Rings', 'Medicine Balls', 'Battle Ropes', 'Boxes / Steps',
+const EQUIPMENT_TAGS = [
+  'None', 'Dumbbells', 'Barbell', 'Machines', 'Bands',
+  'Kettlebells', 'Cardio machines', 'Full gym access',
 ];
 
-const MOTIVATION_STYLES = [
-  { value: 'accountability', label: 'Accountability Partner' },
-  { value: 'data_driven', label: 'Data & Progress Tracking' },
-  { value: 'community', label: 'Community & Social' },
-  { value: 'competition', label: 'Competition & Challenges' },
-  { value: 'routine', label: 'Structured Routine' },
-  { value: 'variety', label: 'Variety & Fun' },
-  { value: 'self_motivated', label: 'Self-Motivated / Independent' },
-];
-
-const SESSION_LENGTHS = [
-  { value: '15-30', label: '15–30 min' },
+const SESSION_TAGS = [
+  { value: '10-20', label: '10–20 min' },
+  { value: '20-30', label: '20–30 min' },
   { value: '30-45', label: '30–45 min' },
   { value: '45-60', label: '45–60 min' },
-  { value: '60-90', label: '60–90 min' },
-  { value: '90+', label: '90+ min' },
+  { value: '60+', label: '60+ min' },
+];
+
+const MOTIVATION_TAGS = [
+  'Structured plan', 'Coaching/accountability', 'Competition',
+  'Gamification', 'Community', 'Education',
+  'Aesthetics', 'Performance', 'Habit-building',
 ];
 
 const TRAINING_FREQUENCIES = [
@@ -124,7 +119,7 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
   const [trainingEnvironment, setTrainingEnvironment] = useState<string[]>([]);
   const [equipmentAccess, setEquipmentAccess] = useState<string[]>([]);
   const [injuriesLimitations, setInjuriesLimitations] = useState('');
-  const [motivationStyle, setMotivationStyle] = useState('');
+  const [motivationStyle, setMotivationStyle] = useState<string[]>([]);
   const [preferredSessionLength, setPreferredSessionLength] = useState('');
   const [trainingFrequency, setTrainingFrequency] = useState('');
   const [subSearch, setSubSearch] = useState('');
@@ -148,7 +143,11 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
       setTrainingEnvironment(existingProfile.training_environment || []);
       setEquipmentAccess(existingProfile.equipment_access || []);
       setInjuriesLimitations(existingProfile.injuries_limitations || '');
-      setMotivationStyle(existingProfile.motivation_style || '');
+      // motivation_style was a string, now multi-select
+      const ms = existingProfile.motivation_style;
+      if (ms) {
+        setMotivationStyle(Array.isArray(ms) ? ms : [ms]);
+      }
       setPreferredSessionLength(existingProfile.preferred_session_length || '');
       setTrainingFrequency(existingProfile.training_frequency || '');
     }
@@ -172,7 +171,6 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
     return acc;
   }, {});
 
-  // Get all selected interests (primary categories + specific subcategories) for per-interest experience
   const allSelectedInterestItems = [
     ...categories.filter(c => primaryInterests.includes(c.id)).map(c => ({ id: c.id, name: c.name.split(' / ')[0], type: 'category' as const })),
     ...subcategories.filter(s => specificInterests.includes(s.id)).map(s => ({ id: s.id, name: s.name, type: 'subcategory' as const })),
@@ -180,6 +178,9 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
 
   const handleSave = async () => {
     try {
+      // Resolve goal IDs to goal names for the normalized table
+      const goalNames = goals.filter(g => goalTags.includes(g.id)).map(g => g.name);
+
       await saveMutation.mutateAsync({
         client_id: clientId,
         shop_id: shopId,
@@ -192,12 +193,14 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
         training_environment: trainingEnvironment,
         equipment_access: equipmentAccess,
         injuries_limitations: injuriesLimitations || null,
-        motivation_style: motivationStyle || null,
+        motivation_style: motivationStyle.join(',') || null,
         preferred_session_length: preferredSessionLength || null,
         training_frequency: trainingFrequency || null,
         intake_completed: true,
         intake_completed_at: new Date().toISOString(),
-      });
+        // Pass goal names for normalized write (via extra field)
+        _goalNames: goalNames,
+      } as any);
       toast({ title: 'Fitness Profile Saved', description: 'Your fitness interests have been recorded successfully.' });
       onComplete?.();
     } catch (error) {
@@ -434,7 +437,6 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
         <h2 className="text-xl font-bold text-foreground">How committed are you?</h2>
         <p className="text-sm text-muted-foreground">Tell us where you are in your fitness journey</p>
       </div>
-
       <div className="space-y-3">
         {COMMITMENT_LEVELS.map(lvl => (
           <button
@@ -461,7 +463,7 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
     </div>
   );
 
-  // ─── Step 6: Profile Details ──────────────────────────────────
+  // ─── Step 6: Profile Details (updated tag sets) ───────────────
   const renderStep6Profile = () => (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -494,7 +496,7 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
       <div className="space-y-2">
         <Label className="font-semibold">Training Environment</Label>
         <div className="flex flex-wrap gap-2">
-          {TRAINING_ENVIRONMENTS.map(env => (
+          {ENVIRONMENT_TAGS.map(env => (
             <Badge
               key={env}
               variant={trainingEnvironment.includes(env) ? 'default' : 'outline'}
@@ -514,7 +516,7 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
       <div className="space-y-2">
         <Label className="font-semibold">Equipment Access</Label>
         <div className="flex flex-wrap gap-2">
-          {EQUIPMENT_OPTIONS.map(eq => (
+          {EQUIPMENT_TAGS.map(eq => (
             <Badge
               key={eq}
               variant={equipmentAccess.includes(eq) ? 'default' : 'outline'}
@@ -534,32 +536,62 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="font-semibold">Session Length</Label>
-          <Select value={preferredSessionLength} onValueChange={setPreferredSessionLength}>
-            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              {SESSION_LENGTHS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            {SESSION_TAGS.map(s => (
+              <Badge
+                key={s.value}
+                variant={preferredSessionLength === s.value ? 'default' : 'outline'}
+                className={cn(
+                  'cursor-pointer px-3 py-1.5 text-xs transition-all',
+                  preferredSessionLength === s.value ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                )}
+                onClick={() => setPreferredSessionLength(s.value)}
+              >
+                {preferredSessionLength === s.value && <Check className="h-3 w-3 mr-1" />}
+                {s.label}
+              </Badge>
+            ))}
+          </div>
         </div>
         <div className="space-y-2">
           <Label className="font-semibold">Training Frequency</Label>
-          <Select value={trainingFrequency} onValueChange={setTrainingFrequency}>
-            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              {TRAINING_FREQUENCIES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            {TRAINING_FREQUENCIES.map(f => (
+              <Badge
+                key={f.value}
+                variant={trainingFrequency === f.value ? 'default' : 'outline'}
+                className={cn(
+                  'cursor-pointer px-3 py-1.5 text-xs transition-all',
+                  trainingFrequency === f.value ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                )}
+                onClick={() => setTrainingFrequency(f.value)}
+              >
+                {trainingFrequency === f.value && <Check className="h-3 w-3 mr-1" />}
+                {f.label}
+              </Badge>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label className="font-semibold">Motivation Style</Label>
-        <Select value={motivationStyle} onValueChange={setMotivationStyle}>
-          <SelectTrigger><SelectValue placeholder="What keeps you going?" /></SelectTrigger>
-          <SelectContent>
-            {MOTIVATION_STYLES.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <Label className="font-semibold">Motivation Style <span className="text-muted-foreground font-normal">(select all that apply)</span></Label>
+        <div className="flex flex-wrap gap-2">
+          {MOTIVATION_TAGS.map(m => (
+            <Badge
+              key={m}
+              variant={motivationStyle.includes(m) ? 'default' : 'outline'}
+              className={cn(
+                'cursor-pointer px-3 py-1.5 text-xs transition-all',
+                motivationStyle.includes(m) ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+              )}
+              onClick={() => toggleInArray(motivationStyle, m, setMotivationStyle)}
+            >
+              {motivationStyle.includes(m) && <Check className="h-3 w-3 mr-1" />}
+              {m}
+            </Badge>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -590,7 +622,6 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
         </div>
 
         <div className="space-y-4">
-          {/* Primary with per-interest experience */}
           <div>
             <p className="text-xs font-semibold text-muted-foreground mb-2">Primary Interests</p>
             <div className="space-y-2">
@@ -627,7 +658,6 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
 
           <SummarySection title="Goals" items={selectedGoals.map(g => g.name)} color="bg-accent" />
 
-          {/* Commitment */}
           {commitLabel && (
             <div className="p-3 bg-muted rounded-lg flex items-center gap-3">
               <span className="text-xl">{commitLabel.emoji}</span>
@@ -640,11 +670,11 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
 
           <div className="grid grid-cols-2 gap-3">
             <SummaryCard label="Overall Experience" value={expLabel} />
-            <SummaryCard label="Session Length" value={SESSION_LENGTHS.find(s => s.value === preferredSessionLength)?.label || '—'} />
+            <SummaryCard label="Session Length" value={SESSION_TAGS.find(s => s.value === preferredSessionLength)?.label || '—'} />
             <SummaryCard label="Frequency" value={TRAINING_FREQUENCIES.find(f => f.value === trainingFrequency)?.label || '—'} />
-            <SummaryCard label="Motivation" value={MOTIVATION_STYLES.find(m => m.value === motivationStyle)?.label || '—'} />
           </div>
 
+          {motivationStyle.length > 0 && <SummarySection title="Motivation Style" items={motivationStyle} color="bg-secondary" />}
           {trainingEnvironment.length > 0 && <SummarySection title="Environment" items={trainingEnvironment} color="bg-secondary" />}
           {equipmentAccess.length > 0 && <SummarySection title="Equipment" items={equipmentAccess} color="bg-secondary" />}
           {injuriesLimitations && (
