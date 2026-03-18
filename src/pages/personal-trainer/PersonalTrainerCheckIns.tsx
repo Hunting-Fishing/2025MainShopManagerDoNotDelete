@@ -4,18 +4,21 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ClipboardCheck, MessageSquare, Loader2, Star, Moon, Zap, Brain } from 'lucide-react';
+import { ClipboardCheck, MessageSquare, Loader2, Star, Moon, Zap, Brain, Sparkles } from 'lucide-react';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import ReactMarkdown from 'react-markdown';
 
 export default function PersonalTrainerCheckIns() {
   const { shopId } = useShopId();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState('all');
+  const [aiSummary, setAiSummary] = useState<Record<string, string>>({});
+  const [aiLoading, setAiLoading] = useState<string | null>(null);
 
   const { data: checkIns = [], isLoading } = useQuery({
     queryKey: ['pt-check-ins', shopId, statusFilter],
@@ -43,6 +46,21 @@ export default function PersonalTrainerCheckIns() {
       toast({ title: 'Feedback saved' });
     },
   });
+
+  const generateAiSummary = async (clientId: string) => {
+    setAiLoading(clientId);
+    try {
+      const { data, error } = await supabase.functions.invoke('pt-ai-assistant', {
+        body: { action: 'summarize_checkins', clientId, shopId },
+      });
+      if (error) throw error;
+      setAiSummary(prev => ({ ...prev, [clientId]: data.content }));
+    } catch (e: any) {
+      toast({ title: 'AI Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setAiLoading(null);
+    }
+  };
 
   const moodIcons: Record<string, React.ReactNode> = {
     great: <Star className="h-4 w-4 text-yellow-500" />,
@@ -88,14 +106,26 @@ export default function PersonalTrainerCheckIns() {
                         </h3>
                         <p className="text-xs text-muted-foreground">{format(new Date(ci.check_in_date), 'MMM d, yyyy')}</p>
                       </div>
-                      <Badge variant={ci.status === 'reviewed' ? 'default' : 'secondary'}>{ci.status}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs"
+                          disabled={aiLoading === ci.client_id}
+                          onClick={() => generateAiSummary(ci.client_id)}
+                        >
+                          {aiLoading === ci.client_id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                          AI Summary
+                        </Button>
+                        <Badge variant={ci.status === 'reviewed' ? 'default' : 'secondary'}>{ci.status}</Badge>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {ci.weight && (
+                      {ci.weight_kg && (
                         <div className="p-2 rounded-lg bg-muted/50">
                           <p className="text-xs text-muted-foreground">Weight</p>
-                          <p className="font-semibold text-sm">{ci.weight} lbs</p>
+                          <p className="font-semibold text-sm">{ci.weight_kg} kg</p>
                         </div>
                       )}
                       {ci.mood && (
@@ -119,9 +149,29 @@ export default function PersonalTrainerCheckIns() {
                           <p className="font-semibold text-sm">{ci.energy_level}/10</p>
                         </div>
                       )}
+                      {ci.workout_compliance && (
+                        <div className="p-2 rounded-lg bg-muted/50">
+                          <p className="text-xs text-muted-foreground">Workout</p>
+                          <p className="font-semibold text-sm">{ci.workout_compliance}/10</p>
+                        </div>
+                      )}
+                      {ci.soreness_level && (
+                        <div className="p-2 rounded-lg bg-muted/50">
+                          <p className="text-xs text-muted-foreground">Soreness</p>
+                          <p className="font-semibold text-sm">{ci.soreness_level}/10</p>
+                        </div>
+                      )}
                     </div>
 
                     {ci.notes && <p className="text-sm text-muted-foreground bg-muted/30 p-2 rounded-lg">{ci.notes}</p>}
+
+                    {/* AI Summary */}
+                    {aiSummary[ci.client_id] && (
+                      <div className="bg-violet-50 dark:bg-violet-950/20 p-3 rounded-lg border border-violet-200 dark:border-violet-800">
+                        <p className="text-xs font-medium text-violet-600 mb-2 flex items-center gap-1"><Sparkles className="h-3 w-3" />AI Check-In Summary</p>
+                        <div className="prose prose-sm max-w-none text-sm"><ReactMarkdown>{aiSummary[ci.client_id]}</ReactMarkdown></div>
+                      </div>
+                    )}
 
                     {ci.trainer_feedback && (
                       <div className="bg-orange-50 dark:bg-orange-950/20 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
