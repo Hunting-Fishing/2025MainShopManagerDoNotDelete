@@ -15,9 +15,10 @@ import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dumbbell, LogOut, Calendar, Activity, Loader2, ClipboardList, CheckCircle2,
-  MessageSquare, Send, ClipboardCheck, Package, CreditCard, User, Utensils
+  MessageSquare, Send, ClipboardCheck, Package, CreditCard, User, Utensils,
+  Camera, Flame, X, Upload
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInCalendarDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -40,6 +41,10 @@ export default function PTPortalDashboard() {
   const [loggingExercise, setLoggingExercise] = useState<string | null>(null);
   const [logWeight, setLogWeight] = useState('');
   const [trainers, setTrainers] = useState<any[]>([]);
+  const [progressPhotos, setProgressPhotos] = useState<any[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [workoutStreak, setWorkoutStreak] = useState(0);
+  const [cancellingSession, setCancellingSession] = useState<string | null>(null);
 
   // Check-in state
   const [checkInForm, setCheckInForm] = useState({ weight: '', mood: 'good', energy_level: [7], sleep_hours: '', notes: '', workout_compliance: [7], soreness_level: [3], pain_issues: '' });
@@ -78,7 +83,7 @@ export default function PTPortalDashboard() {
       }
       setClient(cl);
 
-      const [sessRes, metRes, progRes, pkgRes, msgRes, logRes, trainerRes] = await Promise.all([
+      const [sessRes, metRes, progRes, pkgRes, msgRes, logRes, trainerRes, photosRes, streakRes] = await Promise.all([
         (supabase as any).from('pt_sessions').select('id, session_date, duration_minutes, session_type, status, location')
           .eq('client_id', cl.id).order('session_date', { ascending: false }).limit(20),
         (supabase as any).from('pt_body_metrics').select('id, recorded_date, weight_kg, body_fat_percent, chest_cm, waist_cm')
@@ -95,6 +100,10 @@ export default function PTPortalDashboard() {
           .lte('completed_at', new Date().toISOString().split('T')[0] + 'T23:59:59'),
         (supabase as any).from('pt_trainers').select('id, first_name, last_name')
           .eq('shop_id', cl.shop_id).eq('is_active', true),
+        (supabase as any).from('pt_progress_photos').select('*')
+          .eq('client_id', cl.id).order('photo_date', { ascending: false }).limit(20),
+        (supabase as any).from('pt_workout_logs').select('completed_at')
+          .eq('client_id', cl.id).order('completed_at', { ascending: false }).limit(100),
       ]);
 
       setSessions(sessRes.data || []);
@@ -105,6 +114,20 @@ export default function PTPortalDashboard() {
       setMessages(msgRes.data || []);
       setTrainers(trainerRes.data || []);
       setCompletedExercises(new Set((logRes.data || []).map((l: any) => `${l.workout_day_id}_${l.exercise_id}`)));
+      setProgressPhotos(photosRes.data || []);
+
+      // Calculate workout streak (consecutive days with logs)
+      const logDates = [...new Set((streakRes.data || []).map((l: any) => l.completed_at?.split('T')[0]))].sort().reverse();
+      let streak = 0;
+      const today = new Date().toISOString().split('T')[0];
+      for (let i = 0; i < logDates.length; i++) {
+        const expectedDate = new Date();
+        expectedDate.setDate(expectedDate.getDate() - i);
+        const expected = expectedDate.toISOString().split('T')[0];
+        if (logDates[i] === expected) streak++;
+        else break;
+      }
+      setWorkoutStreak(streak);
     } catch (err) {
       console.error(err);
     } finally { setLoading(false); }
@@ -220,6 +243,41 @@ export default function PTPortalDashboard() {
     finally { setSendingMessage(false); }
   };
 
+  const cancelSession = async (sessionId: string) => {
+    if (!client) return;
+    setCancellingSession(sessionId);
+    try {
+      const { error } = await (supabase as any).from('pt_sessions').update({ status: 'canceled' }).eq('id', sessionId);
+      if (error) throw error;
+      toast({ title: 'Session cancelled' });
+      setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: 'canceled' } : s));
+    } catch (e: any) { toast({ title: 'Error', description: e.message, variant: 'destructive' }); }
+    finally { setCancellingSession(null); }
+  };
+
+  const uploadProgressPhoto = async (file: File) => {
+    if (!client) return;
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${client.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('pt-progress-photos').upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('pt-progress-photos').getPublicUrl(path);
+      const { error: dbError } = await (supabase as any).from('pt_progress_photos').insert({
+        client_id: client.id, shop_id: client.shop_id,
+        photo_url: publicUrl, photo_date: new Date().toISOString().split('T')[0],
+        category: 'progress',
+      });
+      if (dbError) throw dbError;
+      toast({ title: 'Photo uploaded! 📸' });
+      const { data } = await (supabase as any).from('pt_progress_photos').select('*')
+        .eq('client_id', client.id).order('photo_date', { ascending: false }).limit(20);
+      if (data) setProgressPhotos(data);
+    } catch (e: any) { toast({ title: 'Upload failed', description: e.message, variant: 'destructive' }); }
+    finally { setUploadingPhoto(false); }
+  };
+
   const handleSignOut = async () => { await supabase.auth.signOut(); navigate('/pt-portal/login'); };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>;
@@ -249,11 +307,12 @@ export default function PTPortalDashboard() {
 
       <div className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{upcomingSessions.length}</p><p className="text-xs text-muted-foreground">Upcoming Sessions</p></CardContent></Card>
           <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{programs.length}</p><p className="text-xs text-muted-foreground">Active Programs</p></CardContent></Card>
           <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{packages.reduce((s: number, p: any) => s + (p.remaining_sessions || 0), 0)}</p><p className="text-xs text-muted-foreground">Sessions Left</p></CardContent></Card>
           <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{packages.length}</p><p className="text-xs text-muted-foreground">Active Packages</p></CardContent></Card>
+          <Card className={workoutStreak > 0 ? 'border-orange-500/50' : ''}><CardContent className="p-4 text-center"><p className="text-2xl font-bold flex items-center justify-center gap-1">{workoutStreak > 0 && <Flame className="h-5 w-5 text-orange-500" />}{workoutStreak}</p><p className="text-xs text-muted-foreground">Day Streak</p></CardContent></Card>
         </div>
 
         <Tabs defaultValue="workouts">
@@ -397,6 +456,22 @@ export default function PTPortalDashboard() {
 
           {/* Progress Tab */}
           <TabsContent value="progress" className="space-y-4 mt-4">
+            {/* Streak Card */}
+            {workoutStreak > 0 && (
+              <Card className="border-orange-500/30 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                    <Flame className="h-7 w-7 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{workoutStreak} Day Streak! 🔥</p>
+                    <p className="text-sm text-muted-foreground">Keep it up — consistency builds results!</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Charts */}
             {chartData.length >= 2 && (
               <Card>
                 <CardHeader><CardTitle className="text-sm">Weight Over Time</CardTitle></CardHeader>
@@ -407,7 +482,7 @@ export default function PTPortalDashboard() {
                       <XAxis dataKey="date" className="text-xs" />
                       <YAxis className="text-xs" />
                       <Tooltip />
-                      <Line type="monotone" dataKey="weight" stroke="#f97316" strokeWidth={2} dot={{ r: 4 }} name="Weight (kg)" />
+                      <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} name="Weight (kg)" />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -423,12 +498,44 @@ export default function PTPortalDashboard() {
                       <XAxis dataKey="date" className="text-xs" />
                       <YAxis className="text-xs" />
                       <Tooltip />
-                      <Line type="monotone" dataKey="bodyFat" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} name="Body Fat %" />
+                      <Line type="monotone" dataKey="bodyFat" stroke="hsl(var(--accent-foreground))" strokeWidth={2} dot={{ r: 4 }} name="Body Fat %" />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
             )}
+
+            {/* Progress Photos */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2"><Camera className="h-4 w-4" />Progress Photos</CardTitle>
+                  <Button size="sm" variant="outline" className="text-xs" disabled={uploadingPhoto} onClick={() => document.getElementById('photo-upload')?.click()}>
+                    {uploadingPhoto ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
+                    Upload
+                  </Button>
+                  <input id="photo-upload" type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadProgressPhoto(e.target.files[0]); e.target.value = ''; }} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {progressPhotos.length === 0 ? (
+                  <p className="text-center text-sm text-muted-foreground py-4">No progress photos yet. Upload your first!</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {progressPhotos.map((photo: any) => (
+                      <div key={photo.id} className="relative group">
+                        <img src={photo.photo_url} alt="Progress" className="rounded-lg aspect-square object-cover w-full" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1.5 rounded-b-lg">
+                          {format(new Date(photo.photo_date), 'MMM d, yyyy')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Metrics History */}
             {metrics.length === 0 ? (
               <Card><CardContent className="py-8 text-center text-muted-foreground">No metrics recorded yet.</CardContent></Card>
             ) : metrics.map((m: any) => (
@@ -496,7 +603,14 @@ export default function PTPortalDashboard() {
                       <p className="font-medium text-sm">{format(new Date(s.session_date), 'EEEE, MMM d')}</p>
                       <p className="text-xs text-muted-foreground">{format(new Date(s.session_date), 'h:mm a')} · {s.duration_minutes}min · {s.session_type?.replace('_', ' ')}</p>
                     </div>
-                    <Badge variant={s.status === 'completed' ? 'default' : s.status === 'canceled' ? 'destructive' : 'secondary'}>{s.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      {s.status === 'scheduled' && new Date(s.session_date) > new Date() && (
+                        <Button size="sm" variant="ghost" className="text-destructive text-xs h-7" disabled={cancellingSession === s.id} onClick={() => cancelSession(s.id)}>
+                          {cancellingSession === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3 mr-1" />}Cancel
+                        </Button>
+                      )}
+                      <Badge variant={s.status === 'completed' ? 'default' : s.status === 'canceled' ? 'destructive' : 'secondary'}>{s.status}</Badge>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
