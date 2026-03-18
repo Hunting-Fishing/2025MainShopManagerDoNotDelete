@@ -404,6 +404,7 @@ const PersonalTrainerChallenges = lazy(() => import('@/pages/personal-trainer/Pe
 const PersonalTrainerReferrals = lazy(() => import('@/pages/personal-trainer/PersonalTrainerReferrals'));
 const PersonalTrainerBranding = lazy(() => import('@/pages/personal-trainer/PersonalTrainerBranding'));
 const PersonalTrainerNutrition = lazy(() => import('@/pages/personal-trainer/PersonalTrainerNutrition'));
+const PersonalTrainerWearables = lazy(() => import('@/pages/personal-trainer/PersonalTrainerWearables'));
 import { PersonalTrainerLayout } from '@/components/personal-trainer';
 
 // Personal Trainer Portal
