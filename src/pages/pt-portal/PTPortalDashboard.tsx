@@ -289,6 +289,11 @@ export default function PTPortalDashboard() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>;
 
   const upcomingSessions = sessions.filter(s => new Date(s.session_date) >= new Date() && s.status === 'scheduled');
+  const nextSession = upcomingSessions[0];
+  const todayWorkout = programs.length > 0 ? programs[0] : null;
+  const latestWeight = metrics.length > 0 ? metrics[0] : null;
+  const trainerMessages = messages.filter((m: any) => m.sender_id !== currentUserId);
+  const lastTrainerMsg = trainerMessages.length > 0 ? trainerMessages[trainerMessages.length - 1] : null;
   const chartData = [...metrics].reverse().map((m: any) => ({
     date: format(new Date(m.recorded_date), 'MMM d'),
     weight: m.weight_kg, bodyFat: m.body_fat_percent, waist: m.waist_cm,
