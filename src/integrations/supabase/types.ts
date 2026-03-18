@@ -37745,6 +37745,7 @@ export type Database = {
       pt_client_fitness_profiles: {
         Row: {
           client_id: string
+          commitment_level: string | null
           created_at: string | null
           equipment_access: string[] | null
           experience_level: string | null
@@ -37753,6 +37754,7 @@ export type Database = {
           injuries_limitations: string | null
           intake_completed: boolean | null
           intake_completed_at: string | null
+          interest_experience_levels: Json | null
           interest_intensity: Json | null
           motivation_style: string | null
           preferred_session_length: string | null
@@ -37765,6 +37767,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          commitment_level?: string | null
           created_at?: string | null
           equipment_access?: string[] | null
           experience_level?: string | null
@@ -37773,6 +37776,7 @@ export type Database = {
           injuries_limitations?: string | null
           intake_completed?: boolean | null
           intake_completed_at?: string | null
+          interest_experience_levels?: Json | null
           interest_intensity?: Json | null
           motivation_style?: string | null
           preferred_session_length?: string | null
@@ -37785,6 +37789,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          commitment_level?: string | null
           created_at?: string | null
           equipment_access?: string[] | null
           experience_level?: string | null
@@ -37793,6 +37798,7 @@ export type Database = {
           injuries_limitations?: string | null
           intake_completed?: boolean | null
           intake_completed_at?: string | null
+          interest_experience_levels?: Json | null
           interest_intensity?: Json | null
           motivation_style?: string | null
           preferred_session_length?: string | null

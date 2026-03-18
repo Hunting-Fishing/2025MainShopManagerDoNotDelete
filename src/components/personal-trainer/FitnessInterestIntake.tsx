@@ -15,7 +15,6 @@ import {
   useFitnessGoals,
   useClientFitnessProfile,
   useSaveFitnessProfile,
-  FitnessCategory,
   FitnessSubcategory,
 } from '@/hooks/useFitnessTaxonomy';
 import { useToast } from '@/hooks/use-toast';
@@ -42,6 +41,22 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Target: <Target className="h-5 w-5" />,
   Scale: <Target className="h-5 w-5" />,
 };
+
+const INTEREST_EXPERIENCE_LEVELS = [
+  { value: 'curious', label: 'Curious', desc: 'Haven\'t tried yet', emoji: '🔍' },
+  { value: 'beginner', label: 'Beginner', desc: 'Just starting out', emoji: '🌱' },
+  { value: 'intermediate', label: 'Intermediate', desc: 'Comfortable & consistent', emoji: '💪' },
+  { value: 'advanced', label: 'Advanced', desc: 'Highly experienced', emoji: '🔥' },
+  { value: 'competitive', label: 'Competitive', desc: 'Competition level', emoji: '🏆' },
+];
+
+const COMMITMENT_LEVELS = [
+  { value: 'exploring', label: 'Just Exploring', desc: 'Browsing options, no commitment yet', emoji: '👀' },
+  { value: 'starting_soon', label: 'Starting Soon', desc: 'Planning to begin in the next few weeks', emoji: '📅' },
+  { value: 'already_active', label: 'Already Active', desc: 'Currently training regularly', emoji: '✅' },
+  { value: 'serious_hobby', label: 'Serious Hobby', desc: 'Dedicated lifestyle commitment', emoji: '🎯' },
+  { value: 'competitive_elite', label: 'Competitive / Elite', desc: 'Training at competition or professional level', emoji: '🏅' },
+];
 
 const EXPERIENCE_LEVELS = [
   { value: 'complete_beginner', label: 'Complete Beginner', desc: 'Never trained before' },
@@ -97,13 +112,15 @@ interface FitnessInterestIntakeProps {
 export default function FitnessInterestIntake({ clientId, shopId, onComplete, embedded = false }: FitnessInterestIntakeProps) {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const totalSteps = 5;
+  const totalSteps = 7;
 
   // Form state
   const [primaryInterests, setPrimaryInterests] = useState<string[]>([]);
   const [specificInterests, setSpecificInterests] = useState<string[]>([]);
   const [goalTags, setGoalTags] = useState<string[]>([]);
   const [experienceLevel, setExperienceLevel] = useState('beginner');
+  const [interestExperienceLevels, setInterestExperienceLevels] = useState<Record<string, string>>({});
+  const [commitmentLevel, setCommitmentLevel] = useState('exploring');
   const [trainingEnvironment, setTrainingEnvironment] = useState<string[]>([]);
   const [equipmentAccess, setEquipmentAccess] = useState<string[]>([]);
   const [injuriesLimitations, setInjuriesLimitations] = useState('');
@@ -126,6 +143,8 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
       setSpecificInterests(existingProfile.specific_interests || []);
       setGoalTags(existingProfile.goal_tags || []);
       setExperienceLevel(existingProfile.experience_level || 'beginner');
+      setInterestExperienceLevels(existingProfile.interest_experience_levels || {});
+      setCommitmentLevel(existingProfile.commitment_level || 'exploring');
       setTrainingEnvironment(existingProfile.training_environment || []);
       setEquipmentAccess(existingProfile.equipment_access || []);
       setInjuriesLimitations(existingProfile.injuries_limitations || '');
@@ -147,12 +166,17 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
     !subSearch || s.name.toLowerCase().includes(subSearch.toLowerCase())
   );
 
-  // Group subcategories by category
   const groupedSubs = filteredSubcategories.reduce<Record<string, FitnessSubcategory[]>>((acc, sub) => {
     if (!acc[sub.category_id]) acc[sub.category_id] = [];
     acc[sub.category_id].push(sub);
     return acc;
   }, {});
+
+  // Get all selected interests (primary categories + specific subcategories) for per-interest experience
+  const allSelectedInterestItems = [
+    ...categories.filter(c => primaryInterests.includes(c.id)).map(c => ({ id: c.id, name: c.name.split(' / ')[0], type: 'category' as const })),
+    ...subcategories.filter(s => specificInterests.includes(s.id)).map(s => ({ id: s.id, name: s.name, type: 'subcategory' as const })),
+  ];
 
   const handleSave = async () => {
     try {
@@ -163,6 +187,8 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
         specific_interests: specificInterests,
         goal_tags: goalTags,
         experience_level: experienceLevel,
+        interest_experience_levels: interestExperienceLevels,
+        commitment_level: commitmentLevel,
         training_environment: trainingEnvironment,
         equipment_access: equipmentAccess,
         injuries_limitations: injuriesLimitations || null,
@@ -182,10 +208,12 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
   const canProceed = () => {
     switch (step) {
       case 1: return primaryInterests.length >= 1;
-      case 2: return true; // optional
+      case 2: return true;
       case 3: return goalTags.length >= 1;
-      case 4: return !!experienceLevel;
-      case 5: return true;
+      case 4: return allSelectedInterestItems.length === 0 || allSelectedInterestItems.every(i => interestExperienceLevels[i.id]);
+      case 5: return !!commitmentLevel;
+      case 6: return !!experienceLevel;
+      case 7: return true;
       default: return true;
     }
   };
@@ -195,12 +223,15 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
       case 1: return renderStep1PrimaryIdentity();
       case 2: return renderStep2SpecificInterests();
       case 3: return renderStep3Goals();
-      case 4: return renderStep4Profile();
-      case 5: return renderStep5Summary();
+      case 4: return renderStep4InterestExperience();
+      case 5: return renderStep5Commitment();
+      case 6: return renderStep6Profile();
+      case 7: return renderStep7Summary();
       default: return null;
     }
   };
 
+  // ─── Step 1: Primary Identity ─────────────────────────────────
   const renderStep1PrimaryIdentity = () => (
     <div className="space-y-4">
       <div className="text-center space-y-2">
@@ -242,12 +273,11 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
           })}
         </div>
       )}
-      <p className="text-center text-xs text-muted-foreground">
-        {primaryInterests.length}/3 selected
-      </p>
+      <p className="text-center text-xs text-muted-foreground">{primaryInterests.length}/3 selected</p>
     </div>
   );
 
+  // ─── Step 2: Specific Interests ───────────────────────────────
   const renderStep2SpecificInterests = () => (
     <div className="space-y-4">
       <div className="text-center space-y-2">
@@ -256,12 +286,7 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
       </div>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search interests..."
-          value={subSearch}
-          onChange={(e) => setSubSearch(e.target.value)}
-          className="pl-9"
-        />
+        <Input placeholder="Search interests..." value={subSearch} onChange={(e) => setSubSearch(e.target.value)} className="pl-9" />
       </div>
       {loadingSubs ? (
         <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
@@ -303,12 +328,11 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
           })}
         </div>
       )}
-      <p className="text-center text-xs text-muted-foreground">
-        {specificInterests.length} interests selected
-      </p>
+      <p className="text-center text-xs text-muted-foreground">{specificInterests.length} interests selected</p>
     </div>
   );
 
+  // ─── Step 3: Goals ────────────────────────────────────────────
   const renderStep3Goals = () => (
     <div className="space-y-4">
       <div className="text-center space-y-2">
@@ -327,9 +351,7 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
                 onClick={() => toggleInArray(goalTags, goal.id, setGoalTags)}
                 className={cn(
                   'flex items-center gap-3 p-3 rounded-lg border transition-all text-left',
-                  selected
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border hover:border-primary/40 hover:bg-muted/50'
+                  selected ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40 hover:bg-muted/50'
                 )}
               >
                 <div className={cn(
@@ -338,9 +360,7 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
                 )}>
                   {ICON_MAP[goal.icon || ''] || <Target className="h-4 w-4" />}
                 </div>
-                <span className={cn('font-medium text-sm', selected ? 'text-primary' : 'text-foreground')}>
-                  {goal.name}
-                </span>
+                <span className={cn('font-medium text-sm', selected ? 'text-primary' : 'text-foreground')}>{goal.name}</span>
                 {selected && <Check className="h-4 w-4 text-primary ml-auto shrink-0" />}
               </button>
             );
@@ -350,16 +370,107 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
     </div>
   );
 
-  const renderStep4Profile = () => (
+  // ─── Step 4: Experience Level by Interest ─────────────────────
+  const renderStep4InterestExperience = () => (
+    <div className="space-y-4">
+      <div className="text-center space-y-2">
+        <h2 className="text-xl font-bold text-foreground">Experience by Interest</h2>
+        <p className="text-sm text-muted-foreground">Rate your experience level for each selected interest</p>
+      </div>
+
+      {allSelectedInterestItems.length === 0 ? (
+        <p className="text-center text-muted-foreground py-8">Go back and select some interests first</p>
+      ) : (
+        <div className="space-y-4 max-h-[450px] overflow-y-auto pr-1">
+          {allSelectedInterestItems.map(item => {
+            const currentLevel = interestExperienceLevels[item.id] || '';
+            return (
+              <div key={item.id} className="p-4 rounded-xl border border-border space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge variant={item.type === 'category' ? 'default' : 'secondary'} className="text-xs">
+                    {item.type === 'category' ? 'Primary' : 'Specific'}
+                  </Badge>
+                  <p className="font-semibold text-sm text-foreground">{item.name}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {INTEREST_EXPERIENCE_LEVELS.map(lvl => (
+                    <button
+                      key={lvl.value}
+                      onClick={() => setInterestExperienceLevels(prev => ({ ...prev, [item.id]: lvl.value }))}
+                      className={cn(
+                        'flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
+                        currentLevel === lvl.value
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border hover:border-primary/40 text-foreground hover:bg-muted/50'
+                      )}
+                    >
+                      <span>{lvl.emoji}</span>
+                      <span>{lvl.label}</span>
+                      {currentLevel === lvl.value && <Check className="h-3 w-3" />}
+                    </button>
+                  ))}
+                </div>
+                {currentLevel && (
+                  <p className="text-xs text-muted-foreground">
+                    {INTEREST_EXPERIENCE_LEVELS.find(l => l.value === currentLevel)?.desc}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <p className="text-center text-xs text-muted-foreground">
+        {Object.keys(interestExperienceLevels).filter(k => allSelectedInterestItems.some(i => i.id === k)).length} / {allSelectedInterestItems.length} rated
+      </p>
+    </div>
+  );
+
+  // ─── Step 5: Commitment / Intent ──────────────────────────────
+  const renderStep5Commitment = () => (
+    <div className="space-y-4">
+      <div className="text-center space-y-2">
+        <h2 className="text-xl font-bold text-foreground">How committed are you?</h2>
+        <p className="text-sm text-muted-foreground">Tell us where you are in your fitness journey</p>
+      </div>
+
+      <div className="space-y-3">
+        {COMMITMENT_LEVELS.map(lvl => (
+          <button
+            key={lvl.value}
+            onClick={() => setCommitmentLevel(lvl.value)}
+            className={cn(
+              'w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left',
+              commitmentLevel === lvl.value
+                ? 'border-primary bg-primary/10 shadow-md'
+                : 'border-border hover:border-primary/40 hover:bg-muted/50'
+            )}
+          >
+            <span className="text-2xl">{lvl.emoji}</span>
+            <div className="flex-1">
+              <p className={cn('font-semibold text-sm', commitmentLevel === lvl.value ? 'text-primary' : 'text-foreground')}>
+                {lvl.label}
+              </p>
+              <p className="text-xs text-muted-foreground">{lvl.desc}</p>
+            </div>
+            {commitmentLevel === lvl.value && <Check className="h-5 w-5 text-primary shrink-0" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ─── Step 6: Profile Details ──────────────────────────────────
+  const renderStep6Profile = () => (
     <div className="space-y-6">
       <div className="text-center space-y-2">
         <h2 className="text-xl font-bold text-foreground">Tell us more about you</h2>
         <p className="text-sm text-muted-foreground">Help us personalize your experience</p>
       </div>
 
-      {/* Experience Level */}
       <div className="space-y-2">
-        <Label className="font-semibold">Experience Level</Label>
+        <Label className="font-semibold">Overall Experience Level</Label>
         <div className="grid grid-cols-1 gap-2">
           {EXPERIENCE_LEVELS.map(lvl => (
             <button
@@ -367,9 +478,7 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
               onClick={() => setExperienceLevel(lvl.value)}
               className={cn(
                 'flex items-center justify-between p-3 rounded-lg border transition-all text-left',
-                experienceLevel === lvl.value
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border hover:border-primary/40'
+                experienceLevel === lvl.value ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'
               )}
             >
               <div>
@@ -382,7 +491,6 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
         </div>
       </div>
 
-      {/* Training Environment */}
       <div className="space-y-2">
         <Label className="font-semibold">Training Environment</Label>
         <div className="flex flex-wrap gap-2">
@@ -403,7 +511,6 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
         </div>
       </div>
 
-      {/* Equipment Access */}
       <div className="space-y-2">
         <Label className="font-semibold">Equipment Access</Label>
         <div className="flex flex-wrap gap-2">
@@ -424,7 +531,6 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
         </div>
       </div>
 
-      {/* Session Length & Frequency */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="font-semibold">Session Length</Label>
@@ -446,7 +552,6 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
         </div>
       </div>
 
-      {/* Motivation Style */}
       <div className="space-y-2">
         <Label className="font-semibold">Motivation Style</Label>
         <Select value={motivationStyle} onValueChange={setMotivationStyle}>
@@ -457,7 +562,6 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
         </Select>
       </div>
 
-      {/* Injuries */}
       <div className="space-y-2">
         <Label className="font-semibold">Injuries / Limitations</Label>
         <Textarea
@@ -470,11 +574,13 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
     </div>
   );
 
-  const renderStep5Summary = () => {
+  // ─── Step 7: Summary ──────────────────────────────────────────
+  const renderStep7Summary = () => {
     const selectedCats = categories.filter(c => primaryInterests.includes(c.id));
     const selectedSubs = subcategories.filter(s => specificInterests.includes(s.id));
     const selectedGoals = goals.filter(g => goalTags.includes(g.id));
     const expLabel = EXPERIENCE_LEVELS.find(e => e.value === experienceLevel)?.label || experienceLevel;
+    const commitLabel = COMMITMENT_LEVELS.find(c => c.value === commitmentLevel);
 
     return (
       <div className="space-y-6">
@@ -484,19 +590,63 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
         </div>
 
         <div className="space-y-4">
-          <SummarySection title="Primary Interests" items={selectedCats.map(c => c.name.split(' / ')[0])} color="bg-primary" />
-          {selectedSubs.length > 0 && <SummarySection title="Specific Interests" items={selectedSubs.map(s => s.name)} color="bg-blue-500" />}
-          <SummarySection title="Goals" items={selectedGoals.map(g => g.name)} color="bg-green-500" />
+          {/* Primary with per-interest experience */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-2">Primary Interests</p>
+            <div className="space-y-2">
+              {selectedCats.map(c => {
+                const expLvl = interestExperienceLevels[c.id];
+                const expInfo = INTEREST_EXPERIENCE_LEVELS.find(l => l.value === expLvl);
+                return (
+                  <div key={c.id} className="flex items-center gap-2">
+                    <Badge className="bg-primary text-primary-foreground text-xs">{c.name.split(' / ')[0]}</Badge>
+                    {expInfo && <span className="text-xs text-muted-foreground">{expInfo.emoji} {expInfo.label}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {selectedSubs.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2">Specific Interests</p>
+              <div className="space-y-2">
+                {selectedSubs.map(s => {
+                  const expLvl = interestExperienceLevels[s.id];
+                  const expInfo = INTEREST_EXPERIENCE_LEVELS.find(l => l.value === expLvl);
+                  return (
+                    <div key={s.id} className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">{s.name}</Badge>
+                      {expInfo && <span className="text-xs text-muted-foreground">{expInfo.emoji} {expInfo.label}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <SummarySection title="Goals" items={selectedGoals.map(g => g.name)} color="bg-accent" />
+
+          {/* Commitment */}
+          {commitLabel && (
+            <div className="p-3 bg-muted rounded-lg flex items-center gap-3">
+              <span className="text-xl">{commitLabel.emoji}</span>
+              <div>
+                <p className="text-xs text-muted-foreground">Commitment Level</p>
+                <p className="font-semibold text-sm text-foreground">{commitLabel.label}</p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
-            <SummaryCard label="Experience" value={expLabel} />
+            <SummaryCard label="Overall Experience" value={expLabel} />
             <SummaryCard label="Session Length" value={SESSION_LENGTHS.find(s => s.value === preferredSessionLength)?.label || '—'} />
             <SummaryCard label="Frequency" value={TRAINING_FREQUENCIES.find(f => f.value === trainingFrequency)?.label || '—'} />
             <SummaryCard label="Motivation" value={MOTIVATION_STYLES.find(m => m.value === motivationStyle)?.label || '—'} />
           </div>
 
-          {trainingEnvironment.length > 0 && <SummarySection title="Environment" items={trainingEnvironment} color="bg-orange-500" />}
-          {equipmentAccess.length > 0 && <SummarySection title="Equipment" items={equipmentAccess} color="bg-purple-500" />}
+          {trainingEnvironment.length > 0 && <SummarySection title="Environment" items={trainingEnvironment} color="bg-secondary" />}
+          {equipmentAccess.length > 0 && <SummarySection title="Equipment" items={equipmentAccess} color="bg-secondary" />}
           {injuriesLimitations && (
             <div className="p-3 bg-muted rounded-lg">
               <p className="text-xs font-semibold text-muted-foreground mb-1">Injuries / Limitations</p>
@@ -514,7 +664,6 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
   return (
     <Wrapper className={cn(!embedded && 'max-w-2xl mx-auto shadow-xl border-0')}>
       <ContentWrapper className={cn(!embedded && 'p-6', 'space-y-6')}>
-        {/* Progress */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Step {step} of {totalSteps}</span>
@@ -523,10 +672,8 @@ export default function FitnessInterestIntake({ clientId, shopId, onComplete, em
           <Progress value={(step / totalSteps) * 100} className="h-2" />
         </div>
 
-        {/* Step Content */}
         {renderStep()}
 
-        {/* Navigation */}
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <Button
             variant="outline"
@@ -567,7 +714,7 @@ function SummarySection({ title, items, color }: { title: string; items: string[
       <p className="text-xs font-semibold text-muted-foreground mb-2">{title}</p>
       <div className="flex flex-wrap gap-1.5">
         {items.map(item => (
-          <Badge key={item} className={cn(color, 'text-white text-xs px-2 py-0.5')}>{item}</Badge>
+          <Badge key={item} className={cn(color, 'text-xs px-2 py-0.5')}>{item}</Badge>
         ))}
       </div>
     </div>
