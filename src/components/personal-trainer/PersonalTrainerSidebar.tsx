@@ -44,13 +44,22 @@ const navSections: NavSection[] = [
     title: 'Overview',
     items: [
       { title: 'Dashboard', href: '/personal-trainer', icon: LayoutDashboard, color: 'from-orange-500 to-red-600' },
+      { title: 'Reports', href: '/personal-trainer/reports', icon: BarChartIcon, color: 'from-teal-500 to-cyan-600' },
+    ],
+  },
+  {
+    title: 'Team',
+    items: [
+      { title: 'Trainers', href: '/personal-trainer/trainers', icon: UserCog, color: 'from-indigo-500 to-blue-600' },
     ],
   },
   {
     title: 'Clients',
     items: [
       { title: 'All Clients', href: '/personal-trainer/clients', icon: Users, color: 'from-blue-500 to-cyan-500' },
+      { title: 'Check-Ins', href: '/personal-trainer/check-ins', icon: ClipboardCheck, color: 'from-lime-500 to-green-600' },
       { title: 'Body Metrics', href: '/personal-trainer/metrics', icon: Activity, color: 'from-emerald-500 to-teal-500' },
+      { title: 'Messages', href: '/personal-trainer/messages', icon: MessageSquare, color: 'from-rose-500 to-pink-600' },
     ],
   },
   {

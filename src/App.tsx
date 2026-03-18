@@ -1633,10 +1633,15 @@ function App() {
                 <Routes>
                   <Route path="/" element={<PersonalTrainerDashboard />} />
                   <Route path="/clients" element={<PersonalTrainerClients />} />
+                  <Route path="/clients/:id" element={<PersonalTrainerClientDetail />} />
+                  <Route path="/trainers" element={<PersonalTrainerTrainers />} />
                   <Route path="/programs" element={<PersonalTrainerPrograms />} />
                   <Route path="/exercises" element={<PersonalTrainerExercises />} />
                   <Route path="/sessions" element={<PersonalTrainerSessions />} />
                   <Route path="/metrics" element={<PersonalTrainerMetrics />} />
+                  <Route path="/check-ins" element={<PersonalTrainerCheckIns />} />
+                  <Route path="/messages" element={<PersonalTrainerMessages />} />
+                  <Route path="/reports" element={<PersonalTrainerReports />} />
                   <Route path="/packages" element={<PersonalTrainerPackages />} />
                   <Route path="/billing" element={<PersonalTrainerBilling />} />
                   <Route path="/settings" element={<PersonalTrainerSettings />} />
