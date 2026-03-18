@@ -249,6 +249,9 @@ export const useSaveFitnessProfile = () => {
       }
 
       // 4. Write training context
+      const motivStyles = profile.motivation_style
+        ? profile.motivation_style.split(',').filter(Boolean)
+        : [];
       const contextPayload = {
         client_id: profile.client_id,
         shop_id: profile.shop_id,
@@ -257,7 +260,7 @@ export const useSaveFitnessProfile = () => {
         session_length: profile.preferred_session_length || null,
         weekly_frequency: profile.training_frequency || null,
         injury_notes: profile.injuries_limitations || null,
-        motivation_style: profile.motivation_style ? [profile.motivation_style] : [],
+        motivation_style: motivStyles,
         updated_at: new Date().toISOString(),
       };
 
