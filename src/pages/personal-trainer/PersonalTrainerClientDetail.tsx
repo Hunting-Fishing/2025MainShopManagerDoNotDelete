@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles } from 'lucide-react';
 import FitnessInterestIntake from '@/components/personal-trainer/FitnessInterestIntake';
+import FitnessProfileScores from '@/components/personal-trainer/FitnessProfileScores';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
