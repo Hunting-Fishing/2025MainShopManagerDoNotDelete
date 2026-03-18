@@ -204,6 +204,10 @@ export default function PersonalTrainerClientDetail() {
           {id && shopId && <FitnessInterestIntake clientId={id} shopId={shopId} embedded />}
         </TabsContent>
 
+        <TabsContent value="ai-insights" className="mt-4">
+          {id && shopId && <AIInsightsPanel clientId={id} shopId={shopId} />}
+        </TabsContent>
+
         <TabsContent value="programs" className="mt-4 space-y-3">
           {programs.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">No programs assigned</p> : programs.map((p: any) => (
             <Card key={p.id}><CardContent className="p-4 flex items-center justify-between">
