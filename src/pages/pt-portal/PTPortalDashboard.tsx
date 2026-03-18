@@ -45,6 +45,8 @@ export default function PTPortalDashboard() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [workoutStreak, setWorkoutStreak] = useState(0);
   const [cancellingSession, setCancellingSession] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Check-in state
   const [checkInForm, setCheckInForm] = useState({ weight: '', mood: 'good', energy_level: [7], sleep_hours: '', notes: '', workout_compliance: [7], soreness_level: [3], pain_issues: '' });
