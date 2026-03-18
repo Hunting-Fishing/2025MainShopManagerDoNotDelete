@@ -197,7 +197,8 @@ export default function PersonalTrainerClientDetail() {
           <TabsTrigger value="billing" className="text-xs"><CreditCard className="h-3 w-3 mr-1" />Billing</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="fitness-profile" className="mt-4">
+        <TabsContent value="fitness-profile" className="mt-4 space-y-4">
+          {id && shopId && <FitnessProfileScores clientId={id} shopId={shopId} />}
           {id && shopId && <FitnessInterestIntake clientId={id} shopId={shopId} embedded />}
         </TabsContent>
 
