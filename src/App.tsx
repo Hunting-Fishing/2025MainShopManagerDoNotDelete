@@ -1637,6 +1637,7 @@ function App() {
                   <Route path="/clients/:id" element={<PersonalTrainerClientDetail />} />
                   <Route path="/trainers" element={<PersonalTrainerTrainers />} />
                   <Route path="/programs" element={<PersonalTrainerPrograms />} />
+                  <Route path="/programs/:programId/builder" element={<PersonalTrainerWorkoutBuilder />} />
                   <Route path="/exercises" element={<PersonalTrainerExercises />} />
                   <Route path="/sessions" element={<PersonalTrainerSessions />} />
                   <Route path="/metrics" element={<PersonalTrainerMetrics />} />
