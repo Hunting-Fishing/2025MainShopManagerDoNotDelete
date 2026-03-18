@@ -456,6 +456,22 @@ export default function PTPortalDashboard() {
 
           {/* Progress Tab */}
           <TabsContent value="progress" className="space-y-4 mt-4">
+            {/* Streak Card */}
+            {workoutStreak > 0 && (
+              <Card className="border-orange-500/30 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                    <Flame className="h-7 w-7 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{workoutStreak} Day Streak! 🔥</p>
+                    <p className="text-sm text-muted-foreground">Keep it up — consistency builds results!</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Charts */}
             {chartData.length >= 2 && (
               <Card>
                 <CardHeader><CardTitle className="text-sm">Weight Over Time</CardTitle></CardHeader>
@@ -466,7 +482,7 @@ export default function PTPortalDashboard() {
                       <XAxis dataKey="date" className="text-xs" />
                       <YAxis className="text-xs" />
                       <Tooltip />
-                      <Line type="monotone" dataKey="weight" stroke="#f97316" strokeWidth={2} dot={{ r: 4 }} name="Weight (kg)" />
+                      <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} name="Weight (kg)" />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -482,12 +498,44 @@ export default function PTPortalDashboard() {
                       <XAxis dataKey="date" className="text-xs" />
                       <YAxis className="text-xs" />
                       <Tooltip />
-                      <Line type="monotone" dataKey="bodyFat" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} name="Body Fat %" />
+                      <Line type="monotone" dataKey="bodyFat" stroke="hsl(var(--accent-foreground))" strokeWidth={2} dot={{ r: 4 }} name="Body Fat %" />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
             )}
+
+            {/* Progress Photos */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2"><Camera className="h-4 w-4" />Progress Photos</CardTitle>
+                  <Button size="sm" variant="outline" className="text-xs" disabled={uploadingPhoto} onClick={() => document.getElementById('photo-upload')?.click()}>
+                    {uploadingPhoto ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
+                    Upload
+                  </Button>
+                  <input id="photo-upload" type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadProgressPhoto(e.target.files[0]); e.target.value = ''; }} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {progressPhotos.length === 0 ? (
+                  <p className="text-center text-sm text-muted-foreground py-4">No progress photos yet. Upload your first!</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {progressPhotos.map((photo: any) => (
+                      <div key={photo.id} className="relative group">
+                        <img src={photo.photo_url} alt="Progress" className="rounded-lg aspect-square object-cover w-full" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1.5 rounded-b-lg">
+                          {format(new Date(photo.photo_date), 'MMM d, yyyy')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Metrics History */}
             {metrics.length === 0 ? (
               <Card><CardContent className="py-8 text-center text-muted-foreground">No metrics recorded yet.</CardContent></Card>
             ) : metrics.map((m: any) => (
