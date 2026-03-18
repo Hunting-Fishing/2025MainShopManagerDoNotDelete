@@ -119,6 +119,7 @@ export default function PTPortalDashboard() {
       setMessages(msgRes.data || []);
       setTrainers(trainerRes.data || []);
       setCompletedExercises(new Set((logRes.data || []).map((l: any) => `${l.workout_day_id}_${l.exercise_id}`)));
+      setNotifications(notifRes.data || []);
       setProgressPhotos(photosRes.data || []);
 
       // Calculate workout streak (consecutive days with logs)
