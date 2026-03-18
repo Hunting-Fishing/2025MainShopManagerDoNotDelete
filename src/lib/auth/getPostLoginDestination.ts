@@ -12,6 +12,7 @@ const MODULE_ROUTES: Record<string, string> = {
   'fuel-delivery': '/fuel-delivery',
   'septic': '/septic',
   'export-company': '/export',
+  'personal-trainer': '/personal-trainer',
 };
 
 /**

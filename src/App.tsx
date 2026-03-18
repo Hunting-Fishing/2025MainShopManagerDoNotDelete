@@ -1619,6 +1619,34 @@ function App() {
           }
         />
 
+        {/* Personal Trainer Module */}
+        <Route
+          path="/personal-trainer/*"
+          element={
+            <AuthGate>
+              <PersonalTrainerLayout>
+                <Routes>
+                  <Route path="/" element={<PersonalTrainerDashboard />} />
+                  <Route path="/clients" element={<PersonalTrainerClients />} />
+                  <Route path="/programs" element={<PersonalTrainerPrograms />} />
+                  <Route path="/exercises" element={<PersonalTrainerExercises />} />
+                  <Route path="/sessions" element={<PersonalTrainerSessions />} />
+                  <Route path="/metrics" element={<PersonalTrainerMetrics />} />
+                  <Route path="/packages" element={<PersonalTrainerPackages />} />
+                  <Route path="/billing" element={<PersonalTrainerBilling />} />
+                  <Route path="/settings" element={<PersonalTrainerSettings />} />
+                </Routes>
+              </PersonalTrainerLayout>
+            </AuthGate>
+          }
+        />
+
+        {/* Personal Trainer Portal - Public routes */}
+        <Route path="/pt-portal" element={<PTPortalLanding />} />
+        <Route path="/pt-portal/login" element={<PTPortalLogin />} />
+        <Route path="/pt-portal/register" element={<PTPortalRegister />} />
+        <Route path="/pt-portal/dashboard" element={<PTPortalDashboard />} />
+
         {/* Septic Services Module */}
         <Route
           path="/septic/*"
