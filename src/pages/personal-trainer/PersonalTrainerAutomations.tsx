@@ -27,7 +27,7 @@ const TRIGGER_TYPES = [
   { type: 'package_low', label: 'Package Low Balance', icon: Package, color: 'from-violet-500 to-purple-500', description: 'Upsell message when sessions are running low (≤2 left)' },
   { type: 'missed_appointment', label: 'Missed Appointment', icon: XCircle, color: 'from-red-500 to-rose-500', description: 'Follow-up when client is a no-show' },
   { type: 'milestone', label: 'Client Milestone', icon: Trophy, color: 'from-emerald-500 to-green-500', description: 'Congratulations when client hits a goal' },
-  { type: 'inactive_client', label: 'Inactive Client (30 Days)', icon: Ghost, color: 'from-gray-500 to-slate-500', description: 'Re-engagement offer for dormant clients' },
+  { type: 'inactive_client', label: 'Inactive Client (14 Days)', icon: Ghost, color: 'from-gray-500 to-slate-500', description: 'Re-engagement offer after 14 days of no activity' },
 ];
 
 export default function PersonalTrainerAutomations() {
