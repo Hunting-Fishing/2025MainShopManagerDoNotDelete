@@ -83,7 +83,7 @@ export default function PTPortalDashboard() {
       }
       setClient(cl);
 
-      const [sessRes, metRes, progRes, pkgRes, msgRes, logRes, trainerRes] = await Promise.all([
+      const [sessRes, metRes, progRes, pkgRes, msgRes, logRes, trainerRes, photosRes, streakRes] = await Promise.all([
         (supabase as any).from('pt_sessions').select('id, session_date, duration_minutes, session_type, status, location')
           .eq('client_id', cl.id).order('session_date', { ascending: false }).limit(20),
         (supabase as any).from('pt_body_metrics').select('id, recorded_date, weight_kg, body_fat_percent, chest_cm, waist_cm')
@@ -100,6 +100,10 @@ export default function PTPortalDashboard() {
           .lte('completed_at', new Date().toISOString().split('T')[0] + 'T23:59:59'),
         (supabase as any).from('pt_trainers').select('id, first_name, last_name')
           .eq('shop_id', cl.shop_id).eq('is_active', true),
+        (supabase as any).from('pt_progress_photos').select('*')
+          .eq('client_id', cl.id).order('photo_date', { ascending: false }).limit(20),
+        (supabase as any).from('pt_workout_logs').select('completed_at')
+          .eq('client_id', cl.id).order('completed_at', { ascending: false }).limit(100),
       ]);
 
       setSessions(sessRes.data || []);
@@ -110,6 +114,20 @@ export default function PTPortalDashboard() {
       setMessages(msgRes.data || []);
       setTrainers(trainerRes.data || []);
       setCompletedExercises(new Set((logRes.data || []).map((l: any) => `${l.workout_day_id}_${l.exercise_id}`)));
+      setProgressPhotos(photosRes.data || []);
+
+      // Calculate workout streak (consecutive days with logs)
+      const logDates = [...new Set((streakRes.data || []).map((l: any) => l.completed_at?.split('T')[0]))].sort().reverse();
+      let streak = 0;
+      const today = new Date().toISOString().split('T')[0];
+      for (let i = 0; i < logDates.length; i++) {
+        const expectedDate = new Date();
+        expectedDate.setDate(expectedDate.getDate() - i);
+        const expected = expectedDate.toISOString().split('T')[0];
+        if (logDates[i] === expected) streak++;
+        else break;
+      }
+      setWorkoutStreak(streak);
     } catch (err) {
       console.error(err);
     } finally { setLoading(false); }
