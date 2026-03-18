@@ -37833,12 +37833,16 @@ export type Database = {
       }
       pt_exercises: {
         Row: {
+          alternatives: string | null
           category: string
+          common_mistakes: string | null
           created_at: string | null
           description: string | null
           difficulty: string | null
           equipment: string | null
           id: string
+          image_url: string | null
+          instructions: string | null
           is_custom: boolean | null
           muscle_group: string | null
           name: string
@@ -37847,12 +37851,16 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          alternatives?: string | null
           category?: string
+          common_mistakes?: string | null
           created_at?: string | null
           description?: string | null
           difficulty?: string | null
           equipment?: string | null
           id?: string
+          image_url?: string | null
+          instructions?: string | null
           is_custom?: boolean | null
           muscle_group?: string | null
           name: string
@@ -37861,12 +37869,16 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          alternatives?: string | null
           category?: string
+          common_mistakes?: string | null
           created_at?: string | null
           description?: string | null
           difficulty?: string | null
           equipment?: string | null
           id?: string
+          image_url?: string | null
+          instructions?: string | null
           is_custom?: boolean | null
           muscle_group?: string | null
           name?: string
