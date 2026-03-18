@@ -243,6 +243,41 @@ export default function PTPortalDashboard() {
     finally { setSendingMessage(false); }
   };
 
+  const cancelSession = async (sessionId: string) => {
+    if (!client) return;
+    setCancellingSession(sessionId);
+    try {
+      const { error } = await (supabase as any).from('pt_sessions').update({ status: 'canceled' }).eq('id', sessionId);
+      if (error) throw error;
+      toast({ title: 'Session cancelled' });
+      setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: 'canceled' } : s));
+    } catch (e: any) { toast({ title: 'Error', description: e.message, variant: 'destructive' }); }
+    finally { setCancellingSession(null); }
+  };
+
+  const uploadProgressPhoto = async (file: File) => {
+    if (!client) return;
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${client.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('pt-progress-photos').upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('pt-progress-photos').getPublicUrl(path);
+      const { error: dbError } = await (supabase as any).from('pt_progress_photos').insert({
+        client_id: client.id, shop_id: client.shop_id,
+        photo_url: publicUrl, photo_date: new Date().toISOString().split('T')[0],
+        category: 'progress',
+      });
+      if (dbError) throw dbError;
+      toast({ title: 'Photo uploaded! 📸' });
+      const { data } = await (supabase as any).from('pt_progress_photos').select('*')
+        .eq('client_id', client.id).order('photo_date', { ascending: false }).limit(20);
+      if (data) setProgressPhotos(data);
+    } catch (e: any) { toast({ title: 'Upload failed', description: e.message, variant: 'destructive' }); }
+    finally { setUploadingPhoto(false); }
+  };
+
   const handleSignOut = async () => { await supabase.auth.signOut(); navigate('/pt-portal/login'); };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>;
