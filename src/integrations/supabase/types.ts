@@ -37811,6 +37811,57 @@ export type Database = {
         }
         Relationships: []
       }
+      pt_client_fitness_scores: {
+        Row: {
+          aesthetics_affinity: number | null
+          beginner_support_need: number | null
+          client_id: string
+          coaching_intensity: number | null
+          competition_affinity: number | null
+          computed_at: string | null
+          created_at: string | null
+          endurance_affinity: number | null
+          equipment_richness: number | null
+          id: string
+          recovery_need: number | null
+          shop_id: string
+          strength_affinity: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          aesthetics_affinity?: number | null
+          beginner_support_need?: number | null
+          client_id: string
+          coaching_intensity?: number | null
+          competition_affinity?: number | null
+          computed_at?: string | null
+          created_at?: string | null
+          endurance_affinity?: number | null
+          equipment_richness?: number | null
+          id?: string
+          recovery_need?: number | null
+          shop_id: string
+          strength_affinity?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          aesthetics_affinity?: number | null
+          beginner_support_need?: number | null
+          client_id?: string
+          coaching_intensity?: number | null
+          competition_affinity?: number | null
+          computed_at?: string | null
+          created_at?: string | null
+          endurance_affinity?: number | null
+          equipment_richness?: number | null
+          id?: string
+          recovery_need?: number | null
+          shop_id?: string
+          strength_affinity?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       pt_client_packages: {
         Row: {
           amount_paid: number | null
@@ -38171,6 +38222,8 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          parent_id: string | null
+          slug: string | null
         }
         Insert: {
           color?: string | null
@@ -38181,6 +38234,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          parent_id?: string | null
+          slug?: string | null
         }
         Update: {
           color?: string | null
@@ -38191,8 +38246,18 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          parent_id?: string | null
+          slug?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pt_fitness_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "pt_fitness_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pt_fitness_goals: {
         Row: {
@@ -38225,26 +38290,41 @@ export type Database = {
         Row: {
           category_id: string
           created_at: string | null
+          description: string | null
+          difficulty_hint: string | null
           display_order: number
+          equipment_level: string | null
           id: string
           is_active: boolean | null
           name: string
+          slug: string | null
+          training_style: string | null
         }
         Insert: {
           category_id: string
           created_at?: string | null
+          description?: string | null
+          difficulty_hint?: string | null
           display_order?: number
+          equipment_level?: string | null
           id?: string
           is_active?: boolean | null
           name: string
+          slug?: string | null
+          training_style?: string | null
         }
         Update: {
           category_id?: string
           created_at?: string | null
+          description?: string | null
+          difficulty_hint?: string | null
           display_order?: number
+          equipment_level?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
+          slug?: string | null
+          training_style?: string | null
         }
         Relationships: [
           {
@@ -39069,6 +39149,114 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pt_user_fitness_goals: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          goal_name: string
+          id: string
+          priority_rank: number | null
+          shop_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          goal_name: string
+          id?: string
+          priority_rank?: number | null
+          shop_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          goal_name?: string
+          id?: string
+          priority_rank?: number | null
+          shop_id?: string
+        }
+        Relationships: []
+      }
+      pt_user_fitness_interests: {
+        Row: {
+          client_id: string
+          commitment_level: string | null
+          created_at: string | null
+          experience_level: string | null
+          id: string
+          interest_id: string
+          interest_rank: number | null
+          interest_type: string
+          selected_at: string | null
+          shop_id: string
+        }
+        Insert: {
+          client_id: string
+          commitment_level?: string | null
+          created_at?: string | null
+          experience_level?: string | null
+          id?: string
+          interest_id: string
+          interest_rank?: number | null
+          interest_type: string
+          selected_at?: string | null
+          shop_id: string
+        }
+        Update: {
+          client_id?: string
+          commitment_level?: string | null
+          created_at?: string | null
+          experience_level?: string | null
+          id?: string
+          interest_id?: string
+          interest_rank?: number | null
+          interest_type?: string
+          selected_at?: string | null
+          shop_id?: string
+        }
+        Relationships: []
+      }
+      pt_user_training_context: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          environment_preference: string[] | null
+          equipment_access: string[] | null
+          id: string
+          injury_notes: string | null
+          motivation_style: string[] | null
+          session_length: string | null
+          shop_id: string
+          updated_at: string | null
+          weekly_frequency: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          environment_preference?: string[] | null
+          equipment_access?: string[] | null
+          id?: string
+          injury_notes?: string | null
+          motivation_style?: string[] | null
+          session_length?: string | null
+          shop_id: string
+          updated_at?: string | null
+          weekly_frequency?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          environment_preference?: string[] | null
+          equipment_access?: string[] | null
+          id?: string
+          injury_notes?: string | null
+          motivation_style?: string[] | null
+          session_length?: string | null
+          shop_id?: string
+          updated_at?: string | null
+          weekly_frequency?: string | null
+        }
+        Relationships: []
       }
       pt_wearable_connections: {
         Row: {
@@ -58182,6 +58370,10 @@ export type Database = {
             Returns: boolean
           }
       clear_service_data: { Args: never; Returns: undefined }
+      compute_fitness_profile_scores: {
+        Args: { p_client_id: string; p_shop_id: string }
+        Returns: undefined
+      }
       convert_quote_to_work_order: {
         Args: { p_converted_by: string; p_notes?: string; p_quote_id: string }
         Returns: string
