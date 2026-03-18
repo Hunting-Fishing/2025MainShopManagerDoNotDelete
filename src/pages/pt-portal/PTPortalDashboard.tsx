@@ -289,6 +289,11 @@ export default function PTPortalDashboard() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>;
 
   const upcomingSessions = sessions.filter(s => new Date(s.session_date) >= new Date() && s.status === 'scheduled');
+  const nextSession = upcomingSessions[0];
+  const todayWorkout = programs.length > 0 ? programs[0] : null;
+  const latestWeight = metrics.length > 0 ? metrics[0] : null;
+  const trainerMessages = messages.filter((m: any) => m.sender_id !== currentUserId);
+  const lastTrainerMsg = trainerMessages.length > 0 ? trainerMessages[trainerMessages.length - 1] : null;
   const chartData = [...metrics].reverse().map((m: any) => ({
     date: format(new Date(m.recorded_date), 'MMM d'),
     weight: m.weight_kg, bodyFat: m.body_fat_percent, waist: m.waist_cm,
@@ -337,13 +342,45 @@ export default function PTPortalDashboard() {
       </header>
 
       <div className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{upcomingSessions.length}</p><p className="text-xs text-muted-foreground">Upcoming Sessions</p></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{programs.length}</p><p className="text-xs text-muted-foreground">Active Programs</p></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{packages.reduce((s: number, p: any) => s + (p.remaining_sessions || 0), 0)}</p><p className="text-xs text-muted-foreground">Sessions Left</p></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold">{packages.length}</p><p className="text-xs text-muted-foreground">Active Packages</p></CardContent></Card>
-          <Card className={workoutStreak > 0 ? 'border-orange-500/50' : ''}><CardContent className="p-4 text-center"><p className="text-2xl font-bold flex items-center justify-center gap-1">{workoutStreak > 0 && <Flame className="h-5 w-5 text-orange-500" />}{workoutStreak}</p><p className="text-xs text-muted-foreground">Day Streak</p></CardContent></Card>
+        {/* Client Dashboard Cards — spec: Today's Workout, Next Session, Progress Snapshot, Sessions Left, Weekly Check-In, Message From Trainer */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {/* scroll to workouts tab */}}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1"><Dumbbell className="h-4 w-4 text-orange-500" /><p className="text-xs font-medium text-muted-foreground">Today's Workout</p></div>
+              <p className="text-sm font-bold truncate">{todayWorkout ? todayWorkout.name : 'No program assigned'}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1"><Calendar className="h-4 w-4 text-blue-500" /><p className="text-xs font-medium text-muted-foreground">Next Session</p></div>
+              <p className="text-sm font-bold">{nextSession ? format(new Date(nextSession.session_date), 'MMM d, h:mm a') : 'None booked'}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1"><Activity className="h-4 w-4 text-emerald-500" /><p className="text-xs font-medium text-muted-foreground">Progress Snapshot</p></div>
+              <p className="text-sm font-bold">{latestWeight ? `${latestWeight.weight_kg} kg` : 'No data'}</p>
+              {latestWeight?.body_fat_percent && <p className="text-[10px] text-muted-foreground">{latestWeight.body_fat_percent}% body fat</p>}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1"><Package className="h-4 w-4 text-violet-500" /><p className="text-xs font-medium text-muted-foreground">Sessions Left</p></div>
+              <p className="text-2xl font-bold">{packages.reduce((s: number, p: any) => s + (p.remaining_sessions || 0), 0)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1"><ClipboardCheck className="h-4 w-4 text-lime-500" /><p className="text-xs font-medium text-muted-foreground">Weekly Check-In</p></div>
+              <p className="text-sm font-bold">{workoutStreak > 0 ? `${workoutStreak} day streak 🔥` : 'Submit today!'}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1"><MessageSquare className="h-4 w-4 text-rose-500" /><p className="text-xs font-medium text-muted-foreground">Message From Trainer</p></div>
+              <p className="text-xs truncate">{lastTrainerMsg ? lastTrainerMsg.content : 'No messages yet'}</p>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs defaultValue="workouts">

@@ -107,7 +107,7 @@ serve(async (req) => {
       }
       results.missed_appointment = missedCount;
 
-      // 4. Inactive clients (no session or check-in in 30+ days)
+      // 4. Inactive clients (no session or check-in in 14+ days)
       let inactiveCount = 0;
       for (const client of (activeClients || [])) {
         const { data: lastSession } = await supabase.from('pt_sessions')
@@ -123,7 +123,7 @@ serve(async (req) => {
         );
         const daysSinceActivity = lastActivity ? Math.floor((Date.now() - lastActivity) / 86400000) : 999;
 
-        if (daysSinceActivity >= 30) {
+        if (daysSinceActivity >= 14) {
           const { data: existing } = await supabase.from('pt_notifications')
             .select('id').eq('client_id', client.id).eq('trigger_type', 'inactive_client')
             .gte('created_at', new Date(Date.now() - 14 * 86400000).toISOString()).limit(1);
