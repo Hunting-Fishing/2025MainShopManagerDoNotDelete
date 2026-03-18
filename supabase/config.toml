@@ -60,3 +60,6 @@ verify_jwt = false
 
 [functions.pt-ai-assistant]
 verify_jwt = false
+
+[functions.pt-automations]
+verify_jwt = false
