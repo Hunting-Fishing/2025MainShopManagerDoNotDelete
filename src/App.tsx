@@ -399,6 +399,11 @@ const PersonalTrainerTrainers = lazy(() => import('@/pages/personal-trainer/Pers
 const PersonalTrainerCheckIns = lazy(() => import('@/pages/personal-trainer/PersonalTrainerCheckIns'));
 const PersonalTrainerMessages = lazy(() => import('@/pages/personal-trainer/PersonalTrainerMessages'));
 const PersonalTrainerReports = lazy(() => import('@/pages/personal-trainer/PersonalTrainerReports'));
+const PersonalTrainerCommunity = lazy(() => import('@/pages/personal-trainer/PersonalTrainerCommunity'));
+const PersonalTrainerChallenges = lazy(() => import('@/pages/personal-trainer/PersonalTrainerChallenges'));
+const PersonalTrainerReferrals = lazy(() => import('@/pages/personal-trainer/PersonalTrainerReferrals'));
+const PersonalTrainerBranding = lazy(() => import('@/pages/personal-trainer/PersonalTrainerBranding'));
+const PersonalTrainerNutrition = lazy(() => import('@/pages/personal-trainer/PersonalTrainerNutrition'));
 import { PersonalTrainerLayout } from '@/components/personal-trainer';
 
 // Personal Trainer Portal
