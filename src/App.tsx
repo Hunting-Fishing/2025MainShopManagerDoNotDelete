@@ -1652,6 +1652,11 @@ function App() {
                   <Route path="/packages" element={<PersonalTrainerPackages />} />
                   <Route path="/billing" element={<PersonalTrainerBilling />} />
                   <Route path="/settings" element={<PersonalTrainerSettings />} />
+                  <Route path="/community" element={<PersonalTrainerCommunity />} />
+                  <Route path="/challenges" element={<PersonalTrainerChallenges />} />
+                  <Route path="/referrals" element={<PersonalTrainerReferrals />} />
+                  <Route path="/branding" element={<PersonalTrainerBranding />} />
+                  <Route path="/nutrition" element={<PersonalTrainerNutrition />} />
                 </Routes>
               </PersonalTrainerLayout>
             </AuthGate>
