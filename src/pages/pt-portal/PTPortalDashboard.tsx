@@ -16,7 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dumbbell, LogOut, Calendar, Activity, Loader2, ClipboardList, CheckCircle2,
   MessageSquare, Send, ClipboardCheck, Package, CreditCard, User, Utensils,
-  Camera, Flame, X, Upload
+  Camera, Flame, X, Upload, Bell
 } from 'lucide-react';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { cn } from '@/lib/utils';
