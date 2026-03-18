@@ -30805,6 +30805,625 @@ export type Database = {
         }
         Relationships: []
       }
+      nt_biometric_snapshots: {
+        Row: {
+          bmr_kcal: number | null
+          body_fat_pct: number | null
+          calories_burned: number | null
+          client_id: string
+          created_at: string | null
+          heart_rate_resting: number | null
+          id: string
+          muscle_mass_kg: number | null
+          raw_data: Json | null
+          recorded_at: string | null
+          shop_id: string
+          sleep_hours: number | null
+          source: string | null
+          steps: number | null
+          tdee_kcal: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          bmr_kcal?: number | null
+          body_fat_pct?: number | null
+          calories_burned?: number | null
+          client_id: string
+          created_at?: string | null
+          heart_rate_resting?: number | null
+          id?: string
+          muscle_mass_kg?: number | null
+          raw_data?: Json | null
+          recorded_at?: string | null
+          shop_id: string
+          sleep_hours?: number | null
+          source?: string | null
+          steps?: number | null
+          tdee_kcal?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          bmr_kcal?: number | null
+          body_fat_pct?: number | null
+          calories_burned?: number | null
+          client_id?: string
+          created_at?: string | null
+          heart_rate_resting?: number | null
+          id?: string
+          muscle_mass_kg?: number | null
+          raw_data?: Json | null
+          recorded_at?: string | null
+          shop_id?: string
+          sleep_hours?: number | null
+          source?: string | null
+          steps?: number | null
+          tdee_kcal?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      nt_fitness_goals: {
+        Row: {
+          activity_multiplier: number | null
+          calorie_method: string | null
+          client_id: string
+          created_at: string | null
+          goal_type: string
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          shop_id: string
+          target_calories: number | null
+          target_carbs_g: number | null
+          target_fat_g: number | null
+          target_fiber_g: number | null
+          target_protein_g: number | null
+          target_water_ml: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          activity_multiplier?: number | null
+          calorie_method?: string | null
+          client_id: string
+          created_at?: string | null
+          goal_type: string
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          shop_id: string
+          target_calories?: number | null
+          target_carbs_g?: number | null
+          target_fat_g?: number | null
+          target_fiber_g?: number | null
+          target_protein_g?: number | null
+          target_water_ml?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          activity_multiplier?: number | null
+          calorie_method?: string | null
+          client_id?: string
+          created_at?: string | null
+          goal_type?: string
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          shop_id?: string
+          target_calories?: number | null
+          target_carbs_g?: number | null
+          target_fat_g?: number | null
+          target_fiber_g?: number | null
+          target_protein_g?: number | null
+          target_water_ml?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      nt_food_logs: {
+        Row: {
+          calories: number | null
+          carbs_g: number | null
+          client_id: string
+          created_at: string | null
+          fat_g: number | null
+          fiber_g: number | null
+          food_name: string
+          id: string
+          log_date: string
+          meal_type: string
+          notes: string | null
+          product_id: string | null
+          protein_g: number | null
+          quality_score: number | null
+          servings: number | null
+          shop_id: string
+        }
+        Insert: {
+          calories?: number | null
+          carbs_g?: number | null
+          client_id: string
+          created_at?: string | null
+          fat_g?: number | null
+          fiber_g?: number | null
+          food_name: string
+          id?: string
+          log_date?: string
+          meal_type?: string
+          notes?: string | null
+          product_id?: string | null
+          protein_g?: number | null
+          quality_score?: number | null
+          servings?: number | null
+          shop_id: string
+        }
+        Update: {
+          calories?: number | null
+          carbs_g?: number | null
+          client_id?: string
+          created_at?: string | null
+          fat_g?: number | null
+          fiber_g?: number | null
+          food_name?: string
+          id?: string
+          log_date?: string
+          meal_type?: string
+          notes?: string | null
+          product_id?: string | null
+          protein_g?: number | null
+          quality_score?: number | null
+          servings?: number | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nt_food_logs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "nt_food_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nt_food_product_ingredients: {
+        Row: {
+          additive_code: string | null
+          created_at: string | null
+          id: string
+          ingredient_name: string
+          is_additive: boolean | null
+          position: number | null
+          product_id: string
+          risk_level: string | null
+        }
+        Insert: {
+          additive_code?: string | null
+          created_at?: string | null
+          id?: string
+          ingredient_name: string
+          is_additive?: boolean | null
+          position?: number | null
+          product_id: string
+          risk_level?: string | null
+        }
+        Update: {
+          additive_code?: string | null
+          created_at?: string | null
+          id?: string
+          ingredient_name?: string
+          is_additive?: boolean | null
+          position?: number | null
+          product_id?: string
+          risk_level?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nt_food_product_ingredients_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "nt_food_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nt_food_product_nutrients: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          id: string
+          nutrient_name: string
+          per_serving: boolean | null
+          product_id: string
+          unit: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          nutrient_name: string
+          per_serving?: boolean | null
+          product_id: string
+          unit?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          nutrient_name?: string
+          per_serving?: boolean | null
+          product_id?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nt_food_product_nutrients_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "nt_food_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nt_food_products: {
+        Row: {
+          barcode: string | null
+          brand: string | null
+          calories_per_serving: number | null
+          category: string | null
+          created_at: string | null
+          external_id: string | null
+          id: string
+          image_url: string | null
+          is_verified: boolean | null
+          name: string
+          nova_group: number | null
+          nutriscore_grade: string | null
+          raw_data: Json | null
+          serving_size_g: number | null
+          serving_unit: string | null
+          source_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          barcode?: string | null
+          brand?: string | null
+          calories_per_serving?: number | null
+          category?: string | null
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          image_url?: string | null
+          is_verified?: boolean | null
+          name: string
+          nova_group?: number | null
+          nutriscore_grade?: string | null
+          raw_data?: Json | null
+          serving_size_g?: number | null
+          serving_unit?: string | null
+          source_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          barcode?: string | null
+          brand?: string | null
+          calories_per_serving?: number | null
+          category?: string | null
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          image_url?: string | null
+          is_verified?: boolean | null
+          name?: string
+          nova_group?: number | null
+          nutriscore_grade?: string | null
+          raw_data?: Json | null
+          serving_size_g?: number | null
+          serving_unit?: string | null
+          source_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nt_food_products_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "nt_food_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nt_food_quality_scores: {
+        Row: {
+          client_id: string | null
+          computed_at: string | null
+          goal_fit: number | null
+          id: string
+          ingredient_quality: number | null
+          nutrition_density: number | null
+          overall_score: number | null
+          product_id: string
+          recovery_fit: number | null
+          scoring_details: Json | null
+          shop_id: string | null
+          workout_fit: number | null
+        }
+        Insert: {
+          client_id?: string | null
+          computed_at?: string | null
+          goal_fit?: number | null
+          id?: string
+          ingredient_quality?: number | null
+          nutrition_density?: number | null
+          overall_score?: number | null
+          product_id: string
+          recovery_fit?: number | null
+          scoring_details?: Json | null
+          shop_id?: string | null
+          workout_fit?: number | null
+        }
+        Update: {
+          client_id?: string | null
+          computed_at?: string | null
+          goal_fit?: number | null
+          id?: string
+          ingredient_quality?: number | null
+          nutrition_density?: number | null
+          overall_score?: number | null
+          product_id?: string
+          recovery_fit?: number | null
+          scoring_details?: Json | null
+          shop_id?: string | null
+          workout_fit?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nt_food_quality_scores_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "nt_food_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nt_food_sources: {
+        Row: {
+          api_base_url: string | null
+          config: Json | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          source_name: string
+          source_type: string
+        }
+        Insert: {
+          api_base_url?: string | null
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          source_name: string
+          source_type: string
+        }
+        Update: {
+          api_base_url?: string | null
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          source_name?: string
+          source_type?: string
+        }
+        Relationships: []
+      }
+      nt_food_substitutions: {
+        Row: {
+          created_at: string | null
+          id: string
+          original_product_id: string
+          reason: string | null
+          score_improvement: number | null
+          substitute_product_id: string
+          substitution_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          original_product_id: string
+          reason?: string | null
+          score_improvement?: number | null
+          substitute_product_id: string
+          substitution_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          original_product_id?: string
+          reason?: string | null
+          score_improvement?: number | null
+          substitute_product_id?: string
+          substitution_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nt_food_substitutions_original_product_id_fkey"
+            columns: ["original_product_id"]
+            isOneToOne: false
+            referencedRelation: "nt_food_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nt_food_substitutions_substitute_product_id_fkey"
+            columns: ["substitute_product_id"]
+            isOneToOne: false
+            referencedRelation: "nt_food_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nt_meal_plans: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          created_by: string | null
+          day_type: string | null
+          grocery_list: Json | null
+          id: string
+          is_active: boolean | null
+          meals: Json | null
+          plan_name: string
+          plan_type: string | null
+          shop_id: string
+          target_calories: number | null
+          target_carbs_g: number | null
+          target_fat_g: number | null
+          target_protein_g: number | null
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          created_by?: string | null
+          day_type?: string | null
+          grocery_list?: Json | null
+          id?: string
+          is_active?: boolean | null
+          meals?: Json | null
+          plan_name: string
+          plan_type?: string | null
+          shop_id: string
+          target_calories?: number | null
+          target_carbs_g?: number | null
+          target_fat_g?: number | null
+          target_protein_g?: number | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          day_type?: string | null
+          grocery_list?: Json | null
+          id?: string
+          is_active?: boolean | null
+          meals?: Json | null
+          plan_name?: string
+          plan_type?: string | null
+          shop_id?: string
+          target_calories?: number | null
+          target_carbs_g?: number | null
+          target_fat_g?: number | null
+          target_protein_g?: number | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      nt_nutrition_profiles: {
+        Row: {
+          allergies: string[] | null
+          budget_level: string | null
+          client_id: string
+          cooking_level: string | null
+          created_at: string | null
+          dietary_style: string | null
+          digestive_notes: string | null
+          disliked_foods: string[] | null
+          hydration_goal_ml: number | null
+          id: string
+          intolerances: string[] | null
+          meal_frequency: number | null
+          shop_id: string
+          snack_frequency: number | null
+          supplement_usage: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          allergies?: string[] | null
+          budget_level?: string | null
+          client_id: string
+          cooking_level?: string | null
+          created_at?: string | null
+          dietary_style?: string | null
+          digestive_notes?: string | null
+          disliked_foods?: string[] | null
+          hydration_goal_ml?: number | null
+          id?: string
+          intolerances?: string[] | null
+          meal_frequency?: number | null
+          shop_id: string
+          snack_frequency?: number | null
+          supplement_usage?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          allergies?: string[] | null
+          budget_level?: string | null
+          client_id?: string
+          cooking_level?: string | null
+          created_at?: string | null
+          dietary_style?: string | null
+          digestive_notes?: string | null
+          disliked_foods?: string[] | null
+          hydration_goal_ml?: number | null
+          id?: string
+          intolerances?: string[] | null
+          meal_frequency?: number | null
+          shop_id?: string
+          snack_frequency?: number | null
+          supplement_usage?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      nt_workout_day_types: {
+        Row: {
+          calorie_bias: number | null
+          carb_bias: number | null
+          created_at: string | null
+          day_type: string
+          description: string | null
+          fat_bias: number | null
+          id: string
+          is_default: boolean | null
+          label: string
+          protein_bias: number | null
+          shop_id: string | null
+        }
+        Insert: {
+          calorie_bias?: number | null
+          carb_bias?: number | null
+          created_at?: string | null
+          day_type: string
+          description?: string | null
+          fat_bias?: number | null
+          id?: string
+          is_default?: boolean | null
+          label: string
+          protein_bias?: number | null
+          shop_id?: string | null
+        }
+        Update: {
+          calorie_bias?: number | null
+          carb_bias?: number | null
+          created_at?: string | null
+          day_type?: string
+          description?: string | null
+          fat_bias?: number | null
+          id?: string
+          is_default?: boolean | null
+          label?: string
+          protein_bias?: number | null
+          shop_id?: string | null
+        }
+        Relationships: []
+      }
       onboarding_progress: {
         Row: {
           completed_steps: number[] | null
