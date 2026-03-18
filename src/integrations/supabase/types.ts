@@ -37438,6 +37438,42 @@ export type Database = {
         }
         Relationships: []
       }
+      pt_ai_recommendations: {
+        Row: {
+          acted_on: boolean | null
+          client_id: string
+          confidence: number | null
+          content: Json
+          created_at: string
+          expires_at: string | null
+          id: string
+          shop_id: string
+          type: string
+        }
+        Insert: {
+          acted_on?: boolean | null
+          client_id: string
+          confidence?: number | null
+          content?: Json
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          shop_id: string
+          type: string
+        }
+        Update: {
+          acted_on?: boolean | null
+          client_id?: string
+          confidence?: number | null
+          content?: Json
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          shop_id?: string
+          type?: string
+        }
+        Relationships: []
+      }
       pt_automation_rules: {
         Row: {
           channel: string
@@ -37484,6 +37520,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pt_biometric_history: {
+        Row: {
+          calories_burned: number | null
+          client_id: string
+          created_at: string
+          heart_rate_avg: number | null
+          heart_rate_resting: number | null
+          id: string
+          raw_data: Json | null
+          recorded_at: string
+          shop_id: string
+          sleep_hours: number | null
+          sleep_quality: string | null
+          source: string
+          steps: number | null
+        }
+        Insert: {
+          calories_burned?: number | null
+          client_id: string
+          created_at?: string
+          heart_rate_avg?: number | null
+          heart_rate_resting?: number | null
+          id?: string
+          raw_data?: Json | null
+          recorded_at?: string
+          shop_id: string
+          sleep_hours?: number | null
+          sleep_quality?: string | null
+          source?: string
+          steps?: number | null
+        }
+        Update: {
+          calories_burned?: number | null
+          client_id?: string
+          created_at?: string
+          heart_rate_avg?: number | null
+          heart_rate_resting?: number | null
+          id?: string
+          raw_data?: Json | null
+          recorded_at?: string
+          shop_id?: string
+          sleep_hours?: number | null
+          sleep_quality?: string | null
+          source?: string
+          steps?: number | null
+        }
+        Relationships: []
       }
       pt_body_metrics: {
         Row: {
@@ -37827,6 +37911,7 @@ export type Database = {
           shop_id: string
           strength_affinity: number | null
           updated_at: string | null
+          wearable_boost: Json | null
         }
         Insert: {
           aesthetics_affinity?: number | null
@@ -37843,6 +37928,7 @@ export type Database = {
           shop_id: string
           strength_affinity?: number | null
           updated_at?: string | null
+          wearable_boost?: Json | null
         }
         Update: {
           aesthetics_affinity?: number | null
@@ -37859,6 +37945,7 @@ export type Database = {
           shop_id?: string
           strength_affinity?: number | null
           updated_at?: string | null
+          wearable_boost?: Json | null
         }
         Relationships: []
       }
