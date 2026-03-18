@@ -63,3 +63,9 @@ verify_jwt = false
 
 [functions.pt-automations]
 verify_jwt = false
+
+[functions.nutrition-food-lookup]
+verify_jwt = false
+
+[functions.nutrition-engine]
+verify_jwt = false
