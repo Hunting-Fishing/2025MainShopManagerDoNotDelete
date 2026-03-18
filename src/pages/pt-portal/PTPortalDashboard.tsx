@@ -85,7 +85,7 @@ export default function PTPortalDashboard() {
       }
       setClient(cl);
 
-      const [sessRes, metRes, progRes, pkgRes, msgRes, logRes, trainerRes, photosRes, streakRes] = await Promise.all([
+      const [sessRes, metRes, progRes, pkgRes, msgRes, logRes, trainerRes, photosRes, streakRes, notifRes] = await Promise.all([
         (supabase as any).from('pt_sessions').select('id, session_date, duration_minutes, session_type, status, location')
           .eq('client_id', cl.id).order('session_date', { ascending: false }).limit(20),
         (supabase as any).from('pt_body_metrics').select('id, recorded_date, weight_kg, body_fat_percent, chest_cm, waist_cm')
@@ -106,6 +106,9 @@ export default function PTPortalDashboard() {
           .eq('client_id', cl.id).order('photo_date', { ascending: false }).limit(20),
         (supabase as any).from('pt_workout_logs').select('completed_at')
           .eq('client_id', cl.id).order('completed_at', { ascending: false }).limit(100),
+        (supabase as any).from('pt_notifications').select('*')
+          .eq('client_id', cl.id).eq('is_read', false)
+          .order('created_at', { ascending: false }).limit(10),
       ]);
 
       setSessions(sessRes.data || []);
