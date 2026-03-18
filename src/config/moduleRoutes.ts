@@ -1849,6 +1849,27 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Developer', href: '/export/developer', icon: Code, description: 'API & developer tools', group: 'Resources' },
     ],
   },
+  personal_trainer: {
+    slug: 'personal_trainer',
+    name: 'Personal Trainer',
+    description: 'Client management, workout programming, and session scheduling',
+    icon: Dumbbell,
+    dashboardRoute: '/personal-trainer',
+    color: 'hsl(var(--chart-2))',
+    gradientFrom: 'from-orange-500',
+    gradientTo: 'to-red-600',
+    sections: [
+      { title: 'Dashboard', href: '/personal-trainer', icon: Gauge, description: 'Module overview and KPIs' },
+      { title: 'Clients', href: '/personal-trainer/clients', icon: Users, description: 'Client management' },
+      { title: 'Workout Programs', href: '/personal-trainer/programs', icon: ClipboardList, description: 'Training programs' },
+      { title: 'Exercises', href: '/personal-trainer/exercises', icon: Target, description: 'Exercise library' },
+      { title: 'Sessions', href: '/personal-trainer/sessions', icon: Calendar, description: 'Session scheduling' },
+      { title: 'Body Metrics', href: '/personal-trainer/metrics', icon: Activity, description: 'Progress tracking' },
+      { title: 'Packages', href: '/personal-trainer/packages', icon: Package, description: 'Session packages', group: 'Billing' },
+      { title: 'Client Billing', href: '/personal-trainer/billing', icon: CreditCard, description: 'Billing management', group: 'Billing' },
+      { title: 'Settings', href: '/personal-trainer/settings', icon: Settings, description: 'Module settings' },
+    ],
+  },
 };
 
 export const getModuleRoute = (slug: string): ModuleRouteConfig | undefined => {
