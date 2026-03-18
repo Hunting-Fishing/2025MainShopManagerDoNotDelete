@@ -38372,6 +38372,90 @@ export type Database = {
           },
         ]
       }
+      pt_workout_logs: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          created_at: string | null
+          duration_seconds: number | null
+          exercise_id: string | null
+          id: string
+          notes: string | null
+          program_id: string
+          reps_completed: string | null
+          sets_completed: number | null
+          shop_id: string
+          weight_used: number | null
+          workout_day_id: string
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          exercise_id?: string | null
+          id?: string
+          notes?: string | null
+          program_id: string
+          reps_completed?: string | null
+          sets_completed?: number | null
+          shop_id: string
+          weight_used?: number | null
+          workout_day_id: string
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          exercise_id?: string | null
+          id?: string
+          notes?: string | null
+          program_id?: string
+          reps_completed?: string | null
+          sets_completed?: number | null
+          shop_id?: string
+          weight_used?: number | null
+          workout_day_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_workout_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_workout_logs_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "pt_exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_workout_logs_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "pt_workout_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_workout_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_workout_logs_workout_day_id_fkey"
+            columns: ["workout_day_id"]
+            isOneToOne: false
+            referencedRelation: "pt_workout_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_workout_programs: {
         Row: {
           created_at: string | null
