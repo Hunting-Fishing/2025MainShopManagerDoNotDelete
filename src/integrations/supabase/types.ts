@@ -37497,6 +37497,113 @@ export type Database = {
           },
         ]
       }
+      pt_challenge_participants: {
+        Row: {
+          challenge_id: string
+          client_id: string
+          completed: boolean | null
+          completed_at: string | null
+          current_progress: number | null
+          id: string
+          joined_at: string
+        }
+        Insert: {
+          challenge_id: string
+          client_id: string
+          completed?: boolean | null
+          completed_at?: string | null
+          current_progress?: number | null
+          id?: string
+          joined_at?: string
+        }
+        Update: {
+          challenge_id?: string
+          client_id?: string
+          completed?: boolean | null
+          completed_at?: string | null
+          current_progress?: number | null
+          id?: string
+          joined_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "pt_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_challenge_participants_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_challenges: {
+        Row: {
+          challenge_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string
+          goal_unit: string | null
+          goal_value: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          prize_description: string | null
+          shop_id: string
+          start_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          challenge_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date: string
+          goal_unit?: string | null
+          goal_value?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          prize_description?: string | null
+          shop_id: string
+          start_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          challenge_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string
+          goal_unit?: string | null
+          goal_value?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          prize_description?: string | null
+          shop_id?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_challenges_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_check_ins: {
         Row: {
           check_in_date: string
@@ -37831,6 +37938,56 @@ export type Database = {
           },
         ]
       }
+      pt_community_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          group_type: string
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          max_members: number | null
+          name: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          group_type?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          max_members?: number | null
+          name: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          group_type?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          max_members?: number | null
+          name?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_community_groups_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_exercises: {
         Row: {
           alternatives: string | null
@@ -37887,6 +38044,145 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: []
+      }
+      pt_group_members: {
+        Row: {
+          client_id: string
+          group_id: string
+          id: string
+          joined_at: string
+          role: string
+        }
+        Insert: {
+          client_id: string
+          group_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+        }
+        Update: {
+          client_id?: string
+          group_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_group_members_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "pt_community_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_group_posts: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          group_id: string
+          id: string
+          likes_count: number | null
+          post_type: string | null
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          group_id: string
+          id?: string
+          likes_count?: number | null
+          post_type?: string | null
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          likes_count?: number | null
+          post_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_group_posts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "pt_community_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_gym_branding: {
+        Row: {
+          accent_color: string | null
+          created_at: string
+          font_family: string | null
+          footer_text: string | null
+          gym_name: string | null
+          id: string
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          shop_id: string
+          social_facebook: string | null
+          social_instagram: string | null
+          social_website: string | null
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string
+          font_family?: string | null
+          footer_text?: string | null
+          gym_name?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          shop_id: string
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_website?: string | null
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string
+          font_family?: string | null
+          footer_text?: string | null
+          gym_name?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          shop_id?: string
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_website?: string | null
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_gym_branding_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pt_invoices: {
         Row: {
@@ -38024,6 +38320,56 @@ export type Database = {
             columns: ["trainer_id"]
             isOneToOne: false
             referencedRelation: "pt_trainers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_nutrition_logs: {
+        Row: {
+          calories: number | null
+          carbs_g: number | null
+          client_id: string
+          created_at: string
+          fat_g: number | null
+          food_item: string
+          id: string
+          log_date: string
+          meal_type: string
+          notes: string | null
+          protein_g: number | null
+        }
+        Insert: {
+          calories?: number | null
+          carbs_g?: number | null
+          client_id: string
+          created_at?: string
+          fat_g?: number | null
+          food_item: string
+          id?: string
+          log_date?: string
+          meal_type: string
+          notes?: string | null
+          protein_g?: number | null
+        }
+        Update: {
+          calories?: number | null
+          carbs_g?: number | null
+          client_id?: string
+          created_at?: string
+          fat_g?: number | null
+          food_item?: string
+          id?: string
+          log_date?: string
+          meal_type?: string
+          notes?: string | null
+          protein_g?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_nutrition_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
             referencedColumns: ["id"]
           },
         ]
@@ -38172,6 +38518,79 @@ export type Database = {
           },
         ]
       }
+      pt_referrals: {
+        Row: {
+          converted_at: string | null
+          created_at: string
+          id: string
+          referred_client_id: string | null
+          referred_email: string | null
+          referred_name: string
+          referred_phone: string | null
+          referrer_client_id: string
+          reward_claimed: boolean | null
+          reward_type: string | null
+          reward_value: number | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          referred_client_id?: string | null
+          referred_email?: string | null
+          referred_name: string
+          referred_phone?: string | null
+          referrer_client_id: string
+          reward_claimed?: boolean | null
+          reward_type?: string | null
+          reward_value?: number | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          referred_client_id?: string | null
+          referred_email?: string | null
+          referred_name?: string
+          referred_phone?: string | null
+          referrer_client_id?: string
+          reward_claimed?: boolean | null
+          reward_type?: string | null
+          reward_value?: number | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_referrals_referred_client_id_fkey"
+            columns: ["referred_client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_referrals_referrer_client_id_fkey"
+            columns: ["referrer_client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_referrals_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_sessions: {
         Row: {
           attendance: string | null
@@ -38230,6 +38649,80 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_settings: {
+        Row: {
+          allow_client_booking: boolean | null
+          auto_checkin_reminder: boolean | null
+          cancellation_policy_hours: number | null
+          cancellation_policy_text: string | null
+          checkin_reminder_day: string | null
+          created_at: string
+          default_calorie_target: number | null
+          default_hydration_target: number | null
+          default_protein_target: number | null
+          default_session_duration: number | null
+          id: string
+          max_daily_sessions: number | null
+          package_expiry_reminder_days: number | null
+          session_buffer_minutes: number | null
+          session_low_reminder_count: number | null
+          session_types: string | null
+          shop_id: string
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          allow_client_booking?: boolean | null
+          auto_checkin_reminder?: boolean | null
+          cancellation_policy_hours?: number | null
+          cancellation_policy_text?: string | null
+          checkin_reminder_day?: string | null
+          created_at?: string
+          default_calorie_target?: number | null
+          default_hydration_target?: number | null
+          default_protein_target?: number | null
+          default_session_duration?: number | null
+          id?: string
+          max_daily_sessions?: number | null
+          package_expiry_reminder_days?: number | null
+          session_buffer_minutes?: number | null
+          session_low_reminder_count?: number | null
+          session_types?: string | null
+          shop_id: string
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          allow_client_booking?: boolean | null
+          auto_checkin_reminder?: boolean | null
+          cancellation_policy_hours?: number | null
+          cancellation_policy_text?: string | null
+          checkin_reminder_day?: string | null
+          created_at?: string
+          default_calorie_target?: number | null
+          default_hydration_target?: number | null
+          default_protein_target?: number | null
+          default_session_duration?: number | null
+          id?: string
+          max_daily_sessions?: number | null
+          package_expiry_reminder_days?: number | null
+          session_buffer_minutes?: number | null
+          session_low_reminder_count?: number | null
+          session_types?: string | null
+          shop_id?: string
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -38295,6 +38788,53 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_wearable_connections: {
+        Row: {
+          access_token: string | null
+          client_id: string
+          connection_status: string | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          provider: string
+          refresh_token: string | null
+          sync_data: Json | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          client_id: string
+          connection_status?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          provider: string
+          refresh_token?: string | null
+          sync_data?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          client_id?: string
+          connection_status?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          provider?: string
+          refresh_token?: string | null
+          sync_data?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_wearable_connections_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
             referencedColumns: ["id"]
           },
         ]

@@ -399,6 +399,12 @@ const PersonalTrainerTrainers = lazy(() => import('@/pages/personal-trainer/Pers
 const PersonalTrainerCheckIns = lazy(() => import('@/pages/personal-trainer/PersonalTrainerCheckIns'));
 const PersonalTrainerMessages = lazy(() => import('@/pages/personal-trainer/PersonalTrainerMessages'));
 const PersonalTrainerReports = lazy(() => import('@/pages/personal-trainer/PersonalTrainerReports'));
+const PersonalTrainerCommunity = lazy(() => import('@/pages/personal-trainer/PersonalTrainerCommunity'));
+const PersonalTrainerChallenges = lazy(() => import('@/pages/personal-trainer/PersonalTrainerChallenges'));
+const PersonalTrainerReferrals = lazy(() => import('@/pages/personal-trainer/PersonalTrainerReferrals'));
+const PersonalTrainerBranding = lazy(() => import('@/pages/personal-trainer/PersonalTrainerBranding'));
+const PersonalTrainerNutrition = lazy(() => import('@/pages/personal-trainer/PersonalTrainerNutrition'));
+const PersonalTrainerWearables = lazy(() => import('@/pages/personal-trainer/PersonalTrainerWearables'));
 import { PersonalTrainerLayout } from '@/components/personal-trainer';
 
 // Personal Trainer Portal
@@ -1647,6 +1653,12 @@ function App() {
                   <Route path="/packages" element={<PersonalTrainerPackages />} />
                   <Route path="/billing" element={<PersonalTrainerBilling />} />
                   <Route path="/settings" element={<PersonalTrainerSettings />} />
+                  <Route path="/community" element={<PersonalTrainerCommunity />} />
+                  <Route path="/challenges" element={<PersonalTrainerChallenges />} />
+                  <Route path="/referrals" element={<PersonalTrainerReferrals />} />
+                  <Route path="/branding" element={<PersonalTrainerBranding />} />
+                  <Route path="/nutrition" element={<PersonalTrainerNutrition />} />
+                  <Route path="/wearables" element={<PersonalTrainerWearables />} />
                 </Routes>
               </PersonalTrainerLayout>
             </AuthGate>

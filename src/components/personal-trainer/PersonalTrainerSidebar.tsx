@@ -21,6 +21,10 @@ import {
   Package,
   BarChart3,
   Target,
+  Trophy,
+  Gift,
+  Palette,
+  Utensils,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -67,6 +71,13 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Workout Programs', href: '/personal-trainer/programs', icon: ClipboardList, color: 'from-violet-500 to-purple-600' },
       { title: 'Exercise Library', href: '/personal-trainer/exercises', icon: Target, color: 'from-pink-500 to-rose-500' },
+      { title: 'Nutrition', href: '/personal-trainer/nutrition', icon: Utensils, color: 'from-green-500 to-emerald-500' },
+    ],
+  },
+  {
+    title: 'Integrations',
+    items: [
+      { title: 'Wearables', href: '/personal-trainer/wearables', icon: Activity, color: 'from-cyan-500 to-blue-500' },
     ],
   },
   {
@@ -83,8 +94,17 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: 'Engagement',
+    items: [
+      { title: 'Community', href: '/personal-trainer/community', icon: Users, color: 'from-blue-500 to-indigo-600' },
+      { title: 'Challenges', href: '/personal-trainer/challenges', icon: Trophy, color: 'from-amber-500 to-yellow-600' },
+      { title: 'Referrals', href: '/personal-trainer/referrals', icon: Gift, color: 'from-pink-500 to-rose-600' },
+    ],
+  },
+  {
     title: 'Configuration',
     items: [
+      { title: 'Branding', href: '/personal-trainer/branding', icon: Palette, color: 'from-violet-500 to-purple-600' },
       { title: 'Settings', href: '/personal-trainer/settings', icon: Settings, color: 'from-slate-500 to-gray-600' },
     ],
   },
