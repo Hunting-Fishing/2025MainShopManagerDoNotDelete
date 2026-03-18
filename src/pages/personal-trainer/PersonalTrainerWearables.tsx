@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Watch, Loader2, Link, Unlink, RefreshCw, Activity } from 'lucide-react';
+import { Watch, Loader2, Link, Unlink, RefreshCw, Activity, Sparkles } from 'lucide-react';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { useSaveBiometricSnapshot } from '@/hooks/usePTAIInsights';
 import { format } from 'date-fns';
 
 const PROVIDERS = [
