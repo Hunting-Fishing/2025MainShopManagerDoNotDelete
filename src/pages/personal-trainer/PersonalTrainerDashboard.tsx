@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Dumbbell, Calendar, DollarSign, Users, Plus, ClipboardList, Activity, Package, Target, UserPlus,
-  AlertTriangle, Clock, MessageSquare, TrendingDown, CheckCircle2
+  AlertTriangle, Clock, MessageSquare, TrendingDown, CheckCircle2, Zap, Bell, TrendingUp
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, subDays } from 'date-fns';
+import { format, subDays, startOfMonth } from 'date-fns';
 
 export default function PersonalTrainerDashboard() {
   const navigate = useNavigate();
@@ -57,6 +57,33 @@ export default function PersonalTrainerDashboard() {
     queryFn: async () => {
       if (!shopId) return 0;
       const { count } = await (supabase as any).from('pt_packages').select('*', { count: 'exact', head: true }).eq('shop_id', shopId).eq('is_active', true);
+      return count || 0;
+    },
+    enabled: !!shopId,
+  });
+
+  // Revenue this month
+  const { data: monthlyRevenue = 0 } = useQuery({
+    queryKey: ['pt-monthly-revenue', shopId],
+    queryFn: async () => {
+      if (!shopId) return 0;
+      const monthStart = startOfMonth(new Date()).toISOString();
+      const { data } = await (supabase as any).from('pt_invoices')
+        .select('amount').eq('shop_id', shopId).eq('status', 'paid')
+        .gte('created_at', monthStart);
+      return (data || []).reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0);
+    },
+    enabled: !!shopId,
+  });
+
+  // New leads (clients added in last 30 days)
+  const { data: newLeads = 0 } = useQuery({
+    queryKey: ['pt-new-leads', shopId],
+    queryFn: async () => {
+      if (!shopId) return 0;
+      const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+      const { count } = await (supabase as any).from('pt_clients').select('*', { count: 'exact', head: true })
+        .eq('shop_id', shopId).gte('created_at', thirtyDaysAgo);
       return count || 0;
     },
     enabled: !!shopId,
@@ -117,7 +144,7 @@ export default function PersonalTrainerDashboard() {
     enabled: !!shopId,
   });
 
-  // Unread messages (latest unread from each client)
+  // Unread messages
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['pt-dashboard-unread', shopId],
     queryFn: async () => {
@@ -130,11 +157,24 @@ export default function PersonalTrainerDashboard() {
     enabled: !!shopId,
   });
 
+  // Unread notifications count
+  const { data: unreadNotifications = 0 } = useQuery({
+    queryKey: ['pt-dashboard-notif-count', shopId],
+    queryFn: async () => {
+      if (!shopId) return 0;
+      const { count } = await (supabase as any).from('pt_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('shop_id', shopId).eq('is_read', false);
+      return count || 0;
+    },
+    enabled: !!shopId,
+  });
+
   const stats = [
     { label: 'Active Clients', value: clientCount, icon: Users, color: 'from-blue-500 to-cyan-500' },
     { label: "Today's Sessions", value: todaySessions.length, icon: Calendar, color: 'from-orange-500 to-red-500' },
-    { label: 'Programs', value: programCount, icon: ClipboardList, color: 'from-violet-500 to-purple-600' },
-    { label: 'Active Packages', value: activePackages, icon: Package, color: 'from-emerald-500 to-teal-500' },
+    { label: 'Revenue (Month)', value: `$${monthlyRevenue.toLocaleString()}`, icon: DollarSign, color: 'from-emerald-500 to-green-500' },
+    { label: 'New Leads (30d)', value: newLeads, icon: UserPlus, color: 'from-violet-500 to-purple-600' },
     { label: 'Unread Messages', value: unreadCount, icon: MessageSquare, color: 'from-rose-500 to-pink-600' },
     { label: 'Overdue Check-ins', value: overdueCheckIns.length, icon: Clock, color: 'from-amber-500 to-orange-600' },
   ];
@@ -143,7 +183,7 @@ export default function PersonalTrainerDashboard() {
     { label: 'Add Client', icon: UserPlus, onClick: () => navigate('/personal-trainer/clients'), color: 'from-blue-500 to-cyan-500' },
     { label: 'Book Session', icon: Calendar, onClick: () => navigate('/personal-trainer/sessions'), color: 'from-orange-500 to-red-500' },
     { label: 'New Program', icon: ClipboardList, onClick: () => navigate('/personal-trainer/programs'), color: 'from-violet-500 to-purple-600' },
-    { label: 'Exercises', icon: Target, onClick: () => navigate('/personal-trainer/exercises'), color: 'from-pink-500 to-rose-500' },
+    { label: 'Automations', icon: Zap, onClick: () => navigate('/personal-trainer/automations'), color: 'from-yellow-500 to-orange-500' },
   ];
 
   return (
@@ -156,10 +196,18 @@ export default function PersonalTrainerDashboard() {
           </h1>
           <p className="text-muted-foreground mt-1">Your daily control center</p>
         </div>
-        <Button onClick={() => navigate('/personal-trainer/clients')} className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg">
-          <Plus className="h-4 w-4 mr-2" />
-          New Client
-        </Button>
+        <div className="flex gap-2">
+          {unreadNotifications > 0 && (
+            <Button variant="outline" size="sm" onClick={() => navigate('/personal-trainer/automations')} className="relative">
+              <Bell className="h-4 w-4 mr-1" />
+              <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center">{unreadNotifications}</span>
+            </Button>
+          )}
+          <Button onClick={() => navigate('/personal-trainer/clients')} className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg">
+            <Plus className="h-4 w-4 mr-2" />
+            New Client
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -199,7 +247,7 @@ export default function PersonalTrainerDashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Calendar className="h-5 w-5 text-orange-500" />
-              Today's Sessions
+              Today's Schedule
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -234,12 +282,12 @@ export default function PersonalTrainerDashboard() {
           </CardContent>
         </Card>
 
-        {/* Overdue Check-Ins */}
+        {/* Clients Needing Review (Overdue Check-Ins) */}
         <Card className="border-0 shadow-md">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Clock className="h-5 w-5 text-amber-500" />
-              Overdue Check-Ins
+              Clients Needing Review
             </CardTitle>
           </CardHeader>
           <CardContent>

@@ -25,6 +25,7 @@ import {
   Gift,
   Palette,
   Utensils,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -96,6 +97,7 @@ const navSections: NavSection[] = [
   {
     title: 'Engagement',
     items: [
+      { title: 'Automations', href: '/personal-trainer/automations', icon: Zap, color: 'from-yellow-500 to-orange-600' },
       { title: 'Community', href: '/personal-trainer/community', icon: Users, color: 'from-blue-500 to-indigo-600' },
       { title: 'Challenges', href: '/personal-trainer/challenges', icon: Trophy, color: 'from-amber-500 to-yellow-600' },
       { title: 'Referrals', href: '/personal-trainer/referrals', icon: Gift, color: 'from-pink-500 to-rose-600' },

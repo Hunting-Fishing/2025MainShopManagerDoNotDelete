@@ -16,7 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dumbbell, LogOut, Calendar, Activity, Loader2, ClipboardList, CheckCircle2,
   MessageSquare, Send, ClipboardCheck, Package, CreditCard, User, Utensils,
-  Camera, Flame, X, Upload
+  Camera, Flame, X, Upload, Bell
 } from 'lucide-react';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,8 @@ export default function PTPortalDashboard() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [workoutStreak, setWorkoutStreak] = useState(0);
   const [cancellingSession, setCancellingSession] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Check-in state
   const [checkInForm, setCheckInForm] = useState({ weight: '', mood: 'good', energy_level: [7], sleep_hours: '', notes: '', workout_compliance: [7], soreness_level: [3], pain_issues: '' });
@@ -83,7 +85,7 @@ export default function PTPortalDashboard() {
       }
       setClient(cl);
 
-      const [sessRes, metRes, progRes, pkgRes, msgRes, logRes, trainerRes, photosRes, streakRes] = await Promise.all([
+      const [sessRes, metRes, progRes, pkgRes, msgRes, logRes, trainerRes, photosRes, streakRes, notifRes] = await Promise.all([
         (supabase as any).from('pt_sessions').select('id, session_date, duration_minutes, session_type, status, location')
           .eq('client_id', cl.id).order('session_date', { ascending: false }).limit(20),
         (supabase as any).from('pt_body_metrics').select('id, recorded_date, weight_kg, body_fat_percent, chest_cm, waist_cm')
@@ -104,6 +106,9 @@ export default function PTPortalDashboard() {
           .eq('client_id', cl.id).order('photo_date', { ascending: false }).limit(20),
         (supabase as any).from('pt_workout_logs').select('completed_at')
           .eq('client_id', cl.id).order('completed_at', { ascending: false }).limit(100),
+        (supabase as any).from('pt_notifications').select('*')
+          .eq('client_id', cl.id).eq('is_read', false)
+          .order('created_at', { ascending: false }).limit(10),
       ]);
 
       setSessions(sessRes.data || []);
@@ -114,6 +119,7 @@ export default function PTPortalDashboard() {
       setMessages(msgRes.data || []);
       setTrainers(trainerRes.data || []);
       setCompletedExercises(new Set((logRes.data || []).map((l: any) => `${l.workout_day_id}_${l.exercise_id}`)));
+      setNotifications(notifRes.data || []);
       setProgressPhotos(photosRes.data || []);
 
       // Calculate workout streak (consecutive days with logs)
@@ -301,7 +307,32 @@ export default function PTPortalDashboard() {
               {client && <p className="text-xs text-muted-foreground">Welcome, {client.first_name}!</p>}
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleSignOut}><LogOut className="h-4 w-4 mr-2" />Sign Out</Button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Button variant="ghost" size="icon" onClick={() => setShowNotifications(!showNotifications)} className="relative">
+                <Bell className="h-4 w-4" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                    {notifications.length}
+                  </span>
+                )}
+              </Button>
+              {showNotifications && notifications.length > 0 && (
+                <div className="absolute right-0 top-10 w-72 bg-background border rounded-lg shadow-xl z-50 p-2 space-y-1 max-h-60 overflow-auto">
+                  {notifications.map((n: any) => (
+                    <div key={n.id} className="p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer" onClick={async () => {
+                      await (supabase as any).from('pt_notifications').update({ is_read: true, read_at: new Date().toISOString() }).eq('id', n.id);
+                      setNotifications(prev => prev.filter(p => p.id !== n.id));
+                    }}>
+                      <p className="text-xs font-medium">{n.title}</p>
+                      <p className="text-[10px] text-muted-foreground line-clamp-2">{n.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}><LogOut className="h-4 w-4 mr-2" />Sign Out</Button>
+          </div>
         </div>
       </header>
 

@@ -37438,6 +37438,53 @@ export type Database = {
         }
         Relationships: []
       }
+      pt_automation_rules: {
+        Row: {
+          channel: string
+          created_at: string | null
+          delay_minutes: number
+          id: string
+          is_active: boolean
+          message_template: string
+          metadata: Json | null
+          shop_id: string
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          channel?: string
+          created_at?: string | null
+          delay_minutes?: number
+          id?: string
+          is_active?: boolean
+          message_template: string
+          metadata?: Json | null
+          shop_id: string
+          trigger_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string | null
+          delay_minutes?: number
+          id?: string
+          is_active?: boolean
+          message_template?: string
+          metadata?: Json | null
+          shop_id?: string
+          trigger_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_automation_rules_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_body_metrics: {
         Row: {
           arm_cm: number | null
@@ -38317,6 +38364,73 @@ export type Database = {
           },
           {
             foreignKeyName: "pt_messages_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "pt_trainers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_notifications: {
+        Row: {
+          channel: string
+          client_id: string | null
+          created_at: string | null
+          id: string
+          is_read: boolean
+          message: string
+          metadata: Json | null
+          read_at: string | null
+          shop_id: string
+          title: string
+          trainer_id: string | null
+          trigger_type: string
+        }
+        Insert: {
+          channel?: string
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          metadata?: Json | null
+          read_at?: string | null
+          shop_id: string
+          title: string
+          trainer_id?: string | null
+          trigger_type: string
+        }
+        Update: {
+          channel?: string
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          metadata?: Json | null
+          read_at?: string | null
+          shop_id?: string
+          title?: string
+          trainer_id?: string | null
+          trigger_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_notifications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_notifications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_notifications_trainer_id_fkey"
             columns: ["trainer_id"]
             isOneToOne: false
             referencedRelation: "pt_trainers"
