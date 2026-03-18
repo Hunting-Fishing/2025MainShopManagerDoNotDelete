@@ -74,6 +74,7 @@ const navSections: NavSection[] = [
       { title: 'Workout Programs', href: '/personal-trainer/programs', icon: ClipboardList, color: 'from-violet-500 to-purple-600' },
       { title: 'Exercise Library', href: '/personal-trainer/exercises', icon: Target, color: 'from-pink-500 to-rose-500' },
       { title: 'Nutrition', href: '/personal-trainer/nutrition', icon: Utensils, color: 'from-green-500 to-emerald-500' },
+      { title: 'AI Coach', href: '/personal-trainer/ai-chat', icon: Bot, color: 'from-orange-500 to-red-600' },
     ],
   },
   {
