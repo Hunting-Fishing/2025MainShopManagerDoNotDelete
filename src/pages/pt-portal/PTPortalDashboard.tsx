@@ -603,7 +603,14 @@ export default function PTPortalDashboard() {
                       <p className="font-medium text-sm">{format(new Date(s.session_date), 'EEEE, MMM d')}</p>
                       <p className="text-xs text-muted-foreground">{format(new Date(s.session_date), 'h:mm a')} · {s.duration_minutes}min · {s.session_type?.replace('_', ' ')}</p>
                     </div>
-                    <Badge variant={s.status === 'completed' ? 'default' : s.status === 'canceled' ? 'destructive' : 'secondary'}>{s.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      {s.status === 'scheduled' && new Date(s.session_date) > new Date() && (
+                        <Button size="sm" variant="ghost" className="text-destructive text-xs h-7" disabled={cancellingSession === s.id} onClick={() => cancelSession(s.id)}>
+                          {cancellingSession === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3 mr-1" />}Cancel
+                        </Button>
+                      )}
+                      <Badge variant={s.status === 'completed' ? 'default' : s.status === 'canceled' ? 'destructive' : 'secondary'}>{s.status}</Badge>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
