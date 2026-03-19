@@ -38570,6 +38570,7 @@ export type Database = {
       }
       pt_client_medical_conditions: {
         Row: {
+          added_by: string | null
           category: string
           clearance_date: string | null
           cleared_by_physician: boolean | null
@@ -38588,6 +38589,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          added_by?: string | null
           category: string
           clearance_date?: string | null
           cleared_by_physician?: boolean | null
@@ -38606,6 +38608,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          added_by?: string | null
           category?: string
           clearance_date?: string | null
           cleared_by_physician?: boolean | null

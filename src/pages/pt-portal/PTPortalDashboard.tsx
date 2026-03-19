@@ -16,8 +16,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dumbbell, LogOut, Calendar, Activity, Loader2, ClipboardList, CheckCircle2,
   MessageSquare, Send, ClipboardCheck, Package, CreditCard, User, Utensils,
-  Camera, Flame, X, Upload, Bell
+  Camera, Flame, X, Upload, Bell, HeartPulse
 } from 'lucide-react';
+import ClientPortalMedical from '@/components/pt-portal/ClientPortalMedical';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -384,8 +385,9 @@ export default function PTPortalDashboard() {
         </div>
 
         <Tabs defaultValue="workouts">
-          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8">
+          <TabsList className="grid w-full grid-cols-5 sm:grid-cols-9">
             <TabsTrigger value="workouts" className="text-xs"><Dumbbell className="h-3 w-3 mr-1" />Workouts</TabsTrigger>
+            <TabsTrigger value="health" className="text-xs"><HeartPulse className="h-3 w-3 mr-1" />Health</TabsTrigger>
             <TabsTrigger value="checkin" className="text-xs"><ClipboardCheck className="h-3 w-3 mr-1" />Check-In</TabsTrigger>
             <TabsTrigger value="messages" className="text-xs"><MessageSquare className="h-3 w-3 mr-1" />Messages</TabsTrigger>
             <TabsTrigger value="progress" className="text-xs"><Activity className="h-3 w-3 mr-1" />Progress</TabsTrigger>
@@ -394,6 +396,13 @@ export default function PTPortalDashboard() {
             <TabsTrigger value="nutrition" className="text-xs"><Utensils className="h-3 w-3 mr-1" />Nutrition</TabsTrigger>
             <TabsTrigger value="profile" className="text-xs"><User className="h-3 w-3 mr-1" />Profile</TabsTrigger>
           </TabsList>
+
+          {/* Health Tab */}
+          <TabsContent value="health" className="space-y-4 mt-4">
+            {client && currentUserId && (
+              <ClientPortalMedical clientId={client.id} shopId={client.shop_id} currentUserId={currentUserId} />
+            )}
+          </TabsContent>
 
           {/* Workouts Tab */}
           <TabsContent value="workouts" className="space-y-4 mt-4">
