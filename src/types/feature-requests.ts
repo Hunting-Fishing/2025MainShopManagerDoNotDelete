@@ -8,7 +8,7 @@ export interface FeatureRequest {
   reason_for_change?: string; // Why the user wants the change
   
   // Categorization
-  module: 'gunsmith' | 'power_washing' | 'pos' | 'payroll' | 'automotive' | 'marine' | 'fuel_delivery' | 'export_company' | 'general';
+  module: 'gunsmith' | 'power_washing' | 'pos' | 'payroll' | 'automotive' | 'marine' | 'fuel_delivery' | 'export_company' | 'personal_trainer' | 'general';
   category: 'ui_ux' | 'functionality' | 'integration' | 'performance' | 'security' | 'other';
   priority: 'low' | 'medium' | 'high' | 'critical';
   status: 'submitted' | 'under_review' | 'approved' | 'in_development' | 'testing' | 'completed' | 'rejected' | 'on_hold';
