@@ -1,58 +1,60 @@
 
 
-# Deep Condition Detail: Location, Injury Level, Weight Limits & Doctor's Orders
+# Fix Shield Tooltip, Auto-Load Safe Exercises from Local Library & Risk-Level Color Coding
 
-## Overview
+## Problems Identified
 
-When a condition like "Herniated Disc" is added, the system currently stores it as a flat record with severity and restrictions. This enhancement adds structured sub-detail so trainers and AI know *exactly* what's affected — which disc, injury grade, weight limits, and physician-imposed restrictions with expiry dates.
+1. **Shield icon has no tooltip** — the edit button uses a Shield icon with no title/hover text, so users don't know what it does.
+2. **Safe exercises don't pre-load** — the recommendations section waits for the user to click a body part or search. It should auto-load exercises from the shop's own `pt_exercises` table based on the client's conditions.
+3. **No risk-level color coding** — exercises aren't visually differentiated by how safe they are for the client's specific restrictions.
 
-## Database Changes
+## Plan
 
-Add 5 new columns to `pt_client_medical_conditions`:
+### 1. Add tooltip to Shield icon button
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| `affected_area` | text | Specific location (e.g., "L4-L5", "Left Shoulder", "C5-C6") |
-| `injury_grade` | text | Severity scale: Grade 1 (mild), Grade 2 (moderate), Grade 3 (severe/complete) |
-| `weight_limit_lbs` | integer | Max weight the client is allowed to lift (null = no limit) |
-| `physician_restrictions` | text | Free-text doctor's orders (e.g., "No spinal loading for 8 weeks, limit flexion to 30 degrees") |
-| `physician_restriction_until` | date | When doctor's restrictions expire — triggers a review reminder |
+Add `title="Edit condition details"` to the Shield button on each condition card. Simple one-liner.
 
-## UI Changes (Edit Condition Dialog)
+### 2. Auto-load safe exercises from local `pt_exercises` library
 
-Add a new **"Condition Detail"** section between the Severity/Status row and the Notes field:
+Currently `SafeExerciseRecommendations` only uses the external ExerciseDB API and requires manual interaction. Change it to:
 
-1. **Affected Area** — Text input with smart placeholder based on condition category:
-   - Musculoskeletal: "e.g., L4-L5 disc, Left ACL, Right rotator cuff"
-   - Cardiovascular: "e.g., Left ventricle, Mitral valve"
-   - Default: "e.g., specific location or body part"
+- Accept `shopId` as a new prop
+- On mount, query `pt_exercises` from Supabase filtered to the shop
+- Cross-reference each exercise's `muscle_group` against the client's avoided body parts and restrictions
+- Classify each exercise into a **risk tier**:
+  - **Safe (green)** — targets only safe body parts, no restriction conflicts
+  - **Caution (yellow)** — targets a secondary muscle that's near a restricted area, or involves equipment that may be problematic
+  - **Warning (orange)** — partially conflicts with a restriction (e.g., exercise involves "back" when client has spinal loading restriction)
+  - **Avoid (red)** — directly targets a restricted body part or violates a named restriction (e.g., `no_heavy_deadlifts` and the exercise is "Deadlift")
+- Auto-display the **Safe** and **Caution** exercises on load — no click required
+- Keep the ExerciseDB search as a secondary "Explore more" option below
 
-2. **Injury Grade** — Select dropdown: Grade 1 (Mild/Strain), Grade 2 (Moderate/Partial), Grade 3 (Severe/Complete), N/A
+### 3. Risk-tier color coding on exercise cards
 
-3. **Weight Limitation** — Number input with "lbs" suffix, placeholder "No limit if empty"
+- Green left border + green shield icon for Safe
+- Yellow left border + yellow caution icon for Caution  
+- Orange left border + orange warning for Warning
+- Red left border + red X for Avoid (shown collapsed/dimmed with "Not recommended" label)
 
-4. **Doctor's Restrictions** — Textarea with prominent styling (bordered, doctor icon), placeholder: "Enter physician-imposed limitations, e.g., No spinal loading for 8 weeks..."
+### 4. Restriction-to-exercise name matching
 
-5. **Restriction Valid Until** — Date picker, shown alongside the doctor's restrictions field. When the date passes, the card shows a "⚠️ Restrictions expired — review needed" badge
+Add a mapping of specific restriction keywords to exercise name patterns so exercises are flagged accurately:
 
-## Card Display Updates
+```text
+no_heavy_deadlifts  → matches exercises containing "deadlift"
+no_heavy_squats     → matches "squat", "leg press"
+no_overhead         → matches "overhead", "military press", "shoulder press"
+no_spinal_loading   → matches "deadlift", "squat", "good morning", "back extension"
+no_bench_press      → matches "bench press"
+no_pull_ups         → matches "pull up", "pullup", "chin up"
+no_plyometrics      → matches "jump", "box jump", "plyometric"
+no_running          → matches "run", "sprint", "jog"
+```
 
-- Show `affected_area` right after the condition name (e.g., "Herniated Disc — L4-L5")
-- Show weight limit badge if set (e.g., "⚖️ Max 50 lbs")
-- Show doctor icon + "Dr. restrictions until [date]" if physician restrictions exist
-- In expanded view, show full physician restrictions text
-
-## AI Integration
-
-The `trainer_ai_notes` field already feeds into AI prompts. The new fields will be concatenated into the condition context that AI receives, so workout generation automatically accounts for:
-- Exact location (avoid exercises targeting that area)
-- Weight ceiling (cap all prescribed weights)
-- Doctor's specific orders (time-bound restrictions)
-
-## Files to Edit
+### Files to Edit
 
 | File | Change |
 |------|--------|
-| `pt_client_medical_conditions` table | Add 5 new columns via migration |
-| `src/components/personal-trainer/ClientMedicalProfile.tsx` | Add detail section to edit dialog, update card display, update insert/save logic |
+| `src/components/personal-trainer/ClientMedicalProfile.tsx` | Add `title` to Shield button, pass `shopId` to SafeExerciseRecommendations |
+| `src/components/personal-trainer/SafeExerciseRecommendations.tsx` | Add local exercise query, risk classification engine, auto-load on mount, color-coded cards, keep ExerciseDB as secondary search |
 
