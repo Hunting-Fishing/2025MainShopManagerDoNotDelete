@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles, Brain } from 'lucide-react';
+import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles, Brain, HeartPulse } from 'lucide-react';
+import ClientMedicalProfile from '@/components/personal-trainer/ClientMedicalProfile';
 import FitnessInterestIntake from '@/components/personal-trainer/FitnessInterestIntake';
 import FitnessProfileScores from '@/components/personal-trainer/FitnessProfileScores';
 import AIInsightsPanel from '@/components/personal-trainer/AIInsightsPanel';
@@ -177,20 +178,17 @@ export default function PersonalTrainerClientDetail() {
         </CardContent>
       </Card>
 
-      {/* Goals, Health, Injuries */}
-      {(client.goals || client.health_conditions || client.injuries) && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {client.goals && <Card><CardContent className="p-4"><p className="text-xs font-medium text-muted-foreground mb-1">Goals</p><p className="text-sm">{client.goals}</p></CardContent></Card>}
-          {client.health_conditions && <Card><CardContent className="p-4"><p className="text-xs font-medium text-muted-foreground mb-1">Health Conditions</p><p className="text-sm">{client.health_conditions}</p></CardContent></Card>}
-          {client.injuries && <Card><CardContent className="p-4"><p className="text-xs font-medium text-muted-foreground mb-1">Injuries</p><p className="text-sm">{client.injuries}</p></CardContent></Card>}
-        </div>
+      {/* Goals */}
+      {client.goals && (
+        <Card><CardContent className="p-4"><p className="text-xs font-medium text-muted-foreground mb-1">Goals</p><p className="text-sm">{client.goals}</p></CardContent></Card>
       )}
 
       {/* Tabs */}
       <Tabs defaultValue="programs">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="programs" className="text-xs"><ClipboardList className="h-3 w-3 mr-1" />Programs</TabsTrigger>
           <TabsTrigger value="sessions" className="text-xs"><Calendar className="h-3 w-3 mr-1" />Sessions</TabsTrigger>
+          <TabsTrigger value="medical" className="text-xs"><HeartPulse className="h-3 w-3 mr-1" />Medical</TabsTrigger>
           <TabsTrigger value="metrics" className="text-xs"><Activity className="h-3 w-3 mr-1" />Metrics</TabsTrigger>
           <TabsTrigger value="checkins" className="text-xs"><ClipboardCheck className="h-3 w-3 mr-1" />Check-ins</TabsTrigger>
           <TabsTrigger value="fitness-profile" className="text-xs"><Sparkles className="h-3 w-3 mr-1" />Interests</TabsTrigger>
@@ -198,6 +196,10 @@ export default function PersonalTrainerClientDetail() {
           <TabsTrigger value="nutrition" className="text-xs"><Utensils className="h-3 w-3 mr-1" />Nutrition</TabsTrigger>
           <TabsTrigger value="billing" className="text-xs"><CreditCard className="h-3 w-3 mr-1" />Billing</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="medical" className="mt-4">
+          {id && shopId && <ClientMedicalProfile clientId={id} shopId={shopId} />}
+        </TabsContent>
 
         <TabsContent value="fitness-profile" className="mt-4 space-y-4">
           {id && shopId && <FitnessProfileScores clientId={id} shopId={shopId} />}

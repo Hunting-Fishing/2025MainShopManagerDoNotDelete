@@ -38568,6 +38568,63 @@ export type Database = {
         }
         Relationships: []
       }
+      pt_client_medical_conditions: {
+        Row: {
+          category: string
+          clearance_date: string | null
+          cleared_by_physician: boolean | null
+          client_id: string
+          condition_code: string
+          condition_name: string
+          created_at: string
+          diagnosed_date: string | null
+          dietary_implications: string[] | null
+          exercise_restrictions: string[] | null
+          id: string
+          notes: string | null
+          severity: string
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          clearance_date?: string | null
+          cleared_by_physician?: boolean | null
+          client_id: string
+          condition_code: string
+          condition_name: string
+          created_at?: string
+          diagnosed_date?: string | null
+          dietary_implications?: string[] | null
+          exercise_restrictions?: string[] | null
+          id?: string
+          notes?: string | null
+          severity?: string
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          clearance_date?: string | null
+          cleared_by_physician?: boolean | null
+          client_id?: string
+          condition_code?: string
+          condition_name?: string
+          created_at?: string
+          diagnosed_date?: string | null
+          dietary_implications?: string[] | null
+          exercise_restrictions?: string[] | null
+          id?: string
+          notes?: string | null
+          severity?: string
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pt_client_packages: {
         Row: {
           amount_paid: number | null
@@ -39259,6 +39316,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pt_medical_condition_catalog: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          default_dietary_implications: string[] | null
+          default_restrictions: string[] | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category: string
+          code: string
+          created_at?: string
+          default_dietary_implications?: string[] | null
+          default_restrictions?: string[] | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          default_dietary_implications?: string[] | null
+          default_restrictions?: string[] | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       pt_messages: {
         Row: {

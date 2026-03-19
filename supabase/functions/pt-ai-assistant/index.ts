@@ -14,6 +14,7 @@ async function fetchClientContext(supabase: any, clientId: string, shopId: strin
     { data: goals },
     { data: context },
     { data: biometrics },
+    { data: medicalConditions },
   ] = await Promise.all([
     supabase.from('pt_clients').select('*').eq('id', clientId).single(),
     supabase.from('pt_client_fitness_scores').select('*').eq('client_id', clientId).eq('shop_id', shopId).maybeSingle(),
@@ -21,17 +22,43 @@ async function fetchClientContext(supabase: any, clientId: string, shopId: strin
     supabase.from('pt_user_fitness_goals').select('*').eq('client_id', clientId).eq('shop_id', shopId).order('priority_rank'),
     supabase.from('pt_user_training_context').select('*').eq('client_id', clientId).eq('shop_id', shopId).maybeSingle(),
     supabase.from('pt_biometric_history').select('*').eq('client_id', clientId).eq('shop_id', shopId).order('recorded_at', { ascending: false }).limit(14),
+    supabase.from('pt_client_medical_conditions').select('*').eq('client_id', clientId).eq('shop_id', shopId).in('status', ['active', 'chronic', 'monitoring']),
   ]);
-  return { client, scores, interests: interests || [], goals: goals || [], context, biometrics: biometrics || [] };
+  return { client, scores, interests: interests || [], goals: goals || [], context, biometrics: biometrics || [], medicalConditions: medicalConditions || [] };
 }
 
 function buildProfileSummary(ctx: any): string {
-  const { client, scores, goals, context, biometrics } = ctx;
+  const { client, scores, goals, context, biometrics, medicalConditions } = ctx;
   const lines: string[] = [];
   lines.push(`Client: ${client?.first_name} ${client?.last_name}`);
   lines.push(`Fitness Level: ${client?.fitness_level || 'unknown'}`);
   lines.push(`Goals: ${goals.map((g: any) => g.goal_name).join(', ') || client?.goals || 'none'}`);
-  lines.push(`Injuries: ${client?.injuries || context?.injury_notes || 'none'}`);
+  
+  // Medical conditions (structured)
+  if (medicalConditions && medicalConditions.length > 0) {
+    lines.push(`\nMedical Conditions:`);
+    for (const mc of medicalConditions) {
+      lines.push(`  - ${mc.condition_name} (${mc.category}) — Severity: ${mc.severity}, Status: ${mc.status}`);
+      if (mc.exercise_restrictions?.length > 0) {
+        lines.push(`    Exercise Restrictions: ${mc.exercise_restrictions.join(', ')}`);
+      }
+      if (mc.dietary_implications?.length > 0) {
+        lines.push(`    Dietary Implications: ${mc.dietary_implications.join(', ')}`);
+      }
+      if (mc.cleared_by_physician) {
+        lines.push(`    ✓ Cleared by physician`);
+      }
+      if (mc.notes) {
+        lines.push(`    Notes: ${mc.notes}`);
+      }
+    }
+  }
+  
+  // Legacy fields as fallback
+  if ((!medicalConditions || medicalConditions.length === 0) && (client?.injuries || context?.injury_notes)) {
+    lines.push(`Injuries: ${client?.injuries || context?.injury_notes || 'none'}`);
+  }
+  
   if (context) {
     lines.push(`Environment: ${(context.environment_preference || []).join(', ')}`);
     lines.push(`Equipment: ${(context.equipment_access || []).join(', ')}`);
@@ -56,6 +83,20 @@ function buildProfileSummary(ctx: any): string {
   return lines.join('\n');
 }
 
+function buildMedicalWarnings(medicalConditions: any[]): string {
+  if (!medicalConditions || medicalConditions.length === 0) return '';
+  
+  const allRestrictions = new Set<string>();
+  const conditionSummaries: string[] = [];
+  
+  for (const mc of medicalConditions) {
+    conditionSummaries.push(`${mc.condition_name} (${mc.severity})`);
+    (mc.exercise_restrictions || []).forEach((r: string) => allRestrictions.add(r));
+  }
+  
+  return `\n\n⚠️ CRITICAL MEDICAL CONSIDERATIONS:\nClient has the following active conditions: ${conditionSummaries.join(', ')}.\nExercise restrictions to STRICTLY follow: ${[...allRestrictions].join(', ')}.\nDo NOT include any exercises that violate these restrictions. Always provide safe alternatives.`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -78,8 +119,12 @@ serve(async (req) => {
       const { data: recentMetrics } = await supabase.from('pt_body_metrics').select('*').eq('client_id', clientId).order('recorded_date', { ascending: false }).limit(5);
       const { data: recentLogs } = await supabase.from('pt_workout_logs').select('*').eq('client_id', clientId).order('completed_at', { ascending: false }).limit(10);
       const { data: exercises } = await supabase.from('pt_exercises').select('name, muscle_group, equipment, difficulty').eq('shop_id', shopId).limit(50);
+      
+      // Fetch medical conditions for workout suggestions
+      const { data: medConds } = await supabase.from('pt_client_medical_conditions').select('*').eq('client_id', clientId).eq('shop_id', shopId).in('status', ['active', 'chronic']);
+      const medicalWarning = buildMedicalWarnings(medConds || []);
 
-      systemPrompt = `You are an expert personal trainer AI. Generate a workout plan based on the client's profile, recent activity, and available exercises. Return a structured workout with exercises, sets, reps, rest times, and notes. Be specific and practical.`;
+      systemPrompt = `You are an expert personal trainer AI. Generate a workout plan based on the client's profile, recent activity, and available exercises. Return a structured workout with exercises, sets, reps, rest times, and notes. Be specific and practical.${medicalWarning}`;
       userPrompt = `Client Profile:\n- Name: ${client?.first_name} ${client?.last_name}\n- Fitness Level: ${client?.fitness_level || 'intermediate'}\n- Goals: ${client?.goals || 'general fitness'}\n- Injuries: ${client?.injuries || 'none reported'}\n${reqContext?.focus ? `- Focus Area: ${reqContext.focus}` : ''}\n${reqContext?.duration ? `- Session Duration: ${reqContext.duration} minutes` : ''}\n\nRecent Metrics: ${JSON.stringify(recentMetrics?.slice(0, 3) || [])}\nRecent Workouts: ${recentLogs?.length || 0} sessions completed recently\nAvailable Exercises: ${exercises?.map((e: any) => `${e.name} (${e.muscle_group}, ${e.difficulty})`).join(', ')}\n\nPlease suggest a complete workout session with warm-up, main exercises (with sets/reps/rest), and cooldown.`;
 
     } else if (action === 'summarize_checkins') {
@@ -92,17 +137,23 @@ serve(async (req) => {
     } else if (action === 'nutrition_advice') {
       const { data: client } = await supabase.from('pt_clients').select('*').eq('id', clientId).single();
       const { data: logs } = await supabase.from('pt_nutrition_logs').select('*').eq('client_id', clientId).order('log_date', { ascending: false }).limit(21);
+      
+      // Fetch medical conditions for dietary advice
+      const { data: medConds } = await supabase.from('pt_client_medical_conditions').select('*').eq('client_id', clientId).eq('shop_id', shopId).in('status', ['active', 'chronic']);
+      const dietaryImplications = (medConds || []).flatMap((c: any) => c.dietary_implications || []);
+      const dietaryNote = dietaryImplications.length > 0 ? `\n\nDietary restrictions from medical conditions: ${[...new Set(dietaryImplications)].join(', ')}. Ensure all nutrition advice respects these constraints.` : '';
 
-      systemPrompt = `You are a sports nutrition advisor. Analyze the client's nutrition data and targets, then provide practical advice. Do not prescribe medical diets.`;
+      systemPrompt = `You are a sports nutrition advisor. Analyze the client's nutrition data and targets, then provide practical advice. Do not prescribe medical diets.${dietaryNote}`;
       userPrompt = `Client: ${client?.first_name} ${client?.last_name}\nGoals: ${client?.goals || 'general fitness'}\nTargets: Calories=${client?.calorie_target || 2000}, Protein=${client?.protein_target_g || 150}g\nRecent meals logged: ${logs?.length || 0} entries\n${logs?.length ? `Sample entries: ${JSON.stringify(logs.slice(0, 7))}` : 'No recent logs'}\n\nProvide brief nutrition advice and meal suggestions aligned with their goals.`;
 
-    // ---- NEW: Taxonomy-aware actions ----
+    // ---- Taxonomy-aware actions ----
     } else if (action === 'generate_hybrid_program') {
       const ctx = await fetchClientContext(supabase, clientId, shopId);
       const profile = buildProfileSummary(ctx);
+      const medicalWarning = buildMedicalWarnings(ctx.medicalConditions);
       const { data: exercises } = await supabase.from('pt_exercises').select('name, muscle_group, equipment, difficulty').eq('shop_id', shopId).limit(80);
 
-      systemPrompt = `You are an elite personal trainer AI that creates hybrid training programs. You design multi-day weekly programs that intelligently blend the client's interests (e.g., CrossFit + Running + Strength) into a cohesive progressive plan. Be specific with exercises, sets, reps, tempo, rest, and weekly periodization. Use equipment the client has access to. Match session duration to their preference.`;
+      systemPrompt = `You are an elite personal trainer AI that creates hybrid training programs. You design multi-day weekly programs that intelligently blend the client's interests (e.g., CrossFit + Running + Strength) into a cohesive progressive plan. Be specific with exercises, sets, reps, tempo, rest, and weekly periodization. Use equipment the client has access to. Match session duration to their preference.${medicalWarning}`;
       userPrompt = `${profile}\n\nAvailable Exercises: ${(exercises || []).map((e: any) => `${e.name} (${e.muscle_group}, ${e.equipment || 'bodyweight'}, ${e.difficulty})`).join(', ')}\n\nGenerate a complete weekly hybrid training program (4-6 days) with:\n1. Each day labeled with focus (e.g., "Day 1: MetCon + Upper Strength")\n2. Warm-up, main workout (exercises/sets/reps/rest), cooldown\n3. Progressive overload notes for weeks 2-4\n4. Recovery day recommendations\n5. How this program aligns with their specific affinity scores`;
 
     } else if (action === 'suggest_classes') {
@@ -132,7 +183,6 @@ serve(async (req) => {
       const ctx = await fetchClientContext(supabase, clientId, shopId);
       const profile = buildProfileSummary(ctx);
 
-      // Fetch other clients with scores for community matching
       const { data: otherScores } = await supabase.from('pt_client_fitness_scores').select('client_id, strength_affinity, endurance_affinity, competition_affinity, coaching_intensity').eq('shop_id', shopId).neq('client_id', clientId).limit(30);
       const clientIds = (otherScores || []).map((s: any) => s.client_id);
       const { data: otherClients } = clientIds.length > 0
@@ -159,16 +209,26 @@ serve(async (req) => {
     } else if (action === 'generate_program_template') {
       const ctx = reqContext || {};
       let clientProfile = '';
+      let medicalWarning = '';
+      
       if (clientId && shopId) {
         const clientCtx = await fetchClientContext(supabase, clientId, shopId);
         clientProfile = `\n\nClient Profile:\n${buildProfileSummary(clientCtx)}`;
+        medicalWarning = buildMedicalWarnings(clientCtx.medicalConditions);
+      }
+      
+      // Also use medical conditions passed from frontend context
+      if (ctx.medical_conditions && ctx.medical_conditions.length > 0 && !medicalWarning) {
+        const condSummaries = ctx.medical_conditions.map((c: any) => `${c.name} (${c.severity})`);
+        const allRestrictions = ctx.medical_conditions.flatMap((c: any) => c.restrictions || []);
+        medicalWarning = `\n\n⚠️ CRITICAL MEDICAL CONSIDERATIONS:\nClient has: ${condSummaries.join(', ')}.\nExercise restrictions: ${[...new Set(allRestrictions)].join(', ')}.\nDo NOT include exercises that violate these restrictions.`;
       }
 
       const { data: exercises } = await supabase.from('pt_exercises')
         .select('name, muscle_group, equipment, difficulty')
         .eq('shop_id', shopId).limit(100);
 
-      systemPrompt = `You are an expert personal trainer AI that creates detailed, structured workout programs. You output complete multi-day training programs with specific exercises, sets, reps, rest periods, tempo, and progression notes. Be practical and evidence-based. Match the program to the client's equipment access, limitations, and goals.`;
+      systemPrompt = `You are an expert personal trainer AI that creates detailed, structured workout programs. You output complete multi-day training programs with specific exercises, sets, reps, rest periods, tempo, and progression notes. Be practical and evidence-based. Match the program to the client's equipment access, limitations, and goals.${medicalWarning}`;
       
       userPrompt = `Create a complete workout program with these parameters:
 - Workout Style: ${(ctx.workout_style || []).join(', ') || 'General'}

@@ -96,6 +96,7 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
     days_per_week: 4, session_duration_minutes: 60, goal: 'General Fitness',
     limitations: '', client_id: '',
   });
+  const [clientMedicalConditions, setClientMedicalConditions] = useState<any[]>([]);
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [aiGenerating, setAiGenerating] = useState(false);
 
@@ -149,15 +150,44 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
     onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
 
+  // Fetch medical conditions when a client is selected
+  const selectedClientId = aiForm.client_id && aiForm.client_id !== 'none' ? aiForm.client_id : null;
+  
+  useQuery({
+    queryKey: ['pt-client-medical-for-program', selectedClientId, shopId],
+    queryFn: async () => {
+      if (!selectedClientId || !shopId) return [];
+      const { data } = await (supabase as any).from('pt_client_medical_conditions')
+        .select('condition_name, category, severity, status, exercise_restrictions, dietary_implications')
+        .eq('client_id', selectedClientId)
+        .eq('shop_id', shopId)
+        .in('status', ['active', 'chronic']);
+      setClientMedicalConditions(data || []);
+      return data || [];
+    },
+    enabled: !!selectedClientId && !!shopId,
+  });
+
   const generateWithAI = async () => {
     setAiGenerating(true);
     setAiResult(null);
     try {
+      // Build structured medical context
+      const medicalContext = clientMedicalConditions.length > 0
+        ? clientMedicalConditions.map((c: any) => ({
+            name: c.condition_name,
+            category: c.category,
+            severity: c.severity,
+            restrictions: c.exercise_restrictions || [],
+            dietary: c.dietary_implications || [],
+          }))
+        : undefined;
+
       const { data, error } = await supabase.functions.invoke('pt-ai-assistant', {
         body: {
           action: 'generate_program_template',
           shopId,
-          clientId: aiForm.client_id && aiForm.client_id !== 'none' ? aiForm.client_id : undefined,
+          clientId: selectedClientId || undefined,
           context: {
             workout_style: aiForm.workout_style,
             training_platform: aiForm.training_platform,
@@ -167,6 +197,7 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
             session_duration_minutes: aiForm.session_duration_minutes,
             goal: aiForm.goal,
             limitations: aiForm.limitations,
+            medical_conditions: medicalContext,
           },
         },
       });
@@ -398,9 +429,24 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
                       </Select>
                     </div>
 
+                    {/* Medical conditions from selected client */}
+                    {clientMedicalConditions.length > 0 && (
+                      <div>
+                        <Label className="text-sm">Client Medical Conditions</Label>
+                        <div className="flex flex-wrap gap-1 mt-1.5 p-2 bg-muted/50 rounded-md">
+                          {clientMedicalConditions.map((c: any, i: number) => (
+                            <Badge key={i} variant={c.severity === 'severe' ? 'destructive' : c.severity === 'moderate' ? 'default' : 'secondary'} className="text-xs">
+                              {c.condition_name} ({c.severity})
+                            </Badge>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">These conditions will be sent to AI for safe program generation.</p>
+                      </div>
+                    )}
+
                     <div>
-                      <Label>Limitations / Injuries</Label>
-                      <Textarea value={aiForm.limitations} onChange={e => setAiForm(f => ({ ...f, limitations: e.target.value }))} rows={2} placeholder="e.g. Herniated disc L4-L5, avoid heavy axial loading" />
+                      <Label>Additional Limitations / Notes</Label>
+                      <Textarea value={aiForm.limitations} onChange={e => setAiForm(f => ({ ...f, limitations: e.target.value }))} rows={2} placeholder="Any extra notes beyond medical conditions..." />
                     </div>
 
                     <Button
