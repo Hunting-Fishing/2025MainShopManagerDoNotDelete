@@ -390,7 +390,7 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
                       <Select value={aiForm.client_id} onValueChange={v => setAiForm(f => ({ ...f, client_id: v }))}>
                         <SelectTrigger><SelectValue placeholder="No client (generic program)" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No client</SelectItem>
+                          <SelectItem value="none">No client (generic)</SelectItem>
                           {clients.map((c: any) => (
                             <SelectItem key={c.id} value={c.id}>{c.first_name} {c.last_name}</SelectItem>
                           ))}
