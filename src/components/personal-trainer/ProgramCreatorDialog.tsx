@@ -96,6 +96,7 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
     days_per_week: 4, session_duration_minutes: 60, goal: 'General Fitness',
     limitations: '', client_id: '',
   });
+  const [clientMedicalConditions, setClientMedicalConditions] = useState<any[]>([]);
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [aiGenerating, setAiGenerating] = useState(false);
 
