@@ -219,7 +219,7 @@ export default function ClientPortalMedical({ clientId, shopId, currentUserId }:
         </CardContent></Card>
       ) : (
         <div className="space-y-2">
-          {conditions.map((cond: any) => {
+          {conditions.map((cond: any, idx: number) => {
             const isTrainerAdded = cond.added_by === 'trainer' || (!cond.added_by);
             return (
               <Card key={cond.id} className="border-l-4" style={{
