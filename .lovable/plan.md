@@ -1,40 +1,46 @@
 
 
-# Add Filter Bar to Personal Trainer Clients Page
+# Build Production Exercise Library with Seed Data
 
 ## What We're Doing
 
-Adding a comprehensive filter/sort toolbar to the PT Clients page (`PersonalTrainerClients.tsx`). The database already has all the fields needed — gender, fitness_level, membership_status, membership_type, preferred_workout_days, trainer_id — so this is purely a UI filtering task with no schema changes.
+The Exercise Library page exists with full CRUD UI, but the database is empty. We need to seed it with a comprehensive set of real exercises via a Supabase migration, and add a "Seed Default Exercises" button for shops that don't have exercises yet.
 
-## Changes
+## Approach
 
-### 1. `src/pages/personal-trainer/PersonalTrainerClients.tsx` — Add filter bar
+Since exercises are **shop-scoped** (`shop_id` required), we can't use a one-time migration to insert global data. Instead, we'll add a **"Load Default Exercises"** feature that inserts ~80 production-ready exercises into the current shop's `pt_exercises` table on demand.
 
-Add filter state variables and a horizontal filter bar below the search input with these filters:
+### 1. Create `src/data/defaultExercises.ts` — Exercise seed data
 
-| Filter | Type | Options |
-|--------|------|---------|
-| Gender | Select | All, Male, Female, Other |
-| Fitness Level | Select | All, Beginner, Intermediate, Advanced |
-| Status | Select | All, Active, Inactive, Frozen |
-| Membership | Select | All, Standard, Premium, VIP |
-| Preferred Day | Multi-select buttons (Mon-Sun) | Filters clients who train on selected day(s) |
-| Trainer | Select | All, then list from `trainers` query |
-| Sort By | Select | Name A-Z, Name Z-A, Newest, Oldest, Fitness Level |
+A constant array of ~80 exercises covering all muscle groups and categories with real instructions, common mistakes, equipment, and difficulty levels. Organized by muscle group:
 
-Implementation details:
-- Add state: `genderFilter`, `fitnessFilter`, `statusFilter`, `membershipFilter`, `dayFilter`, `trainerFilter`, `sortBy`
-- Place filters in a collapsible row with a "Filters" toggle button and active-filter count badge
-- Update the `filtered` variable to chain all filter predicates
-- Add sort logic after filtering
-- Add a "Clear Filters" button when any filter is active
-- Use existing `Select` and `Button` components — no new dependencies
+| Muscle Group | Exercises (examples) |
+|---|---|
+| Chest | Barbell Bench Press, Incline Dumbbell Press, Cable Flyes, Push-Ups, Dips |
+| Back | Deadlift, Barbell Row, Pull-Ups, Lat Pulldown, Seated Cable Row, T-Bar Row |
+| Shoulders | Overhead Press, Lateral Raises, Face Pulls, Arnold Press, Front Raises |
+| Biceps | Barbell Curl, Hammer Curl, Incline Dumbbell Curl, Preacher Curl |
+| Triceps | Tricep Pushdown, Skull Crushers, Close-Grip Bench, Overhead Extension |
+| Legs | Barbell Squat, Romanian Deadlift, Leg Press, Lunges, Leg Curl, Leg Extension, Calf Raises |
+| Glutes | Hip Thrust, Bulgarian Split Squat, Glute Bridge, Cable Kickback |
+| Core | Plank, Hanging Leg Raise, Cable Crunch, Ab Wheel, Russian Twist, Dead Bug |
+| Full Body | Clean & Press, Burpees, Turkish Get-Up, Kettlebell Swing |
+| Cardio | Rowing Machine, Jump Rope, Battle Ropes, Assault Bike |
+| Mobility | Foam Rolling, Hip Flexor Stretch, Cat-Cow, Band Pull-Aparts |
 
-### 2. Files to Edit
+Each exercise includes: `name`, `category`, `muscle_group`, `equipment`, `difficulty`, `description`, `instructions` (step-by-step), `common_mistakes`, and `alternatives`.
+
+### 2. Update `src/pages/personal-trainer/PersonalTrainerExercises.tsx`
+
+- Add a **"Load Default Exercises"** button visible when `exercises.length === 0`
+- On click, bulk-insert all default exercises from the data file with the current `shop_id`
+- Also add edit and delete capabilities for existing exercises (currently missing)
+- Add a count summary in the header
+
+### Files to Create/Edit
 
 | File | Change |
 |------|--------|
-| `src/pages/personal-trainer/PersonalTrainerClients.tsx` | Add filter bar, filter state, filter + sort logic |
-
-One file change only. No database migrations needed.
+| `src/data/defaultExercises.ts` | **New** — ~80 real exercises with full metadata |
+| `src/pages/personal-trainer/PersonalTrainerExercises.tsx` | Add seed button, edit/delete actions |
 
