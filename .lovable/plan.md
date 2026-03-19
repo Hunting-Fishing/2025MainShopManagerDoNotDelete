@@ -1,66 +1,83 @@
 
 
-# Integrate NLM Clinical Tables ICD-10-CM API
+# Client-Facing Medical Conditions in PT Portal
 
 ## What We're Building
 
-Adding live medical condition search via the free **NLM Clinical Tables API** (no API key required) to the existing Add Condition dialog. Trainers can search thousands of ICD-10 coded conditions beyond the seeded 121, with results mapped to exercise restrictions when possible.
+Adding a "Health & Medical" tab to the client portal dashboard (`PTPortalDashboard.tsx`) so clients can self-report their medical conditions, injuries, and limitations. This data flows directly to trainers and the AI system for safe program generation.
 
----
+## Approach
 
-## Changes
+### 1. Create `ClientPortalMedical.tsx` (New Component)
 
-### 1. Update `ClientMedicalProfile.tsx`
+A simplified, client-friendly version of the trainer's `ClientMedicalProfile.tsx`:
 
-Enhance the Add Condition dialog with two search sources:
+- **Searchable condition browser** with the same catalog + ICD-10 search tabs
+- **Simplified UI** — no trainer-only fields like "cleared by physician" (read-only display if trainer has set it)
+- For each condition: severity selector (mild/moderate/severe), status (active/recovered/chronic), optional notes
+- Client can add conditions from both the local catalog and the ICD-10 API
+- Client can remove conditions they added
+- Shows existing conditions (including trainer-added ones) as read-only cards with an indicator of who added them
+- Visual summary at top: count of active conditions, restriction badges
 
-- **Tab 1: "Our Catalog"** — existing local catalog search (unchanged behavior)
-- **Tab 2: "Medical Database (ICD-10)"** — live search against NLM API with debounced input
-  - Calls `https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search?sf=code,name&terms={query}&maxList=25`
-  - Displays results with ICD-10 code + condition name
-  - When selected, saves with the ICD-10 code as `condition_code`, auto-maps to known restrictions if the code/name matches a catalog entry, otherwise saves with empty restrictions for manual override
-  - Shows a note prompting the trainer to set restrictions manually for non-catalog conditions
+### 2. Update `PTPortalDashboard.tsx`
 
-### 2. Add `useICD10Search.ts` Hook
+- Add a "Health" tab (with HeartPulse icon) to the existing TabsList
+- Render `ClientPortalMedical` in the new tab, passing `client.id` and `client.shop_id`
+- Add a dashboard summary card showing active medical condition count
 
-A small custom hook that:
-- Takes a search string, debounces it (300ms)
-- Fetches from the NLM Clinical Tables API (direct client-side call — it's a public CORS-enabled API, no edge function needed)
-- Returns `{ results, isLoading }` where results are `{ code: string, name: string }[]`
-- Parses the NLM response format: `[totalCount, codeArray, extraFields, [code, name][] ]`
+### 3. RLS Policy Update
 
-### 3. Update `pt_client_medical_conditions` Insert Logic
+The existing `pt_client_medical_conditions` RLS policies likely only allow shop-level access. We need to add a policy allowing clients to INSERT/SELECT/UPDATE/DELETE their own conditions based on `client_id` matching their `pt_clients.user_id`:
 
-When adding a condition from ICD-10 search (not from local catalog):
-- `condition_code` = ICD-10 code (e.g., `M23.51`)
-- `condition_name` = condition name from API
-- `category` = auto-detect from ICD-10 code prefix (M = Musculoskeletal, I = Cardiovascular, etc.) or default to "Other"
-- `exercise_restrictions` and `dietary_implications` = check if a catalog entry has a similar name match; if so, copy defaults; otherwise empty arrays for trainer to fill in
+```sql
+-- Client can view their own conditions
+CREATE POLICY "Clients can view own medical conditions"
+ON pt_client_medical_conditions FOR SELECT
+TO authenticated
+USING (client_id IN (
+  SELECT id FROM pt_clients WHERE user_id = auth.uid()
+));
 
----
+-- Client can add their own conditions  
+CREATE POLICY "Clients can insert own medical conditions"
+ON pt_client_medical_conditions FOR INSERT
+TO authenticated
+WITH CHECK (client_id IN (
+  SELECT id FROM pt_clients WHERE user_id = auth.uid()
+));
+
+-- Client can update their own conditions
+CREATE POLICY "Clients can update own medical conditions"  
+ON pt_client_medical_conditions FOR UPDATE
+TO authenticated
+USING (client_id IN (
+  SELECT id FROM pt_clients WHERE user_id = auth.uid()
+));
+
+-- Client can delete their own conditions
+CREATE POLICY "Clients can delete own medical conditions"
+ON pt_client_medical_conditions FOR DELETE
+TO authenticated
+USING (client_id IN (
+  SELECT id FROM pt_clients WHERE user_id = auth.uid()
+));
+```
+
+Also ensure the catalog table has a SELECT policy for all authenticated users.
 
 ## Files to Create/Edit
 
 | File | Action |
 |------|--------|
-| `src/hooks/useICD10Search.ts` | **Create** — debounced NLM API search hook |
-| `src/components/personal-trainer/ClientMedicalProfile.tsx` | **Edit** — add ICD-10 search tab to Add Condition dialog |
+| `src/components/pt-portal/ClientPortalMedical.tsx` | **Create** — client-facing medical conditions manager |
+| `src/pages/pt-portal/PTPortalDashboard.tsx` | **Edit** — add Health tab + dashboard card |
+| `supabase/migrations/new.sql` | **Create** — RLS policies for client self-service access |
 
----
+## Technical Notes
 
-## Technical Details
-
-**NLM API Response Format:**
-```text
-GET https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search?sf=code,name&terms=knee&maxList=25
-
-Response: [totalCount, ["M17.0","M17.1",...], null, [["M17.0","Primary osteoarthritis, knee"],["M17.1","..."]]]
-```
-
-**ICD-10 Category Mapping** (first letter of code):
-- A-B → Infectious, C-D → Neoplasms/Blood, E → Metabolic, F → Mental Health
-- G → Neurological, I → Cardiovascular, J → Respiratory, K → Digestive
-- M → Musculoskeletal, O → Pregnancy & Postpartum, R → Symptoms, S-T → Injuries
-
-No API key, no edge function, no secrets needed — the NLM API is fully public with CORS support.
+- Reuses the existing `useICD10Search` hook and `pt_medical_condition_catalog` table
+- The `cleared_by_physician` field remains trainer-only (clients see it read-only)
+- All conditions added by clients are immediately visible to trainers and the AI system since they share the same `pt_client_medical_conditions` table
+- No changes needed to AI edge functions — they already pull all conditions for a client
 
