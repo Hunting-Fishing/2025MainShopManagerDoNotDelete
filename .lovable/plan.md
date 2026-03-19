@@ -1,71 +1,111 @@
 
 
-# Upgrade Workout Programs: Enhanced Creator + AI Generation + Preset Library
+# Medical Conditions & Health Restrictions System
 
 ## What We're Building
 
-A major upgrade to the Workout Programs feature with three pillars:
-
-1. **Enhanced "Create Program" dialog** -- more fields, workout style categories, training platform, target muscles, and client limitation awareness
-2. **AI-Generated Programs** -- a "Generate with AI" button that builds a full program based on workout style, client profile, equipment, and limitations
-3. **Preset Workout Library** -- a large collection of ready-made program templates categorized by style (PPL, Upper/Lower, Full Body, CrossFit, HIIT, Bodybuilding, Powerlifting, etc.)
+A structured medical conditions system that replaces free-text "injuries" and "health_conditions" fields with a comprehensive, categorized medical profile. This data feeds into AI program generation, nutrition planning, and trainer decision-making across the entire PT module.
 
 ---
 
-## Changes
+## Database Design
 
-### 1. Enhanced Create Program Dialog (`PersonalTrainerPrograms.tsx`)
+### New Table: `pt_client_medical_conditions`
 
-Expand the current minimal form to include:
+Stores individual medical conditions per client with structured metadata:
 
-- **Workout Style** (multi-select): Push/Pull/Legs, Upper/Lower, Full Body, Bro Split, CrossFit/WOD, HIIT/Circuit, Powerlifting, Olympic Lifting, Bodybuilding, Calisthenics, Functional, Sport-Specific, Endurance, Flexibility/Mobility, Rehabilitation
-- **Training Platform**: Gym, Home, Outdoor, Hotel/Travel, Minimal Equipment, Hybrid
-- **Target Muscle Groups** (multi-select): Chest, Back, Shoulders, Arms, Core, Legs, Glutes, Full Body
-- **Difficulty**: Expand to 5 levels (Absolute Beginner, Beginner, Intermediate, Advanced, Elite)
-- **Days Per Week**: 1-7 selector
-- **Session Duration**: 30/45/60/75/90 min
-- **Client Limitations** (optional, for assigned programs): Injuries, mobility restrictions, equipment constraints
-- **Goal**: Keep existing but expand options (Fat Loss, Muscle Gain, Strength, Endurance, Recomp, Sport Performance, Rehab, General Fitness)
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | |
+| client_id | UUID FK → pt_clients | |
+| shop_id | UUID | Multi-tenant isolation |
+| condition_code | TEXT | Standardized identifier (e.g. `knee_acl_tear`) |
+| condition_name | TEXT | Display name |
+| category | TEXT | Category grouping (see below) |
+| severity | TEXT | mild / moderate / severe / managed |
+| status | TEXT | active / recovered / chronic / monitoring |
+| diagnosed_date | DATE | Optional |
+| notes | TEXT | Trainer/client notes |
+| exercise_restrictions | TEXT[] | e.g. `['no_impact', 'no_heavy_squat']` |
+| dietary_implications | TEXT[] | e.g. `['low_sodium', 'anti_inflammatory']` |
+| cleared_by_physician | BOOLEAN | Medical clearance flag |
+| clearance_date | DATE | |
+| created_at / updated_at | TIMESTAMPTZ | |
 
-### 2. AI Program Generator
+**Categories** (seeded as reference data in `pt_medical_condition_catalog`):
 
-Add a "Generate with AI" button in the create dialog that:
+- **Musculoskeletal**: ACL tear, meniscus injury, rotator cuff, herniated disc, scoliosis, arthritis, tendinitis, carpal tunnel, plantar fasciitis, hip replacement, knee replacement
+- **Amputations**: Above-knee, below-knee, above-elbow, below-elbow, partial hand/foot, bilateral
+- **Cardiovascular**: Heart disease, hypertension, arrhythmia, post-bypass, pacemaker, DVT history
+- **Respiratory**: Asthma, COPD, exercise-induced bronchospasm, post-COVID lung issues
+- **Neurological**: MS, Parkinson's, stroke recovery, epilepsy, neuropathy, vertigo
+- **Metabolic**: Type 1/2 diabetes, thyroid disorders, PCOS, metabolic syndrome
+- **Pregnancy & Postpartum**: Trimester 1/2/3, postpartum recovery, diastasis recti, pelvic floor dysfunction
+- **Mental Health**: Anxiety (exercise-related), PTSD, eating disorder history
+- **Post-Surgical**: Post-cardiac surgery, joint replacement rehab, spinal fusion, bariatric surgery recovery
+- **Chronic Pain**: Fibromyalgia, chronic fatigue, chronic back pain, migraines
+- **Other**: Osteoporosis, cancer recovery, autoimmune conditions, vision/hearing impairment
 
-- Sends the selected workout style, platform, duration, difficulty, goals, limitations, and optionally a selected client's profile to the `pt-ai-assistant` edge function with a new `generate_program_template` action
-- Returns a structured program with days and exercises that auto-populates into the builder
-- Uses tool-calling to get structured JSON output (program name, days, exercises per day with sets/reps/rest/tempo)
-- Saves the generated program and its days/exercises directly to the database
+### New Table: `pt_medical_condition_catalog`
 
-**Edge function update** (`pt-ai-assistant/index.ts`):
-- Add new `generate_program_template` action
-- Accept workout_style, platform, days_per_week, session_duration, difficulty, goals, limitations, and optional clientId
-- If clientId provided, fetches full client context (injuries, fitness scores, equipment access)
-- Uses structured output (tool calling) to return JSON with program structure
-- Returns the structured data for the frontend to insert into DB
+A reference/lookup table with ~120 pre-seeded conditions:
 
-### 3. Preset Program Library
+| Column | Type |
+|--------|------|
+| id | UUID PK |
+| code | TEXT UNIQUE |
+| name | TEXT |
+| category | TEXT |
+| default_restrictions | TEXT[] |
+| default_dietary_implications | TEXT[] |
+| description | TEXT |
 
-Add a "Browse Presets" button that opens a full-screen dialog/sheet with pre-built program templates:
+This catalog provides the selectable options and auto-populates restriction suggestions when a condition is added to a client.
 
-- **Categories**: PPL, Upper/Lower, Full Body, Bro Split, 5x5, CrossFit, HIIT, Bodybuilding, Powerlifting, Calisthenics, Sport-Specific, Rehab/Mobility
-- Each preset includes: name, description, difficulty, duration, days per week, workout style tags
-- "Use Template" button that clones the preset into the shop's programs
-- Presets are seeded via a migration with ~30-40 template programs across categories
-- Each template includes pre-built workout days and exercise references
+---
 
-### 4. New Component: `ProgramCreatorDialog.tsx`
+## Frontend Components
 
-A new dedicated component replacing the inline dialog, featuring:
-- Tabbed interface: **Manual** | **AI Generate** | **Browse Presets**
-- Manual tab: the enhanced form from step 1
-- AI tab: form fields + "Generate" button, shows preview of AI output before saving
-- Presets tab: searchable/filterable grid of preset programs
+### 1. `ClientMedicalProfile.tsx` (New)
 
-### 5. Database Changes (Migration)
+A dedicated medical conditions manager, shown in the Client Detail page:
 
-- Add columns to `pt_workout_programs`: `workout_style TEXT[]`, `training_platform TEXT`, `target_muscles TEXT[]`, `days_per_week INTEGER`, `session_duration_minutes INTEGER`, `limitations TEXT`, `is_preset BOOLEAN DEFAULT false`, `preset_category TEXT`
-- Seed ~30-40 preset program templates with `is_preset = true` and a null `shop_id` (global presets accessible to all shops)
-- RLS policy update to allow reading presets where `is_preset = true`
+- Categorized condition browser using the existing `MultiSelectDialog` pattern
+- For each added condition: severity selector, status, notes, restriction overrides
+- Visual indicators: red badges for active severe conditions, amber for moderate, green for managed
+- "Cleared by physician" toggle with date
+- Custom condition entry with category assignment (same pattern as nutrition allergies)
+
+### 2. Update `PersonalTrainerClientDetail.tsx`
+
+- Add a "Medical & Health" tab/section showing the medical profile component
+- Replace the free-text "Injuries / Limitations" and "Health Conditions" textareas with links to the structured medical profile
+- Show a summary badge count of active conditions
+
+### 3. Update `ProgramCreatorDialog.tsx`
+
+- In both Manual and AI tabs, replace the free-text "Limitations" textarea with an auto-populated summary from the selected client's medical conditions
+- When a client is selected, fetch and display their active conditions as badges
+- Pass structured condition data (not free text) to the AI generator
+
+### 4. Update `NutritionProfile.tsx`
+
+- Add a read-only section showing dietary implications from the client's medical conditions (e.g., diabetes → diabetic_friendly diet suggestion, heart disease → low_sodium)
+- These show as suggested badges that can be accepted into the dietary profile
+
+---
+
+## AI Integration
+
+### Update `pt-ai-assistant/index.ts`
+
+- `fetchClientContext` now also queries `pt_client_medical_conditions` for the client
+- `buildProfileSummary` includes a structured "Medical Conditions" section with condition names, severities, statuses, and exercise restrictions
+- The `generate_program_template` action uses restriction data to instruct the AI (e.g., "Client has active moderate ACL tear — avoid high-impact plyometrics, heavy squats")
+
+### Update `pt-ai-chat/index.ts`
+
+- Include medical conditions in the client context block so Coach and Chef personas are aware of health restrictions
 
 ---
 
@@ -73,26 +113,21 @@ A new dedicated component replacing the inline dialog, featuring:
 
 | File | Action |
 |------|--------|
-| `src/components/personal-trainer/ProgramCreatorDialog.tsx` | **Create** -- new tabbed program creator |
-| `src/components/personal-trainer/PresetProgramLibrary.tsx` | **Create** -- preset browser with filters |
-| `src/pages/personal-trainer/PersonalTrainerPrograms.tsx` | **Edit** -- use new ProgramCreatorDialog |
-| `supabase/functions/pt-ai-assistant/index.ts` | **Edit** -- add `generate_program_template` action with structured output |
-| `supabase/migrations/new_migration.sql` | **Create** -- add columns + seed preset programs |
+| `supabase/migrations/new.sql` | Create `pt_medical_condition_catalog` + `pt_client_medical_conditions` tables, seed ~120 conditions, RLS policies |
+| `src/components/personal-trainer/ClientMedicalProfile.tsx` | **Create** — categorized condition manager |
+| `src/pages/personal-trainer/PersonalTrainerClientDetail.tsx` | **Edit** — add medical profile section |
+| `src/components/personal-trainer/ProgramCreatorDialog.tsx` | **Edit** — use structured conditions instead of free-text |
+| `src/components/nutrition/NutritionProfile.tsx` | **Edit** — show dietary implications from medical conditions |
+| `supabase/functions/pt-ai-assistant/index.ts` | **Edit** — include medical data in context + program generation |
+| `supabase/functions/pt-ai-chat/index.ts` | **Edit** — include medical data in chat context |
 
 ---
 
 ## Technical Details
 
-**AI Structured Output** (tool calling in edge function):
-```text
-Tool: create_workout_program
-Parameters:
-  - program_name: string
-  - description: string  
-  - days: array of { name, focus_area, exercises: [{ name, muscle_group, sets, reps, rest_seconds, tempo, notes }] }
-```
+**RLS**: Both new tables use `shop_id = public.get_current_user_shop_id()` for tenant isolation. The catalog table allows public reads (`SELECT` for all authenticated users) since it's global reference data.
 
-The frontend receives this JSON, creates the program, then batch-inserts days and exercises (matching exercise names to the shop's `pt_exercises` library or creating new ones).
+**Catalog seeding**: ~120 conditions across 11 categories, each with sensible `default_restrictions` and `default_dietary_implications` arrays. When a trainer adds a condition to a client, these defaults pre-populate but can be overridden.
 
-**Preset Seeding**: ~30-40 programs across 12 categories, each with 3-6 workout days. Exercises reference generic names that get matched or created when a shop "uses" a preset.
+**No external medical API needed initially** — the catalog is comprehensive and user-extensible. This avoids API costs and compliance concerns while delivering the same structured data. If a formal medical API (ICD-10, SNOMED) is desired later, the `condition_code` field is ready for mapping.
 
