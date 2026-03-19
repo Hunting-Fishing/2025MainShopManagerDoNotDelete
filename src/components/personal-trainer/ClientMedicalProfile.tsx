@@ -352,7 +352,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
 
       {/* Add Condition Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
           <DialogHeader><DialogTitle>Add Medical Condition</DialogTitle></DialogHeader>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
