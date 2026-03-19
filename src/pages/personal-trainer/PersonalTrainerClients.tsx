@@ -178,7 +178,7 @@ export default function PersonalTrainerClients() {
                     <Select value={assignTrainer} onValueChange={setAssignTrainer}>
                       <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {trainers.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</SelectItem>)}
                       </SelectContent>
                     </Select>
