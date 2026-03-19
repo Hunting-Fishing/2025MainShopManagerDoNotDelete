@@ -32,82 +32,88 @@ export function ModuleCard({
   return (
     <Card 
       className={cn(
-        "group relative overflow-hidden transition-all duration-300 hover:shadow-lg",
+        "group relative overflow-hidden transition-all duration-200 hover:shadow-md",
         hasAccess 
-          ? "cursor-pointer hover:-translate-y-1" 
+          ? "cursor-pointer hover:-translate-y-0.5" 
           : "opacity-75"
       )}
       onClick={hasAccess ? handleEnter : undefined}
     >
       {/* Gradient accent bar */}
       <div className={cn(
-        "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r",
+        "absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r",
         module.gradientFrom,
         module.gradientTo
       )} />
 
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
+      <CardContent className="p-3">
+        <div className="flex items-center gap-3">
           {/* Icon */}
           <div className={cn(
-            "w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br shadow-md",
+            "w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center bg-gradient-to-br shadow-sm",
             module.gradientFrom,
             module.gradientTo
           )}>
-            <IconComponent className="w-7 h-7 text-white" />
+            <IconComponent className="w-4 h-4 text-white" />
           </div>
 
-          {/* Status badge */}
-          {hasAccess ? (
-            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-              <Check className="w-3 h-3 mr-1" />
-              Active
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-muted-foreground">
-              <Lock className="w-3 h-3 mr-1" />
-              Locked
-            </Badge>
-          )}
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-foreground truncate">
+                {module.name}
+              </h3>
+              {hasAccess ? (
+                <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] px-1.5 py-0">
+                  <Check className="w-2.5 h-2.5 mr-0.5" />
+                  Active
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground text-[10px] px-1.5 py-0">
+                  <Lock className="w-2.5 h-2.5 mr-0.5" />
+                  Locked
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              {module.description}
+            </p>
+          </div>
         </div>
 
-        {/* Content */}
-        <h3 className="text-lg font-semibold text-foreground mb-2">
-          {module.name}
-        </h3>
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-          {module.description}
-        </p>
-
         {/* Action */}
-        {hasAccess ? (
-          <Button 
-            className={cn(
-              "w-full group/btn bg-gradient-to-r",
-              module.gradientFrom,
-              module.gradientTo,
-              "hover:opacity-90 transition-opacity"
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEnter();
-            }}
-          >
-            Enter Module
-            <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-          </Button>
-        ) : (
-          <Button 
-            variant="outline" 
-            className="w-full"
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewPlans?.();
-            }}
-          >
-            View Plans
-          </Button>
-        )}
+        <div className="mt-2">
+          {hasAccess ? (
+            <Button 
+              size="sm"
+              className={cn(
+                "w-full h-7 text-xs bg-gradient-to-r",
+                module.gradientFrom,
+                module.gradientTo,
+                "hover:opacity-90 transition-opacity"
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEnter();
+              }}
+            >
+              Enter
+              <ArrowRight className="w-3 h-3 ml-1" />
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="w-full h-7 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewPlans?.();
+              }}
+            >
+              View Plans
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
