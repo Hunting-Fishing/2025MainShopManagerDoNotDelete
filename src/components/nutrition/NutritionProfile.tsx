@@ -8,7 +8,7 @@ import { Save, Loader2, User } from 'lucide-react';
 import { useNutritionProfile, useSaveNutritionProfile } from '@/hooks/useNutrition';
 import MultiSelectDialog from './MultiSelectDialog';
 
-const DIETARY_STYLES_CATEGORIZED: Record<string, string[]> = {
+const INITIAL_DIETARY_STYLES: Record<string, string[]> = {
   'Popular': ['omnivore', 'vegetarian', 'vegan', 'pescatarian', 'flexitarian'],
   'Low-Carb / High-Fat': ['keto', 'paleo', 'carnivore', 'atkins', 'low_carb'],
   'Cultural & Regional': ['mediterranean', 'nordic', 'japanese', 'indian_vegetarian', 'middle_eastern', 'african_heritage'],
@@ -18,13 +18,20 @@ const DIETARY_STYLES_CATEGORIZED: Record<string, string[]> = {
   'Other': ['halal', 'kosher', 'organic_only', 'clean_eating'],
 };
 
-const ALLERGY_OPTIONS_CATEGORIZED: Record<string, string[]> = {
+const INITIAL_ALLERGY_OPTIONS: Record<string, string[]> = {
   'Common (Top 9)': ['milk', 'eggs', 'peanuts', 'tree_nuts', 'wheat', 'soy', 'fish', 'shellfish', 'sesame'],
   'Grains & Gluten': ['gluten', 'barley', 'rye', 'oats', 'corn'],
   'Fruits & Vegetables': ['banana', 'avocado', 'kiwi', 'mango', 'strawberry', 'tomato', 'celery', 'bell_pepper'],
   'Seeds & Legumes': ['mustard', 'sunflower_seeds', 'flaxseed', 'lentils', 'chickpeas', 'lupin'],
   'Animal Products': ['red_meat', 'poultry', 'gelatin'],
   'Other': ['sulfites', 'msg', 'food_coloring', 'latex_related', 'nickel_related'],
+};
+
+const INITIAL_INTOLERANCE_OPTIONS: Record<string, string[]> = {
+  'Common': ['lactose', 'gluten_sensitivity', 'fructose', 'histamine', 'caffeine'],
+  'Digestive': ['fodmap', 'sorbitol', 'mannitol', 'xylitol', 'fructan', 'galactan'],
+  'Additives': ['sulfites', 'salicylates', 'amines', 'msg_sensitivity', 'artificial_sweeteners', 'food_preservatives'],
+  'Other': ['alcohol', 'nightshades', 'oxalates', 'lectins', 'tyramine'],
 };
 
 const INTOLERANCE_OPTIONS_CATEGORIZED: Record<string, string[]> = {
