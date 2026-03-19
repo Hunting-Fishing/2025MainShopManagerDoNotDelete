@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Phone, Mail, Loader2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
+import { Users, Plus, Search, Phone, Mail, Loader2, SlidersHorizontal, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,6 +24,17 @@ export default function PersonalTrainerClients() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Filter states
+  const [genderFilter, setGenderFilter] = useState('all');
+  const [fitnessFilter, setFitnessFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [membershipFilter, setMembershipFilter] = useState('all');
+  const [dayFilter, setDayFilter] = useState<string[]>([]);
+  const [trainerFilter, setTrainerFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', phone: '', gender: '',
     fitness_level: 'beginner', goals: '', health_conditions: '', membership_type: 'standard',
@@ -98,9 +110,67 @@ export default function PersonalTrainerClients() {
     }));
   };
 
-  const filtered = clients.filter((c: any) =>
-    `${c.first_name} ${c.last_name} ${c.email}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const toggleDayFilter = (day: string) => {
+    setDayFilter(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    );
+  };
+
+  const activeFilterCount = [
+    genderFilter !== 'all',
+    fitnessFilter !== 'all',
+    statusFilter !== 'all',
+    membershipFilter !== 'all',
+    dayFilter.length > 0,
+    trainerFilter !== 'all',
+  ].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setGenderFilter('all');
+    setFitnessFilter('all');
+    setStatusFilter('all');
+    setMembershipFilter('all');
+    setDayFilter([]);
+    setTrainerFilter('all');
+    setSortBy('newest');
+  };
+
+  const filtered = useMemo(() => {
+    let result = clients.filter((c: any) => {
+      const matchesSearch = `${c.first_name} ${c.last_name} ${c.email || ''}`.toLowerCase().includes(search.toLowerCase());
+      if (!matchesSearch) return false;
+      if (genderFilter !== 'all' && c.gender !== genderFilter) return false;
+      if (fitnessFilter !== 'all' && c.fitness_level !== fitnessFilter) return false;
+      if (statusFilter !== 'all' && c.membership_status !== statusFilter) return false;
+      if (membershipFilter !== 'all' && c.membership_type !== membershipFilter) return false;
+      if (trainerFilter !== 'all' && c.trainer_id !== trainerFilter) return false;
+      if (dayFilter.length > 0) {
+        const clientDays: string[] = c.preferred_workout_days || [];
+        if (!dayFilter.some(d => clientDays.includes(d))) return false;
+      }
+      return true;
+    });
+
+    result.sort((a: any, b: any) => {
+      switch (sortBy) {
+        case 'name-asc':
+          return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`);
+        case 'name-desc':
+          return `${b.first_name} ${b.last_name}`.localeCompare(`${a.first_name} ${a.last_name}`);
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'fitness': {
+          const order: Record<string, number> = { beginner: 0, intermediate: 1, advanced: 2 };
+          return (order[a.fitness_level] ?? 0) - (order[b.fitness_level] ?? 0);
+        }
+        case 'newest':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return result;
+  }, [clients, search, genderFilter, fitnessFilter, statusFilter, membershipFilter, trainerFilter, dayFilter, sortBy]);
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
@@ -118,7 +188,6 @@ export default function PersonalTrainerClients() {
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Add New Client</DialogTitle></DialogHeader>
             <div className="space-y-4">
-              {/* Basic Info */}
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Personal Info</p>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} /></div>
@@ -157,8 +226,6 @@ export default function PersonalTrainerClients() {
                   </Select>
                 </div>
               </div>
-
-              {/* Membership & Trainer */}
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide pt-2">Membership</p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -185,8 +252,6 @@ export default function PersonalTrainerClients() {
                   </div>
                 )}
               </div>
-
-              {/* Preferred Workout Days */}
               <div>
                 <Label>Preferred Workout Days</Label>
                 <div className="flex flex-wrap gap-2 mt-1">
@@ -197,20 +262,15 @@ export default function PersonalTrainerClients() {
                   ))}
                 </div>
               </div>
-
-              {/* Goals & Health */}
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide pt-2">Health & Goals</p>
               <div><Label>Goals</Label><Textarea value={form.goals} onChange={e => setForm(f => ({ ...f, goals: e.target.value }))} placeholder="Weight loss, muscle gain, etc." /></div>
               <div><Label>Injuries / Limitations</Label><Textarea value={form.injuries} onChange={e => setForm(f => ({ ...f, injuries: e.target.value }))} placeholder="Knee injury, lower back issues..." /></div>
               <div><Label>Medical Warnings / Health Conditions</Label><Textarea value={form.health_conditions} onChange={e => setForm(f => ({ ...f, health_conditions: e.target.value }))} placeholder="Asthma, diabetes, heart conditions..." /></div>
-
-              {/* Emergency Contact */}
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide pt-2">Emergency Contact</p>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Contact Name</Label><Input value={form.emergency_contact} onChange={e => setForm(f => ({ ...f, emergency_contact: e.target.value }))} /></div>
                 <div><Label>Contact Phone</Label><Input value={form.emergency_phone} onChange={e => setForm(f => ({ ...f, emergency_phone: e.target.value }))} /></div>
               </div>
-
               <Button className="w-full" disabled={!form.first_name || !form.last_name || addClient.isPending} onClick={() => addClient.mutate()}>
                 {addClient.isPending ? 'Adding...' : 'Add Client'}
               </Button>
@@ -219,15 +279,150 @@ export default function PersonalTrainerClients() {
         </Dialog>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search clients..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      {/* Search + Filter Toggle + Sort */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search clients..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <Button
+          variant={filtersOpen ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setFiltersOpen(!filtersOpen)}
+          className="gap-2"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          Filters
+          {activeFilterCount > 0 && (
+            <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">
+              {activeFilterCount}
+            </Badge>
+          )}
+        </Button>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest First</SelectItem>
+            <SelectItem value="oldest">Oldest First</SelectItem>
+            <SelectItem value="name-asc">Name A–Z</SelectItem>
+            <SelectItem value="name-desc">Name Z–A</SelectItem>
+            <SelectItem value="fitness">Fitness Level</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
+      {/* Collapsible Filter Bar */}
+      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <CollapsibleContent>
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">Filter Clients</p>
+                {activeFilterCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs gap-1 text-muted-foreground hover:text-destructive">
+                    <X className="h-3 w-3" />Clear All
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Gender</Label>
+                  <Select value={genderFilter} onValueChange={setGenderFilter}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Fitness Level</Label>
+                  <Select value={fitnessFilter} onValueChange={setFitnessFilter}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="frozen">Frozen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Membership</Label>
+                  <Select value={membershipFilter} onValueChange={setMembershipFilter}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="vip">VIP</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {trainers.length > 0 && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Trainer</Label>
+                    <Select value={trainerFilter} onValueChange={setTrainerFilter}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Trainers</SelectItem>
+                        {trainers.map((t: any) => (
+                          <SelectItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Preferred Days</Label>
+                <div className="flex flex-wrap gap-2 mt-1.5">
+                  {WORKOUT_DAYS.map(day => (
+                    <Button
+                      key={day}
+                      type="button"
+                      size="sm"
+                      variant={dayFilter.includes(day) ? 'default' : 'outline'}
+                      className="text-xs h-7 px-3"
+                      onClick={() => toggleDayFilter(day)}
+                    >
+                      {day.slice(0, 3)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Results count */}
+      {(activeFilterCount > 0 || search) && (
+        <p className="text-xs text-muted-foreground">
+          Showing {filtered.length} of {clients.length} clients
+        </p>
+      )}
 
       {isLoading ? (
         <div className="text-center py-12"><Loader2 className="h-8 w-8 animate-spin mx-auto" /></div>
       ) : filtered.length === 0 ? (
-        <Card className="border-dashed"><CardContent className="py-12 text-center text-muted-foreground"><Users className="h-10 w-10 mx-auto mb-3 opacity-30" /><p>No clients yet. Add your first client!</p></CardContent></Card>
+        <Card className="border-dashed"><CardContent className="py-12 text-center text-muted-foreground"><Users className="h-10 w-10 mx-auto mb-3 opacity-30" /><p>{activeFilterCount > 0 ? 'No clients match your filters.' : 'No clients yet. Add your first client!'}</p></CardContent></Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((client: any) => (
