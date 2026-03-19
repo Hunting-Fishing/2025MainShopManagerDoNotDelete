@@ -891,6 +891,74 @@ export const navigation: NavigationSection[] = [
     ],
   },
   {
+    title: 'Personal Trainer',
+    items: [
+      {
+        title: 'Dashboard',
+        href: '/personal-trainer',
+        icon: LayoutDashboard,
+        description: 'Trainer dashboard',
+        permissionModule: 'personal_trainer',
+      },
+      {
+        title: 'Clients',
+        href: '/personal-trainer/clients',
+        icon: Users,
+        description: 'Manage clients',
+        permissionModule: 'personal_trainer',
+      },
+      {
+        title: 'Workout Programs',
+        href: '/personal-trainer/programs',
+        icon: ClipboardList,
+        description: 'Training programs',
+        permissionModule: 'personal_trainer',
+      },
+      {
+        title: 'Exercises',
+        href: '/personal-trainer/exercises',
+        icon: Wrench,
+        description: 'Exercise library',
+        permissionModule: 'personal_trainer',
+      },
+      {
+        title: 'Sessions',
+        href: '/personal-trainer/sessions',
+        icon: Calendar,
+        description: 'Session scheduling',
+        permissionModule: 'personal_trainer',
+      },
+      {
+        title: 'Body Metrics',
+        href: '/personal-trainer/body-metrics',
+        icon: FileBarChart,
+        description: 'Client body metrics',
+        permissionModule: 'personal_trainer',
+      },
+      {
+        title: 'Packages',
+        href: '/personal-trainer/packages',
+        icon: Package,
+        description: 'Service packages',
+        permissionModule: 'personal_trainer',
+      },
+      {
+        title: 'Billing',
+        href: '/personal-trainer/billing',
+        icon: Receipt,
+        description: 'Client billing',
+        permissionModule: 'personal_trainer',
+      },
+      {
+        title: 'Settings',
+        href: '/personal-trainer/settings',
+        icon: Settings,
+        description: 'Module settings',
+        permissionModule: 'personal_trainer',
+      },
+    ],
+  },
+  {
     title: 'Tools',
     items: [
       {

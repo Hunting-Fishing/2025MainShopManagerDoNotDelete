@@ -633,6 +633,26 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Equipment tracking',
     ],
   },
+  {
+    slug: 'personal-trainer',
+    name: 'Personal Trainer & Gym',
+    description: 'Complete fitness management platform with client CRM, workout programming, session scheduling, body metrics tracking, and medical condition management with ICD-10 integration.',
+    icon: Dumbbell,
+    color: 'bg-orange-500',
+    price: 'From $9/mo',
+    available: true,
+    coreFeatures: [
+      'Client management with medical profiles',
+      'Workout program builder & AI generation',
+      'Session scheduling & attendance tracking',
+      'Body metrics & progress photo gallery',
+    ],
+    extraFeatures: [
+      'ICD-10 medical condition tracking',
+      'Client portal with self-service',
+      'Package & billing management',
+    ],
+  },
 ];
 
 export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
