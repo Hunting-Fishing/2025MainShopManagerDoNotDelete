@@ -33,11 +33,15 @@ export default function PersonalTrainerExercises() {
   const [filterMuscle, setFilterMuscle] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
+  const [filterEquipment, setFilterEquipment] = useState('all');
+  const [groupBy, setGroupBy] = useState<'none' | 'equipment' | 'muscle_group'>('none');
+  const [sortBy, setSortBy] = useState<'name-asc' | 'name-desc' | 'muscle_group' | 'equipment' | 'difficulty'>('name-asc');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const { data: exercises = [], isLoading } = useQuery({
     queryKey: ['pt-exercises', shopId],
