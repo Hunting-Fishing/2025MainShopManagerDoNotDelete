@@ -245,7 +245,8 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
         <div className="space-y-2">
           {conditions.map((cond: any) => {
             const isExpanded = expandedCards.has(cond.id);
-            const hasDetails = (cond.exercise_restrictions?.length > 0) || (cond.dietary_implications?.length > 0) || cond.notes || cond.trainer_ai_notes || cond.diagnosed_date;
+            const hasDetails = (cond.exercise_restrictions?.length > 0) || (cond.dietary_implications?.length > 0) || cond.notes || cond.trainer_ai_notes || cond.diagnosed_date || cond.physician_restrictions || cond.affected_area;
+            const restrictionExpired = cond.physician_restriction_until && new Date(cond.physician_restriction_until) < new Date();
             return (
               <Card key={cond.id} className="border-l-4" style={{
                 borderLeftColor: cond.severity === 'severe' ? 'hsl(var(--destructive))' : 
