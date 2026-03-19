@@ -111,6 +111,7 @@ export const MODULE_OPTIONS: { value: ModuleType; label: string }[] = [
   { value: 'marine', label: 'Marine' },
   { value: 'fuel_delivery', label: 'Fuel Delivery' },
   { value: 'export_company', label: 'Export Company' },
+  { value: 'personal_trainer', label: 'Personal Trainer' },
   { value: 'pos', label: 'Point of Sale' },
   { value: 'payroll', label: 'Payroll' },
   { value: 'general', label: 'General' },
