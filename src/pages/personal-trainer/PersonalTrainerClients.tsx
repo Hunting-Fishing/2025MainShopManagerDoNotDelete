@@ -74,7 +74,7 @@ export default function PersonalTrainerClients() {
         emergency_contact: form.emergency_contact || null,
         emergency_phone: form.emergency_phone || null,
         preferred_workout_days: form.preferred_workout_days.length > 0 ? form.preferred_workout_days : null,
-        trainer_id: assignTrainer || null,
+        trainer_id: assignTrainer && assignTrainer !== 'none' ? assignTrainer : null,
       };
       const { error } = await (supabase as any).from('pt_clients').insert(payload);
       if (error) throw error;
