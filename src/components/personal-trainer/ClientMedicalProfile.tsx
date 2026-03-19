@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Plus, HeartPulse, Search, Trash2, Shield, AlertTriangle, CheckCircle, Globe, BookOpen, ChevronDown, ChevronUp, X, User, Stethoscope } from 'lucide-react';
+import { Loader2, Plus, HeartPulse, Search, Trash2, Shield, AlertTriangle, CheckCircle, Globe, BookOpen, ChevronDown, ChevronUp, X, User, Stethoscope, MapPin, Weight, ClipboardList, Calendar } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -245,7 +245,8 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
         <div className="space-y-2">
           {conditions.map((cond: any) => {
             const isExpanded = expandedCards.has(cond.id);
-            const hasDetails = (cond.exercise_restrictions?.length > 0) || (cond.dietary_implications?.length > 0) || cond.notes || cond.trainer_ai_notes || cond.diagnosed_date;
+            const hasDetails = (cond.exercise_restrictions?.length > 0) || (cond.dietary_implications?.length > 0) || cond.notes || cond.trainer_ai_notes || cond.diagnosed_date || cond.physician_restrictions || cond.affected_area;
+            const restrictionExpired = cond.physician_restriction_until && new Date(cond.physician_restriction_until) < new Date();
             return (
               <Card key={cond.id} className="border-l-4" style={{
                 borderLeftColor: cond.severity === 'severe' ? 'hsl(var(--destructive))' : 
@@ -257,11 +258,26 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => hasDetails && toggleExpanded(cond.id)}>
                       <div className="flex items-center gap-2 flex-wrap">
                         {STATUS_ICONS[cond.status] || null}
-                        <span className="font-medium text-sm">{cond.condition_name}</span>
+                        <span className="font-medium text-sm">
+                          {cond.condition_name}
+                          {cond.affected_area && <span className="text-muted-foreground font-normal"> — {cond.affected_area}</span>}
+                        </span>
                         <Badge variant="outline" className="text-xs">{cond.category}</Badge>
                         <span className={`text-xs px-1.5 py-0.5 rounded-full ${SEVERITY_COLORS[cond.severity] || ''}`}>
                           {cond.severity}
                         </span>
+                        {cond.injury_grade && cond.injury_grade !== 'na' && (
+                          <Badge variant="outline" className="text-[10px]">Grade {cond.injury_grade.replace('grade_', '')}</Badge>
+                        )}
+                        {cond.weight_limit_lbs && (
+                          <Badge variant="secondary" className="text-[10px] gap-0.5"><Weight className="h-2.5 w-2.5" /> Max {cond.weight_limit_lbs} lbs</Badge>
+                        )}
+                        {cond.physician_restrictions && (
+                          <Badge variant="outline" className={`text-[10px] gap-0.5 ${restrictionExpired ? 'border-amber-500 text-amber-600' : 'border-blue-500 text-blue-600'}`}>
+                            <ClipboardList className="h-2.5 w-2.5" />
+                            {restrictionExpired ? '⚠️ Dr. orders expired' : `Dr. orders${cond.physician_restriction_until ? ` until ${new Date(cond.physician_restriction_until).toLocaleDateString()}` : ''}`}
+                          </Badge>
+                        )}
                         <Badge variant="secondary" className="text-xs">{cond.status}</Badge>
                         {cond.cleared_by_physician && (
                           <Badge className="text-xs bg-green-600">✓ Cleared</Badge>
@@ -299,6 +315,17 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   {/* Expanded details */}
                   {isExpanded && (
                     <div className="mt-3 pt-3 border-t border-border space-y-2">
+                      {cond.physician_restrictions && (
+                        <div className={`rounded-md p-2 ${restrictionExpired ? 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800' : 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'}`}>
+                          <p className="text-[11px] font-medium mb-1 flex items-center gap-1">
+                            <ClipboardList className="h-3 w-3" />
+                            Doctor's Restrictions
+                            {restrictionExpired && <span className="text-amber-600 font-semibold ml-1">— EXPIRED, review needed</span>}
+                            {cond.physician_restriction_until && !restrictionExpired && <span className="text-muted-foreground font-normal ml-1">until {new Date(cond.physician_restriction_until).toLocaleDateString()}</span>}
+                          </p>
+                          <p className="text-xs">{cond.physician_restrictions}</p>
+                        </div>
+                      )}
                       {(cond.exercise_restrictions?.length > 0) && (
                         <div>
                           <p className="text-[11px] font-medium text-muted-foreground mb-1">Exercise Restrictions</p>
@@ -510,6 +537,69 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   <Label>Diagnosed Date</Label>
                   <Input type="date" value={editingCondition.diagnosed_date || ''} onChange={e => setEditingCondition((p: any) => ({ ...p, diagnosed_date: e.target.value || null }))} />
                 </div>
+
+                {/* Condition Detail Section */}
+                <div className="border border-border rounded-lg p-3 space-y-3">
+                  <p className="text-xs font-semibold flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Condition Detail</p>
+                  
+                  <div>
+                    <Label className="text-xs">Affected Area / Location</Label>
+                    <Input 
+                      value={editingCondition.affected_area || ''} 
+                      onChange={e => setEditingCondition((p: any) => ({ ...p, affected_area: e.target.value }))} 
+                      placeholder={
+                        editingCondition.category === 'Musculoskeletal' ? 'e.g., L4-L5 disc, Left ACL, Right rotator cuff' :
+                        editingCondition.category === 'Cardiovascular' ? 'e.g., Left ventricle, Mitral valve' :
+                        'e.g., specific location or body part'
+                      }
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Injury Grade</Label>
+                      <Select value={editingCondition.injury_grade || 'na'} onValueChange={v => setEditingCondition((p: any) => ({ ...p, injury_grade: v === 'na' ? null : v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="na">N/A</SelectItem>
+                          <SelectItem value="grade_1">Grade 1 — Mild / Strain</SelectItem>
+                          <SelectItem value="grade_2">Grade 2 — Moderate / Partial</SelectItem>
+                          <SelectItem value="grade_3">Grade 3 — Severe / Complete</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Weight Limit (lbs)</Label>
+                      <Input 
+                        type="number" 
+                        value={editingCondition.weight_limit_lbs || ''} 
+                        onChange={e => setEditingCondition((p: any) => ({ ...p, weight_limit_lbs: e.target.value ? parseInt(e.target.value) : null }))} 
+                        placeholder="No limit if empty"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md p-3 space-y-2">
+                    <Label className="text-xs flex items-center gap-1.5"><ClipboardList className="h-3.5 w-3.5 text-blue-600" /> Doctor's Restrictions</Label>
+                    <Textarea 
+                      value={editingCondition.physician_restrictions || ''} 
+                      onChange={e => setEditingCondition((p: any) => ({ ...p, physician_restrictions: e.target.value }))} 
+                      rows={3} 
+                      placeholder="Enter physician-imposed limitations, e.g., No spinal loading for 8 weeks, limit flexion to 30 degrees..."
+                      className="bg-background"
+                    />
+                    <div>
+                      <Label className="text-xs">Restriction Valid Until</Label>
+                      <Input 
+                        type="date" 
+                        value={editingCondition.physician_restriction_until || ''} 
+                        onChange={e => setEditingCondition((p: any) => ({ ...p, physician_restriction_until: e.target.value || null }))} 
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-1">When this date passes, a review reminder will appear on the card.</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <Label>Notes</Label>
                   <Textarea value={editingCondition.notes || ''} onChange={e => setEditingCondition((p: any) => ({ ...p, notes: e.target.value }))} rows={2} placeholder="Additional notes for the trainer..." />

@@ -38571,6 +38571,7 @@ export type Database = {
       pt_client_medical_conditions: {
         Row: {
           added_by: string | null
+          affected_area: string | null
           category: string
           clearance_date: string | null
           cleared_by_physician: boolean | null
@@ -38582,15 +38583,20 @@ export type Database = {
           dietary_implications: string[] | null
           exercise_restrictions: string[] | null
           id: string
+          injury_grade: string | null
           notes: string | null
+          physician_restriction_until: string | null
+          physician_restrictions: string | null
           severity: string
           shop_id: string
           status: string
           trainer_ai_notes: string | null
           updated_at: string
+          weight_limit_lbs: number | null
         }
         Insert: {
           added_by?: string | null
+          affected_area?: string | null
           category: string
           clearance_date?: string | null
           cleared_by_physician?: boolean | null
@@ -38602,15 +38608,20 @@ export type Database = {
           dietary_implications?: string[] | null
           exercise_restrictions?: string[] | null
           id?: string
+          injury_grade?: string | null
           notes?: string | null
+          physician_restriction_until?: string | null
+          physician_restrictions?: string | null
           severity?: string
           shop_id: string
           status?: string
           trainer_ai_notes?: string | null
           updated_at?: string
+          weight_limit_lbs?: number | null
         }
         Update: {
           added_by?: string | null
+          affected_area?: string | null
           category?: string
           clearance_date?: string | null
           cleared_by_physician?: boolean | null
@@ -38622,12 +38633,16 @@ export type Database = {
           dietary_implications?: string[] | null
           exercise_restrictions?: string[] | null
           id?: string
+          injury_grade?: string | null
           notes?: string | null
+          physician_restriction_until?: string | null
+          physician_restrictions?: string | null
           severity?: string
           shop_id?: string
           status?: string
           trainer_ai_notes?: string | null
           updated_at?: string
+          weight_limit_lbs?: number | null
         }
         Relationships: []
       }
