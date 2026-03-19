@@ -14,8 +14,9 @@ serve(async (req) => {
 
   try {
     const { messages, clientId, shopId } = await req.json();
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-    if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured");
+    // Use dedicated PT key, fall back to shared key
+    const OPENAI_API_KEY = Deno.env.get("PT_OPENAI_API_KEY") || Deno.env.get("OPENAI_API_KEY");
+    if (!OPENAI_API_KEY) throw new Error("Neither PT_OPENAI_API_KEY nor OPENAI_API_KEY is configured");
 
     // Build rich context from database
     let contextSections: string[] = [];
