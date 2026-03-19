@@ -29,14 +29,14 @@ export default function PersonalTrainerClientDetail() {
   const [editForm, setEditForm] = useState<any>({});
 
   const { data: client, isLoading } = useQuery({
-    queryKey: ['pt-client-detail', id],
+    queryKey: ['pt-client-detail', id, shopId],
     queryFn: async () => {
-      if (!id) return null;
-      const { data, error } = await (supabase as any).from('pt_clients').select('*').eq('id', id).single();
+      if (!id || !shopId) return null;
+      const { data, error } = await (supabase as any).from('pt_clients').select('*').eq('id', id).eq('shop_id', shopId).single();
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!id && !!shopId,
   });
 
   const { data: programs = [] } = useQuery({
