@@ -51,7 +51,7 @@ export default function PersonalTrainerClients() {
     enabled: !!shopId,
   });
 
-  const [assignTrainer, setAssignTrainer] = useState('');
+  const [assignTrainer, setAssignTrainer] = useState('none');
 
   const addClient = useMutation({
     mutationFn: async () => {
@@ -74,7 +74,7 @@ export default function PersonalTrainerClients() {
         emergency_contact: form.emergency_contact || null,
         emergency_phone: form.emergency_phone || null,
         preferred_workout_days: form.preferred_workout_days.length > 0 ? form.preferred_workout_days : null,
-        trainer_id: assignTrainer || null,
+        trainer_id: assignTrainer && assignTrainer !== 'none' ? assignTrainer : null,
       };
       const { error } = await (supabase as any).from('pt_clients').insert(payload);
       if (error) throw error;
@@ -84,7 +84,7 @@ export default function PersonalTrainerClients() {
       toast({ title: 'Client added successfully' });
       setDialogOpen(false);
       setForm({ first_name: '', last_name: '', email: '', phone: '', gender: '', fitness_level: 'beginner', goals: '', health_conditions: '', membership_type: 'standard', date_of_birth: '', height_cm: '', weight_kg: '', injuries: '', emergency_contact: '', emergency_phone: '', preferred_workout_days: [] });
-      setAssignTrainer('');
+      setAssignTrainer('none');
     },
     onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
@@ -178,7 +178,7 @@ export default function PersonalTrainerClients() {
                     <Select value={assignTrainer} onValueChange={setAssignTrainer}>
                       <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {trainers.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</SelectItem>)}
                       </SelectContent>
                     </Select>
