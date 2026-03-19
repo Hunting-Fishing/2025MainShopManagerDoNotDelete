@@ -15,6 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useICD10Search, mapICD10Category } from '@/hooks/useICD10Search';
+import SafeExerciseRecommendations from './SafeExerciseRecommendations';
 
 interface Props {
   clientId: string;
