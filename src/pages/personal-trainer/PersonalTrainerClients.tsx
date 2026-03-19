@@ -51,7 +51,7 @@ export default function PersonalTrainerClients() {
     enabled: !!shopId,
   });
 
-  const [assignTrainer, setAssignTrainer] = useState('');
+  const [assignTrainer, setAssignTrainer] = useState('none');
 
   const addClient = useMutation({
     mutationFn: async () => {
