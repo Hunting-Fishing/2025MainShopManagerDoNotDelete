@@ -1,4 +1,5 @@
 
+import { lazy } from 'react';
 import { 
   Building2, 
   Users, 
@@ -39,38 +40,40 @@ import {
   Puzzle,
   Fuel
 } from 'lucide-react';
-import { CompanyTab } from '@/components/settings/CompanyTab';
-import { TeamTab } from '@/components/settings/TeamTab';
-import { NotificationsTab } from '@/components/settings/NotificationsTab';
-import { BrandingTab } from '@/components/settings/BrandingTab';
-import { InventorySettingsTab } from '@/components/settings/InventorySettingsTab';
-import { DIYBayRatesTab } from '@/components/settings/DIYBayRatesTab';
-import { WorkOrderNumberingTab } from '@/components/settings/WorkOrderNumberingTab';
-import { WorkOrderWorkflowTab } from '@/components/settings/WorkOrderWorkflowTab';
-import { WorkOrderTemplateTab } from '@/components/settings/WorkOrderTemplateTab';
-import { WorkOrderStatusTab } from '@/components/settings/WorkOrderStatusTab';
-import { WorkOrderManagementTab } from '@/components/settings/WorkOrderManagementTab';
-import { EnhancedWorkOrdersDashboard } from '@/components/settings/EnhancedWorkOrdersDashboard';
-import { NonProfitTab } from '@/components/settings/NonProfitTab';
-import { ProgramManagementTab } from '@/components/settings/ProgramManagementTab';
-import { FinancialManagementTab } from '@/components/settings/FinancialManagementTab';
-import { RaffleManagementTab } from '@/components/settings/RaffleManagementTab';
-import { PublicPortalTab } from '@/components/settings/PublicPortalTab';
 import { SettingsTabConfig, SettingsSection } from '@/types/settingsConfig';
-import { GrantManagementTab } from '@/components/settings/GrantManagementTab';
-import { ImpactMeasurementTab } from '@/components/settings/ImpactMeasurementTab';
-import { BoardMeetingTab } from '@/components/settings/BoardMeetingTab';
-import { ComplianceTab } from '@/components/settings/ComplianceTab';
-import { SecurityTab } from '@/components/settings/SecurityTab';
-import { AssetTrackingTab } from '@/components/settings/AssetTrackingTab';
-import { BudgetManagementTab } from '@/components/settings/BudgetManagementTab';
-import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
-import { VolunteerManagementTab } from '@/components/settings/VolunteerManagementTab';
-import { DashboardSettingsTab } from '@/components/settings/DashboardSettingsTab';
-import { RolePermissionsSettingsTab } from '@/components/settings/RolePermissionsSettingsTab';
-import { UserPermissionsSettingsTab } from '@/components/settings/UserPermissionsSettingsTab';
-import { NavigationSettingsTab } from '@/components/settings/NavigationSettingsTab';
-import { FuelProductsTab } from '@/components/settings/FuelProductsTab';
+
+// Lazy-load all settings tab components for code-splitting
+const CompanyTab = lazy(() => import('@/components/settings/CompanyTab').then(m => ({ default: m.CompanyTab })));
+const TeamTab = lazy(() => import('@/components/settings/TeamTab').then(m => ({ default: m.TeamTab })));
+const NotificationsTab = lazy(() => import('@/components/settings/NotificationsTab').then(m => ({ default: m.NotificationsTab })));
+const BrandingTab = lazy(() => import('@/components/settings/BrandingTab').then(m => ({ default: m.BrandingTab })));
+const InventorySettingsTab = lazy(() => import('@/components/settings/InventorySettingsTab').then(m => ({ default: m.InventorySettingsTab })));
+const DIYBayRatesTab = lazy(() => import('@/components/settings/DIYBayRatesTab').then(m => ({ default: m.DIYBayRatesTab })));
+const WorkOrderNumberingTab = lazy(() => import('@/components/settings/WorkOrderNumberingTab').then(m => ({ default: m.WorkOrderNumberingTab })));
+const WorkOrderWorkflowTab = lazy(() => import('@/components/settings/WorkOrderWorkflowTab').then(m => ({ default: m.WorkOrderWorkflowTab })));
+const WorkOrderTemplateTab = lazy(() => import('@/components/settings/WorkOrderTemplateTab').then(m => ({ default: m.WorkOrderTemplateTab })));
+const WorkOrderStatusTab = lazy(() => import('@/components/settings/WorkOrderStatusTab').then(m => ({ default: m.WorkOrderStatusTab })));
+const WorkOrderManagementTab = lazy(() => import('@/components/settings/WorkOrderManagementTab').then(m => ({ default: m.WorkOrderManagementTab })));
+const EnhancedWorkOrdersDashboard = lazy(() => import('@/components/settings/EnhancedWorkOrdersDashboard').then(m => ({ default: m.EnhancedWorkOrdersDashboard })));
+const NonProfitTab = lazy(() => import('@/components/settings/NonProfitTab').then(m => ({ default: m.NonProfitTab })));
+const ProgramManagementTab = lazy(() => import('@/components/settings/ProgramManagementTab').then(m => ({ default: m.ProgramManagementTab })));
+const FinancialManagementTab = lazy(() => import('@/components/settings/FinancialManagementTab').then(m => ({ default: m.FinancialManagementTab })));
+const RaffleManagementTab = lazy(() => import('@/components/settings/RaffleManagementTab').then(m => ({ default: m.RaffleManagementTab })));
+const PublicPortalTab = lazy(() => import('@/components/settings/PublicPortalTab').then(m => ({ default: m.PublicPortalTab })));
+const GrantManagementTab = lazy(() => import('@/components/settings/GrantManagementTab').then(m => ({ default: m.GrantManagementTab })));
+const ImpactMeasurementTab = lazy(() => import('@/components/settings/ImpactMeasurementTab').then(m => ({ default: m.ImpactMeasurementTab })));
+const BoardMeetingTab = lazy(() => import('@/components/settings/BoardMeetingTab').then(m => ({ default: m.BoardMeetingTab })));
+const ComplianceTab = lazy(() => import('@/components/settings/ComplianceTab').then(m => ({ default: m.ComplianceTab })));
+const SecurityTab = lazy(() => import('@/components/settings/SecurityTab').then(m => ({ default: m.SecurityTab })));
+const AssetTrackingTab = lazy(() => import('@/components/settings/AssetTrackingTab').then(m => ({ default: m.AssetTrackingTab })));
+const BudgetManagementTab = lazy(() => import('@/components/settings/BudgetManagementTab').then(m => ({ default: m.BudgetManagementTab })));
+const IntegrationsTab = lazy(() => import('@/components/settings/IntegrationsTab').then(m => ({ default: m.IntegrationsTab })));
+const VolunteerManagementTab = lazy(() => import('@/components/settings/VolunteerManagementTab').then(m => ({ default: m.VolunteerManagementTab })));
+const DashboardSettingsTab = lazy(() => import('@/components/settings/DashboardSettingsTab').then(m => ({ default: m.DashboardSettingsTab })));
+const RolePermissionsSettingsTab = lazy(() => import('@/components/settings/RolePermissionsSettingsTab').then(m => ({ default: m.RolePermissionsSettingsTab })));
+const UserPermissionsSettingsTab = lazy(() => import('@/components/settings/UserPermissionsSettingsTab').then(m => ({ default: m.UserPermissionsSettingsTab })));
+const NavigationSettingsTab = lazy(() => import('@/components/settings/NavigationSettingsTab').then(m => ({ default: m.NavigationSettingsTab })));
+const FuelProductsTab = lazy(() => import('@/components/settings/FuelProductsTab').then(m => ({ default: m.FuelProductsTab })));
 
 // Placeholder component for lazy-loaded pages
 const PlaceholderTab = () => null;
