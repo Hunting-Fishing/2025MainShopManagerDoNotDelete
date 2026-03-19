@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Plus, HeartPulse, Search, Trash2, Shield, AlertTriangle, CheckCircle, Globe, BookOpen, ChevronDown, ChevronUp, X, User, Stethoscope } from 'lucide-react';
+import { Loader2, Plus, HeartPulse, Search, Trash2, Shield, AlertTriangle, CheckCircle, Globe, BookOpen, ChevronDown, ChevronUp, X, User, Stethoscope, MapPin, Weight, ClipboardList, Calendar } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
