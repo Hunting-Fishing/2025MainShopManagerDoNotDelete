@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Search, Plus, ChevronDown } from 'lucide-react';
 
 interface MultiSelectDialogProps {
@@ -15,6 +16,7 @@ interface MultiSelectDialogProps {
   allowCustom?: boolean;
   customPlaceholder?: string;
   categorized?: Record<string, string[]>;
+  onAddCustomToCategory?: (category: string, value: string) => void;
 }
 
 export default function MultiSelectDialog({
@@ -25,10 +27,12 @@ export default function MultiSelectDialog({
   allowCustom = false,
   customPlaceholder = 'Add custom option...',
   categorized,
+  onAddCustomToCategory,
 }: MultiSelectDialogProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [customValue, setCustomValue] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   const allOptions = categorized
     ? Object.values(categorized).flat()
@@ -46,12 +50,21 @@ export default function MultiSelectDialog({
     );
   };
 
+  const categoryKeys = categorized ? Object.keys(categorized) : [];
+
   const addCustom = () => {
-    const val = customValue.trim().toLowerCase();
-    if (val && !selected.includes(val) && !allOptions.includes(val)) {
+    const val = customValue.trim().toLowerCase().replace(/\s+/g, '_');
+    if (!val) return;
+
+    if (!selected.includes(val)) {
       onSelectionChange([...selected, val]);
-      setCustomValue('');
     }
+
+    if (categorized && selectedCategory && onAddCustomToCategory) {
+      onAddCustomToCategory(selectedCategory, val);
+    }
+
+    setCustomValue('');
   };
 
   const renderOptions = (items: string[]) =>
@@ -133,17 +146,34 @@ export default function MultiSelectDialog({
           </ScrollArea>
 
           {allowCustom && (
-            <div className="flex gap-2 pt-2 border-t">
-              <Input
-                placeholder={customPlaceholder}
-                value={customValue}
-                onChange={e => setCustomValue(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addCustom()}
-                className="flex-1"
-              />
-              <Button size="sm" variant="secondary" onClick={addCustom} disabled={!customValue.trim()}>
-                <Plus className="h-4 w-4" />
-              </Button>
+            <div className="space-y-2 pt-2 border-t">
+              {categorized && categoryKeys.length > 0 && (
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Add to category..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryKeys.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  placeholder={customPlaceholder}
+                  value={customValue}
+                  onChange={e => setCustomValue(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addCustom()}
+                  className="flex-1"
+                />
+                <Button size="sm" variant="secondary" onClick={addCustom} disabled={!customValue.trim() || (!!categorized && !selectedCategory)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {categorized && !selectedCategory && customValue.trim() && (
+                <p className="text-xs text-muted-foreground">Pick a category first</p>
+              )}
             </div>
           )}
 
