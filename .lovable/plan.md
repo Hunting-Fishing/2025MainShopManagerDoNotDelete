@@ -1,31 +1,39 @@
 
 
-# Organize Exercise Library by Equipment + Sort by Muscle Group
+# Fix Add Condition Dialog Scrolling + Enhance Medical Profile for Trainers
 
-## What Changes
+## Problems Identified
 
-Update `PersonalTrainerExercises.tsx` to:
+1. **Scroll issue**: The `ScrollArea` in the Add Condition dialog uses `maxHeight: '40vh'` inline style, but the dialog itself is `max-h-[80vh]`. The flex layout combined with category badges wrapping and tabs overhead leaves insufficient visible scroll area. On smaller screens or when many category badges display, the scrollable list is nearly invisible or cut off.
 
-1. **Add an Equipment filter** — Extract unique equipment values from loaded exercises, add a new `Select` dropdown alongside existing filters. Since equipment strings are freeform (e.g. "Barbell, Flat Bench", "Cable Machine"), we'll extract distinct primary equipment types: Barbell, Dumbbells, Cable Machine, Bodyweight, Machines, Pull-Up Bar, etc.
+2. **Trainer experience gaps**: The edit dialog is functional but lacks the ability to add/remove individual exercise restrictions or dietary implications — they're read-only badges. Trainers can't customize safety parameters per client.
 
-2. **Add a "Group By" toggle** — A new select with options: "None", "Equipment", "Muscle Group". When grouping is active, exercises render in collapsible sections with headers (e.g. "🏋️ Barbell (12)" or "Chest (8)"), replacing the flat grid.
+## Plan
 
-3. **Add Sort By dropdown** — Options: Name A-Z, Name Z-A, Muscle Group, Equipment, Difficulty. Replaces the current default alphabetical-only ordering.
+### 1. Fix scrollbar visibility in Add Condition dialog
 
-## Implementation Details
+- Remove the inline `style={{ maxHeight: '40vh' }}` from both `ScrollArea` components
+- Use proper flex layout so the `ScrollArea` fills remaining space naturally: `className="flex-1 overflow-hidden mt-3"` with the inner scroll area taking full height
+- Increase dialog height to `max-h-[85vh]` for more room
+- Add visible scrollbar styling (override `scrollbar-hide`) so the user can see the scroll indicator
 
-### File: `src/pages/personal-trainer/PersonalTrainerExercises.tsx`
+### 2. Enhance the Edit Condition dialog for trainers
 
-**New state:**
-- `filterEquipment` — select from extracted equipment list
-- `groupBy` — 'none' | 'equipment' | 'muscle_group'  
-- `sortBy` — 'name-asc' | 'name-desc' | 'muscle_group' | 'equipment' | 'difficulty'
+- Make **exercise restrictions** editable: add a multi-select or chip input so trainers can add/remove restrictions from a predefined list (e.g., `no_overhead`, `no_heavy_squats`, `no_running`, `no_twisting`, `avoid_impact`, etc.)
+- Make **dietary implications** editable similarly
+- Add a **"Trainer Notes for AI"** field — a dedicated text area whose content gets injected into AI prompts, letting trainers write specific instructions like "Client has left shoulder impingement — avoid overhead pressing beyond 90°"
+- Add a quick-severity color indicator in the edit dialog header
+- Show `added_by` provenance (trainer vs client-reported) as a subtle badge
 
-**Equipment extraction:** Derive unique equipment values from `exercises` using `useMemo`. Normalize by taking the first item before any comma (e.g. "Barbell, Flat Bench" → "Barbell") to create clean filter options, but also keep exact-match filtering.
+### 3. Improve condition cards on the main list
 
-**Filter bar updates:** Add Equipment select and Sort By select to the existing filter row. Add Group By select.
+- Add an expand/collapse for each card to show full details (restrictions, dietary, notes) without opening the edit dialog
+- Show the `diagnosed_date` if set
+- Add a subtle "Client reported" or "Trainer added" label based on `added_by`
 
-**Grouped rendering:** When `groupBy` is set, group the filtered array into a `Record<string, Exercise[]>`, then render each group as a section with a heading and the existing card grid underneath.
+### Files to Edit
 
-### No other files need changes.
+| File | Change |
+|------|--------|
+| `src/components/personal-trainer/ClientMedicalProfile.tsx` | Fix ScrollArea sizing, enhance edit dialog with editable restrictions/dietary, add trainer AI notes field, improve cards |
 
