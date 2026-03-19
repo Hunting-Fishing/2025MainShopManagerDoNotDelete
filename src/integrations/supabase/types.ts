@@ -38586,6 +38586,7 @@ export type Database = {
           severity: string
           shop_id: string
           status: string
+          trainer_ai_notes: string | null
           updated_at: string
         }
         Insert: {
@@ -38605,6 +38606,7 @@ export type Database = {
           severity?: string
           shop_id: string
           status?: string
+          trainer_ai_notes?: string | null
           updated_at?: string
         }
         Update: {
@@ -38624,6 +38626,7 @@ export type Database = {
           severity?: string
           shop_id?: string
           status?: string
+          trainer_ai_notes?: string | null
           updated_at?: string
         }
         Relationships: []

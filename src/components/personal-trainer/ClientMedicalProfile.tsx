@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Plus, HeartPulse, Search, Trash2, Shield, AlertTriangle, CheckCircle, Globe, BookOpen } from 'lucide-react';
+import { Loader2, Plus, HeartPulse, Search, Trash2, Shield, AlertTriangle, CheckCircle, Globe, BookOpen, ChevronDown, ChevronUp, X, User, Stethoscope } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -29,12 +29,34 @@ const SEVERITY_COLORS: Record<string, string> = {
   managed: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
 };
 
+const SEVERITY_DOT: Record<string, string> = {
+  mild: 'bg-green-500',
+  moderate: 'bg-amber-500',
+  severe: 'bg-red-500',
+  managed: 'bg-blue-500',
+};
+
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   active: <AlertTriangle className="h-3.5 w-3.5 text-red-500" />,
   chronic: <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />,
   monitoring: <Shield className="h-3.5 w-3.5 text-blue-500" />,
   recovered: <CheckCircle className="h-3.5 w-3.5 text-green-500" />,
 };
+
+const ALL_EXERCISE_RESTRICTIONS = [
+  'no_overhead', 'no_heavy_squats', 'no_running', 'no_twisting', 'avoid_impact',
+  'no_jumping', 'no_heavy_deadlifts', 'no_bench_press', 'no_pull_ups',
+  'limit_range_of_motion', 'no_contact_sports', 'no_prolonged_standing',
+  'no_spinal_loading', 'no_lateral_movements', 'no_plyometrics',
+  'low_intensity_only', 'seated_exercises_only', 'no_grip_heavy',
+];
+
+const ALL_DIETARY_IMPLICATIONS = [
+  'low_sodium', 'low_sugar', 'high_protein', 'anti_inflammatory',
+  'gluten_free', 'dairy_free', 'low_fat', 'high_fiber',
+  'iron_rich', 'calcium_rich', 'vitamin_d', 'omega_3',
+  'low_potassium', 'low_purine', 'hydration_focus',
+];
 
 export default function ClientMedicalProfile({ clientId, shopId }: Props) {
   const { toast } = useToast();
@@ -45,8 +67,17 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editingCondition, setEditingCondition] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('catalog');
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   const { results: icd10Results, isLoading: icd10Loading } = useICD10Search(icd10Search);
+
+  const toggleExpanded = (id: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   // Fetch client's conditions
   const { data: conditions = [], isLoading } = useQuery({
@@ -114,7 +145,6 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
 
   const addIcd10Condition = useMutation({
     mutationFn: async (item: { code: string; name: string }) => {
-      // Try to find a matching catalog entry for defaults
       const catalogMatch = catalog.find((c: any) =>
         c.name.toLowerCase() === item.name.toLowerCase() ||
         c.code === item.code
@@ -168,6 +198,26 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
     onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
 
+  const toggleRestriction = (restriction: string) => {
+    setEditingCondition((prev: any) => {
+      const current = prev.exercise_restrictions || [];
+      const updated = current.includes(restriction)
+        ? current.filter((r: string) => r !== restriction)
+        : [...current, restriction];
+      return { ...prev, exercise_restrictions: updated };
+    });
+  };
+
+  const toggleDietary = (implication: string) => {
+    setEditingCondition((prev: any) => {
+      const current = prev.dietary_implications || [];
+      const updated = current.includes(implication)
+        ? current.filter((d: string) => d !== implication)
+        : [...current, implication];
+      return { ...prev, dietary_implications: updated };
+    });
+  };
+
   const activeCount = conditions.filter((c: any) => c.status === 'active' || c.status === 'chronic').length;
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
@@ -193,54 +243,100 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
         </CardContent></Card>
       ) : (
         <div className="space-y-2">
-          {conditions.map((cond: any) => (
-            <Card key={cond.id} className="border-l-4" style={{
-              borderLeftColor: cond.severity === 'severe' ? 'hsl(var(--destructive))' : 
-                cond.severity === 'moderate' ? 'hsl(38 92% 50%)' : 
-                cond.severity === 'managed' ? 'hsl(var(--primary))' : 'hsl(142 76% 36%)'
-            }}>
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {STATUS_ICONS[cond.status] || null}
-                      <span className="font-medium text-sm">{cond.condition_name}</span>
-                      <Badge variant="outline" className="text-xs">{cond.category}</Badge>
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${SEVERITY_COLORS[cond.severity] || ''}`}>
-                        {cond.severity}
-                      </span>
-                      <Badge variant="secondary" className="text-xs">{cond.status}</Badge>
-                      {cond.cleared_by_physician && (
-                        <Badge className="text-xs bg-green-600">✓ Cleared</Badge>
-                      )}
-                      {cond.condition_code && /^[A-Z]\d/.test(cond.condition_code) && (
-                        <Badge variant="outline" className="text-[10px] font-mono">{cond.condition_code}</Badge>
+          {conditions.map((cond: any) => {
+            const isExpanded = expandedCards.has(cond.id);
+            const hasDetails = (cond.exercise_restrictions?.length > 0) || (cond.dietary_implications?.length > 0) || cond.notes || cond.trainer_ai_notes || cond.diagnosed_date;
+            return (
+              <Card key={cond.id} className="border-l-4" style={{
+                borderLeftColor: cond.severity === 'severe' ? 'hsl(var(--destructive))' : 
+                  cond.severity === 'moderate' ? 'hsl(38 92% 50%)' : 
+                  cond.severity === 'managed' ? 'hsl(var(--primary))' : 'hsl(142 76% 36%)'
+              }}>
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => hasDetails && toggleExpanded(cond.id)}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {STATUS_ICONS[cond.status] || null}
+                        <span className="font-medium text-sm">{cond.condition_name}</span>
+                        <Badge variant="outline" className="text-xs">{cond.category}</Badge>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${SEVERITY_COLORS[cond.severity] || ''}`}>
+                          {cond.severity}
+                        </span>
+                        <Badge variant="secondary" className="text-xs">{cond.status}</Badge>
+                        {cond.cleared_by_physician && (
+                          <Badge className="text-xs bg-green-600">✓ Cleared</Badge>
+                        )}
+                        {cond.condition_code && /^[A-Z]\d/.test(cond.condition_code) && (
+                          <Badge variant="outline" className="text-[10px] font-mono">{cond.condition_code}</Badge>
+                        )}
+                        {/* Provenance badge */}
+                        <Badge variant="outline" className="text-[10px] gap-0.5">
+                          {cond.added_by === 'client' ? (
+                            <><User className="h-2.5 w-2.5" /> Client</>
+                          ) : (
+                            <><Stethoscope className="h-2.5 w-2.5" /> Trainer</>
+                          )}
+                        </Badge>
+                      </div>
+                      {cond.diagnosed_date && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Diagnosed: {new Date(cond.diagnosed_date).toLocaleDateString()}</p>
                       )}
                     </div>
-                    {(cond.exercise_restrictions?.length > 0 || cond.dietary_implications?.length > 0) && (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {(cond.exercise_restrictions || []).map((r: string) => (
-                          <Badge key={r} variant="destructive" className="text-[10px] px-1.5">{r.replace(/_/g, ' ')}</Badge>
-                        ))}
-                        {(cond.dietary_implications || []).map((d: string) => (
-                          <Badge key={d} variant="secondary" className="text-[10px] px-1.5">🍎 {d.replace(/_/g, ' ')}</Badge>
-                        ))}
-                      </div>
-                    )}
-                    {cond.notes && <p className="text-xs text-muted-foreground mt-1">{cond.notes}</p>}
+                    <div className="flex gap-1 shrink-0">
+                      {hasDetails && (
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleExpanded(cond.id)}>
+                          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                        </Button>
+                      )}
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingCondition({ ...cond })}>
+                        <Shield className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeCondition.mutate(cond.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingCondition({ ...cond })}>
-                      <Shield className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeCondition.mutate(cond.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  {/* Expanded details */}
+                  {isExpanded && (
+                    <div className="mt-3 pt-3 border-t border-border space-y-2">
+                      {(cond.exercise_restrictions?.length > 0) && (
+                        <div>
+                          <p className="text-[11px] font-medium text-muted-foreground mb-1">Exercise Restrictions</p>
+                          <div className="flex flex-wrap gap-1">
+                            {cond.exercise_restrictions.map((r: string) => (
+                              <Badge key={r} variant="destructive" className="text-[10px] px-1.5">{r.replace(/_/g, ' ')}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {(cond.dietary_implications?.length > 0) && (
+                        <div>
+                          <p className="text-[11px] font-medium text-muted-foreground mb-1">Dietary Implications</p>
+                          <div className="flex flex-wrap gap-1">
+                            {cond.dietary_implications.map((d: string) => (
+                              <Badge key={d} variant="secondary" className="text-[10px] px-1.5">🍎 {d.replace(/_/g, ' ')}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {cond.notes && (
+                        <div>
+                          <p className="text-[11px] font-medium text-muted-foreground mb-1">Notes</p>
+                          <p className="text-xs text-muted-foreground">{cond.notes}</p>
+                        </div>
+                      )}
+                      {cond.trainer_ai_notes && (
+                        <div className="bg-muted/50 rounded-md p-2">
+                          <p className="text-[11px] font-medium text-muted-foreground mb-1">🤖 Trainer Notes for AI</p>
+                          <p className="text-xs">{cond.trainer_ai_notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
       {/* Safe Exercise Recommendations */}
@@ -256,7 +352,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
 
       {/* Add Condition Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
           <DialogHeader><DialogTitle>Add Medical Condition</DialogTitle></DialogHeader>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
@@ -270,7 +366,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
             </TabsList>
 
             <TabsContent value="catalog" className="flex-1 flex flex-col min-h-0 mt-3">
-              <div className="space-y-3">
+              <div className="space-y-3 shrink-0">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="Search conditions..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
@@ -282,8 +378,8 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   ))}
                 </div>
               </div>
-              <ScrollArea className="flex-1 min-h-0 mt-3" style={{ maxHeight: '40vh' }}>
-                <div className="space-y-1 pr-2">
+              <ScrollArea className="flex-1 min-h-0 mt-3 [&>div>div]:!block" style={{ height: '45vh' }}>
+                <div className="space-y-1 pr-3">
                   {filteredCatalog.map((item: any) => (
                     <div key={item.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer" onClick={() => addCondition.mutate(item)}>
                       <div className="min-w-0">
@@ -299,7 +395,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
             </TabsContent>
 
             <TabsContent value="icd10" className="flex-1 flex flex-col min-h-0 mt-3">
-              <div className="space-y-3">
+              <div className="space-y-3 shrink-0">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
@@ -313,8 +409,8 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   Search thousands of standardized medical conditions via the NLM Clinical Tables API. Results include ICD-10-CM codes.
                 </p>
               </div>
-              <ScrollArea className="flex-1 min-h-0 mt-3" style={{ maxHeight: '40vh' }}>
-                <div className="space-y-1 pr-2">
+              <ScrollArea className="flex-1 min-h-0 mt-3 [&>div>div]:!block" style={{ height: '45vh' }}>
+                <div className="space-y-1 pr-3">
                   {icd10Loading && (
                     <div className="flex justify-center py-6">
                       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -365,79 +461,132 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
 
       {/* Edit Condition Dialog */}
       <Dialog open={!!editingCondition} onOpenChange={(open) => !open && setEditingCondition(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Edit: {editingCondition?.condition_name}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className={`h-3 w-3 rounded-full shrink-0 ${SEVERITY_DOT[editingCondition?.severity] || 'bg-muted'}`} />
+              Edit: {editingCondition?.condition_name}
+              {editingCondition?.added_by && (
+                <Badge variant="outline" className="text-[10px] ml-auto gap-0.5 font-normal">
+                  {editingCondition.added_by === 'client' ? (
+                    <><User className="h-2.5 w-2.5" /> Client reported</>
+                  ) : (
+                    <><Stethoscope className="h-2.5 w-2.5" /> Trainer added</>
+                  )}
+                </Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
           {editingCondition && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Severity</Label>
-                  <Select value={editingCondition.severity} onValueChange={v => setEditingCondition((p: any) => ({ ...p, severity: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="mild">Mild</SelectItem>
-                      <SelectItem value="moderate">Moderate</SelectItem>
-                      <SelectItem value="severe">Severe</SelectItem>
-                      <SelectItem value="managed">Managed</SelectItem>
-                    </SelectContent>
-                  </Select>
+            <ScrollArea className="flex-1 min-h-0 pr-3" style={{ maxHeight: '65vh' }}>
+              <div className="space-y-4 pb-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Severity</Label>
+                    <Select value={editingCondition.severity} onValueChange={v => setEditingCondition((p: any) => ({ ...p, severity: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mild">Mild</SelectItem>
+                        <SelectItem value="moderate">Moderate</SelectItem>
+                        <SelectItem value="severe">Severe</SelectItem>
+                        <SelectItem value="managed">Managed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Status</Label>
+                    <Select value={editingCondition.status} onValueChange={v => setEditingCondition((p: any) => ({ ...p, status: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="chronic">Chronic</SelectItem>
+                        <SelectItem value="monitoring">Monitoring</SelectItem>
+                        <SelectItem value="recovered">Recovered</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div>
-                  <Label>Status</Label>
-                  <Select value={editingCondition.status} onValueChange={v => setEditingCondition((p: any) => ({ ...p, status: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="chronic">Chronic</SelectItem>
-                      <SelectItem value="monitoring">Monitoring</SelectItem>
-                      <SelectItem value="recovered">Recovered</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Diagnosed Date</Label>
+                  <Input type="date" value={editingCondition.diagnosed_date || ''} onChange={e => setEditingCondition((p: any) => ({ ...p, diagnosed_date: e.target.value || null }))} />
                 </div>
-              </div>
-              <div>
-                <Label>Diagnosed Date</Label>
-                <Input type="date" value={editingCondition.diagnosed_date || ''} onChange={e => setEditingCondition((p: any) => ({ ...p, diagnosed_date: e.target.value || null }))} />
-              </div>
-              <div>
-                <Label>Notes</Label>
-                <Textarea value={editingCondition.notes || ''} onChange={e => setEditingCondition((p: any) => ({ ...p, notes: e.target.value }))} rows={2} placeholder="Additional notes for the trainer..." />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Switch checked={editingCondition.cleared_by_physician || false} onCheckedChange={v => setEditingCondition((p: any) => ({ ...p, cleared_by_physician: v, clearance_date: v ? new Date().toISOString().split('T')[0] : null }))} />
-                  <Label className="text-sm">Cleared by Physician</Label>
+                <div>
+                  <Label>Notes</Label>
+                  <Textarea value={editingCondition.notes || ''} onChange={e => setEditingCondition((p: any) => ({ ...p, notes: e.target.value }))} rows={2} placeholder="Additional notes for the trainer..." />
                 </div>
-                {editingCondition.cleared_by_physician && (
-                  <Input type="date" className="w-36" value={editingCondition.clearance_date || ''} onChange={e => setEditingCondition((p: any) => ({ ...p, clearance_date: e.target.value }))} />
-                )}
-              </div>
-              <div>
-                <Label className="text-sm">Exercise Restrictions</Label>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {(editingCondition.exercise_restrictions || []).map((r: string) => (
-                    <Badge key={r} variant="destructive" className="text-xs">{r.replace(/_/g, ' ')}</Badge>
-                  ))}
-                  {(editingCondition.exercise_restrictions || []).length === 0 && (
-                    <span className="text-xs text-muted-foreground">No restrictions set</span>
+
+                {/* Trainer Notes for AI */}
+                <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
+                  <Label className="text-sm flex items-center gap-1.5">🤖 Trainer Notes for AI</Label>
+                  <p className="text-[11px] text-muted-foreground">These notes are injected into AI workout generation to ensure safe programming.</p>
+                  <Textarea 
+                    value={editingCondition.trainer_ai_notes || ''} 
+                    onChange={e => setEditingCondition((p: any) => ({ ...p, trainer_ai_notes: e.target.value }))} 
+                    rows={3} 
+                    placeholder="e.g. Client has left shoulder impingement — avoid overhead pressing beyond 90°. Focus on rotator cuff strengthening." 
+                    className="bg-background"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={editingCondition.cleared_by_physician || false} onCheckedChange={v => setEditingCondition((p: any) => ({ ...p, cleared_by_physician: v, clearance_date: v ? new Date().toISOString().split('T')[0] : null }))} />
+                    <Label className="text-sm">Cleared by Physician</Label>
+                  </div>
+                  {editingCondition.cleared_by_physician && (
+                    <Input type="date" className="w-36" value={editingCondition.clearance_date || ''} onChange={e => setEditingCondition((p: any) => ({ ...p, clearance_date: e.target.value }))} />
                   )}
                 </div>
-              </div>
-              <div>
-                <Label className="text-sm">Dietary Implications</Label>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {(editingCondition.dietary_implications || []).map((d: string) => (
-                    <Badge key={d} variant="secondary" className="text-xs">{d.replace(/_/g, ' ')}</Badge>
-                  ))}
-                  {(editingCondition.dietary_implications || []).length === 0 && (
-                    <span className="text-xs text-muted-foreground">No dietary implications set</span>
-                  )}
+
+                {/* Editable Exercise Restrictions */}
+                <div>
+                  <Label className="text-sm">Exercise Restrictions</Label>
+                  <p className="text-[11px] text-muted-foreground mb-2">Tap to add/remove restrictions. Active restrictions are highlighted.</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ALL_EXERCISE_RESTRICTIONS.map((r) => {
+                      const isActive = (editingCondition.exercise_restrictions || []).includes(r);
+                      return (
+                        <Badge
+                          key={r}
+                          variant={isActive ? 'destructive' : 'outline'}
+                          className={`text-[11px] cursor-pointer transition-colors ${isActive ? '' : 'opacity-60 hover:opacity-100'}`}
+                          onClick={() => toggleRestriction(r)}
+                        >
+                          {isActive && <X className="h-2.5 w-2.5 mr-0.5" />}
+                          {r.replace(/_/g, ' ')}
+                        </Badge>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {/* Editable Dietary Implications */}
+                <div>
+                  <Label className="text-sm">Dietary Implications</Label>
+                  <p className="text-[11px] text-muted-foreground mb-2">Tap to add/remove dietary flags.</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ALL_DIETARY_IMPLICATIONS.map((d) => {
+                      const isActive = (editingCondition.dietary_implications || []).includes(d);
+                      return (
+                        <Badge
+                          key={d}
+                          variant={isActive ? 'default' : 'outline'}
+                          className={`text-[11px] cursor-pointer transition-colors ${isActive ? '' : 'opacity-60 hover:opacity-100'}`}
+                          onClick={() => toggleDietary(d)}
+                        >
+                          {isActive && <X className="h-2.5 w-2.5 mr-0.5" />}
+                          🍎 {d.replace(/_/g, ' ')}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <Button className="w-full" disabled={updateCondition.isPending} onClick={() => updateCondition.mutate(editingCondition)}>
+                  {updateCondition.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
               </div>
-              <Button className="w-full" disabled={updateCondition.isPending} onClick={() => updateCondition.mutate(editingCondition)}>
-                {updateCondition.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
+            </ScrollArea>
           )}
         </DialogContent>
       </Dialog>
