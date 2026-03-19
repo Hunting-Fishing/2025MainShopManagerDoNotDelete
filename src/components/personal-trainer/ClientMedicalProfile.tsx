@@ -537,6 +537,69 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   <Label>Diagnosed Date</Label>
                   <Input type="date" value={editingCondition.diagnosed_date || ''} onChange={e => setEditingCondition((p: any) => ({ ...p, diagnosed_date: e.target.value || null }))} />
                 </div>
+
+                {/* Condition Detail Section */}
+                <div className="border border-border rounded-lg p-3 space-y-3">
+                  <p className="text-xs font-semibold flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Condition Detail</p>
+                  
+                  <div>
+                    <Label className="text-xs">Affected Area / Location</Label>
+                    <Input 
+                      value={editingCondition.affected_area || ''} 
+                      onChange={e => setEditingCondition((p: any) => ({ ...p, affected_area: e.target.value }))} 
+                      placeholder={
+                        editingCondition.category === 'Musculoskeletal' ? 'e.g., L4-L5 disc, Left ACL, Right rotator cuff' :
+                        editingCondition.category === 'Cardiovascular' ? 'e.g., Left ventricle, Mitral valve' :
+                        'e.g., specific location or body part'
+                      }
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Injury Grade</Label>
+                      <Select value={editingCondition.injury_grade || 'na'} onValueChange={v => setEditingCondition((p: any) => ({ ...p, injury_grade: v === 'na' ? null : v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="na">N/A</SelectItem>
+                          <SelectItem value="grade_1">Grade 1 — Mild / Strain</SelectItem>
+                          <SelectItem value="grade_2">Grade 2 — Moderate / Partial</SelectItem>
+                          <SelectItem value="grade_3">Grade 3 — Severe / Complete</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Weight Limit (lbs)</Label>
+                      <Input 
+                        type="number" 
+                        value={editingCondition.weight_limit_lbs || ''} 
+                        onChange={e => setEditingCondition((p: any) => ({ ...p, weight_limit_lbs: e.target.value ? parseInt(e.target.value) : null }))} 
+                        placeholder="No limit if empty"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md p-3 space-y-2">
+                    <Label className="text-xs flex items-center gap-1.5"><ClipboardList className="h-3.5 w-3.5 text-blue-600" /> Doctor's Restrictions</Label>
+                    <Textarea 
+                      value={editingCondition.physician_restrictions || ''} 
+                      onChange={e => setEditingCondition((p: any) => ({ ...p, physician_restrictions: e.target.value }))} 
+                      rows={3} 
+                      placeholder="Enter physician-imposed limitations, e.g., No spinal loading for 8 weeks, limit flexion to 30 degrees..."
+                      className="bg-background"
+                    />
+                    <div>
+                      <Label className="text-xs">Restriction Valid Until</Label>
+                      <Input 
+                        type="date" 
+                        value={editingCondition.physician_restriction_until || ''} 
+                        onChange={e => setEditingCondition((p: any) => ({ ...p, physician_restriction_until: e.target.value || null }))} 
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-1">When this date passes, a review reminder will appear on the card.</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <Label>Notes</Label>
                   <Textarea value={editingCondition.notes || ''} onChange={e => setEditingCondition((p: any) => ({ ...p, notes: e.target.value }))} rows={2} placeholder="Additional notes for the trainer..." />
