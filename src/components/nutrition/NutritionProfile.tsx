@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Loader2, User } from 'lucide-react';
+import { Save, Loader2, User, HeartPulse } from 'lucide-react';
 import { useNutritionProfile, useSaveNutritionProfile } from '@/hooks/useNutrition';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import MultiSelectDialog from './MultiSelectDialog';
 
 const INITIAL_DIETARY_STYLES: Record<string, string[]> = {
