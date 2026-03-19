@@ -157,7 +157,7 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
         body: {
           action: 'generate_program_template',
           shopId,
-          clientId: aiForm.client_id || undefined,
+          clientId: aiForm.client_id && aiForm.client_id !== 'none' ? aiForm.client_id : undefined,
           context: {
             workout_style: aiForm.workout_style,
             training_platform: aiForm.training_platform,
