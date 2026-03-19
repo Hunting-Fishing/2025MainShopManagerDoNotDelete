@@ -1,46 +1,31 @@
 
 
-# Build Production Exercise Library with Seed Data
+# Organize Exercise Library by Equipment + Sort by Muscle Group
 
-## What We're Doing
+## What Changes
 
-The Exercise Library page exists with full CRUD UI, but the database is empty. We need to seed it with a comprehensive set of real exercises via a Supabase migration, and add a "Seed Default Exercises" button for shops that don't have exercises yet.
+Update `PersonalTrainerExercises.tsx` to:
 
-## Approach
+1. **Add an Equipment filter** — Extract unique equipment values from loaded exercises, add a new `Select` dropdown alongside existing filters. Since equipment strings are freeform (e.g. "Barbell, Flat Bench", "Cable Machine"), we'll extract distinct primary equipment types: Barbell, Dumbbells, Cable Machine, Bodyweight, Machines, Pull-Up Bar, etc.
 
-Since exercises are **shop-scoped** (`shop_id` required), we can't use a one-time migration to insert global data. Instead, we'll add a **"Load Default Exercises"** feature that inserts ~80 production-ready exercises into the current shop's `pt_exercises` table on demand.
+2. **Add a "Group By" toggle** — A new select with options: "None", "Equipment", "Muscle Group". When grouping is active, exercises render in collapsible sections with headers (e.g. "🏋️ Barbell (12)" or "Chest (8)"), replacing the flat grid.
 
-### 1. Create `src/data/defaultExercises.ts` — Exercise seed data
+3. **Add Sort By dropdown** — Options: Name A-Z, Name Z-A, Muscle Group, Equipment, Difficulty. Replaces the current default alphabetical-only ordering.
 
-A constant array of ~80 exercises covering all muscle groups and categories with real instructions, common mistakes, equipment, and difficulty levels. Organized by muscle group:
+## Implementation Details
 
-| Muscle Group | Exercises (examples) |
-|---|---|
-| Chest | Barbell Bench Press, Incline Dumbbell Press, Cable Flyes, Push-Ups, Dips |
-| Back | Deadlift, Barbell Row, Pull-Ups, Lat Pulldown, Seated Cable Row, T-Bar Row |
-| Shoulders | Overhead Press, Lateral Raises, Face Pulls, Arnold Press, Front Raises |
-| Biceps | Barbell Curl, Hammer Curl, Incline Dumbbell Curl, Preacher Curl |
-| Triceps | Tricep Pushdown, Skull Crushers, Close-Grip Bench, Overhead Extension |
-| Legs | Barbell Squat, Romanian Deadlift, Leg Press, Lunges, Leg Curl, Leg Extension, Calf Raises |
-| Glutes | Hip Thrust, Bulgarian Split Squat, Glute Bridge, Cable Kickback |
-| Core | Plank, Hanging Leg Raise, Cable Crunch, Ab Wheel, Russian Twist, Dead Bug |
-| Full Body | Clean & Press, Burpees, Turkish Get-Up, Kettlebell Swing |
-| Cardio | Rowing Machine, Jump Rope, Battle Ropes, Assault Bike |
-| Mobility | Foam Rolling, Hip Flexor Stretch, Cat-Cow, Band Pull-Aparts |
+### File: `src/pages/personal-trainer/PersonalTrainerExercises.tsx`
 
-Each exercise includes: `name`, `category`, `muscle_group`, `equipment`, `difficulty`, `description`, `instructions` (step-by-step), `common_mistakes`, and `alternatives`.
+**New state:**
+- `filterEquipment` — select from extracted equipment list
+- `groupBy` — 'none' | 'equipment' | 'muscle_group'  
+- `sortBy` — 'name-asc' | 'name-desc' | 'muscle_group' | 'equipment' | 'difficulty'
 
-### 2. Update `src/pages/personal-trainer/PersonalTrainerExercises.tsx`
+**Equipment extraction:** Derive unique equipment values from `exercises` using `useMemo`. Normalize by taking the first item before any comma (e.g. "Barbell, Flat Bench" → "Barbell") to create clean filter options, but also keep exact-match filtering.
 
-- Add a **"Load Default Exercises"** button visible when `exercises.length === 0`
-- On click, bulk-insert all default exercises from the data file with the current `shop_id`
-- Also add edit and delete capabilities for existing exercises (currently missing)
-- Add a count summary in the header
+**Filter bar updates:** Add Equipment select and Sort By select to the existing filter row. Add Group By select.
 
-### Files to Create/Edit
+**Grouped rendering:** When `groupBy` is set, group the filtered array into a `Record<string, Exercise[]>`, then render each group as a section with a heading and the existing card grid underneath.
 
-| File | Change |
-|------|--------|
-| `src/data/defaultExercises.ts` | **New** — ~80 real exercises with full metadata |
-| `src/pages/personal-trainer/PersonalTrainerExercises.tsx` | Add seed button, edit/delete actions |
+### No other files need changes.
 
