@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -9,10 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Plus, HeartPulse, Search, Trash2, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Plus, HeartPulse, Search, Trash2, Shield, AlertTriangle, CheckCircle, Globe, BookOpen } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useICD10Search, mapICD10Category } from '@/hooks/useICD10Search';
 
 interface Props {
   clientId: string;
@@ -38,8 +40,12 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [icd10Search, setIcd10Search] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editingCondition, setEditingCondition] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('catalog');
+
+  const { results: icd10Results, isLoading: icd10Loading } = useICD10Search(icd10Search);
 
   // Fetch client's conditions
   const { data: conditions = [], isLoading } = useQuery({
@@ -79,6 +85,10 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
     return matchSearch && matchCategory && notAlreadyAdded;
   });
 
+  const filteredIcd10 = icd10Results.filter(
+    r => !conditions.some((ex: any) => ex.condition_code === r.code)
+  );
+
   const addCondition = useMutation({
     mutationFn: async (catalogItem: any) => {
       const { error } = await (supabase as any).from('pt_client_medical_conditions').insert({
@@ -97,6 +107,34 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pt-client-medical', clientId] });
       toast({ title: 'Condition added' });
+    },
+    onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  });
+
+  const addIcd10Condition = useMutation({
+    mutationFn: async (item: { code: string; name: string }) => {
+      // Try to find a matching catalog entry for defaults
+      const catalogMatch = catalog.find((c: any) =>
+        c.name.toLowerCase() === item.name.toLowerCase() ||
+        c.code === item.code
+      );
+
+      const { error } = await (supabase as any).from('pt_client_medical_conditions').insert({
+        client_id: clientId,
+        shop_id: shopId,
+        condition_code: item.code,
+        condition_name: item.name,
+        category: catalogMatch?.category || mapICD10Category(item.code),
+        severity: 'moderate',
+        status: 'active',
+        exercise_restrictions: catalogMatch?.default_restrictions || [],
+        dietary_implications: catalogMatch?.default_dietary_implications || [],
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pt-client-medical', clientId] });
+      toast({ title: 'Condition added from ICD-10' });
     },
     onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
@@ -143,7 +181,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
             <Badge variant="destructive" className="text-xs">{activeCount} active</Badge>
           )}
         </div>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
+        <Button size="sm" onClick={() => { setAddOpen(true); setActiveTab('catalog'); setSearch(''); setIcd10Search(''); }}>
           <Plus className="h-4 w-4 mr-1" />Add Condition
         </Button>
       </div>
@@ -173,6 +211,9 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                       <Badge variant="secondary" className="text-xs">{cond.status}</Badge>
                       {cond.cleared_by_physician && (
                         <Badge className="text-xs bg-green-600">✓ Cleared</Badge>
+                      )}
+                      {cond.condition_code && /^[A-Z]\d/.test(cond.condition_code) && (
+                        <Badge variant="outline" className="text-[10px] font-mono">{cond.condition_code}</Badge>
                       )}
                     </div>
                     {(cond.exercise_restrictions?.length > 0 || cond.dietary_implications?.length > 0) && (
@@ -206,32 +247,108 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader><DialogTitle>Add Medical Condition</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search conditions..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              <Badge variant={!selectedCategory ? 'default' : 'outline'} className="cursor-pointer text-xs" onClick={() => setSelectedCategory(null)}>All</Badge>
-              {categories.map((cat: string) => (
-                <Badge key={cat} variant={selectedCategory === cat ? 'default' : 'outline'} className="cursor-pointer text-xs" onClick={() => setSelectedCategory(cat)}>{cat}</Badge>
-              ))}
-            </div>
-          </div>
-          <ScrollArea className="flex-1 min-h-0 mt-3" style={{ maxHeight: '50vh' }}>
-            <div className="space-y-1 pr-2">
-              {filteredCatalog.map((item: any) => (
-                <div key={item.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer" onClick={() => addCondition.mutate(item)}>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">{item.category} · {item.description}</p>
-                  </div>
-                  <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="catalog" className="gap-1.5">
+                <BookOpen className="h-3.5 w-3.5" />Our Catalog
+              </TabsTrigger>
+              <TabsTrigger value="icd10" className="gap-1.5">
+                <Globe className="h-3.5 w-3.5" />ICD-10 Database
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="catalog" className="flex-1 flex flex-col min-h-0 mt-3">
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Search conditions..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
                 </div>
-              ))}
-              {filteredCatalog.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No matching conditions</p>}
-            </div>
-          </ScrollArea>
+                <div className="flex flex-wrap gap-1.5">
+                  <Badge variant={!selectedCategory ? 'default' : 'outline'} className="cursor-pointer text-xs" onClick={() => setSelectedCategory(null)}>All</Badge>
+                  {categories.map((cat: string) => (
+                    <Badge key={cat} variant={selectedCategory === cat ? 'default' : 'outline'} className="cursor-pointer text-xs" onClick={() => setSelectedCategory(cat)}>{cat}</Badge>
+                  ))}
+                </div>
+              </div>
+              <ScrollArea className="flex-1 min-h-0 mt-3" style={{ maxHeight: '40vh' }}>
+                <div className="space-y-1 pr-2">
+                  {filteredCatalog.map((item: any) => (
+                    <div key={item.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer" onClick={() => addCondition.mutate(item)}>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{item.category} · {item.description}</p>
+                      </div>
+                      <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    </div>
+                  ))}
+                  {filteredCatalog.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No matching conditions</p>}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="icd10" className="flex-1 flex flex-col min-h-0 mt-3">
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search ICD-10 medical database..." 
+                    value={icd10Search} 
+                    onChange={e => setIcd10Search(e.target.value)} 
+                    className="pl-9" 
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Search thousands of standardized medical conditions via the NLM Clinical Tables API. Results include ICD-10-CM codes.
+                </p>
+              </div>
+              <ScrollArea className="flex-1 min-h-0 mt-3" style={{ maxHeight: '40vh' }}>
+                <div className="space-y-1 pr-2">
+                  {icd10Loading && (
+                    <div className="flex justify-center py-6">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                  {!icd10Loading && filteredIcd10.map((item) => {
+                    const hasCatalogMatch = catalog.some((c: any) =>
+                      c.name.toLowerCase() === item.name.toLowerCase() || c.code === item.code
+                    );
+                    return (
+                      <div 
+                        key={item.code} 
+                        className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer" 
+                        onClick={() => addIcd10Condition.mutate(item)}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">{item.name}</p>
+                            {hasCatalogMatch && (
+                              <Badge variant="secondary" className="text-[10px] shrink-0">Has defaults</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            <span className="font-mono">{item.code}</span> · {mapICD10Category(item.code)}
+                          </p>
+                        </div>
+                        <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </div>
+                    );
+                  })}
+                  {!icd10Loading && icd10Search.length >= 2 && filteredIcd10.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">No matching ICD-10 conditions</p>
+                  )}
+                  {!icd10Loading && icd10Search.length < 2 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">Type at least 2 characters to search</p>
+                  )}
+                  {!icd10Loading && filteredIcd10.length > 0 && (
+                    <p className="text-[11px] text-muted-foreground text-center py-2 border-t mt-2">
+                      ⚠️ Conditions without a catalog match will have no default restrictions — set them manually after adding.
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
@@ -290,6 +407,9 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   {(editingCondition.exercise_restrictions || []).map((r: string) => (
                     <Badge key={r} variant="destructive" className="text-xs">{r.replace(/_/g, ' ')}</Badge>
                   ))}
+                  {(editingCondition.exercise_restrictions || []).length === 0 && (
+                    <span className="text-xs text-muted-foreground">No restrictions set</span>
+                  )}
                 </div>
               </div>
               <div>
@@ -298,6 +418,9 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   {(editingCondition.dietary_implications || []).map((d: string) => (
                     <Badge key={d} variant="secondary" className="text-xs">{d.replace(/_/g, ' ')}</Badge>
                   ))}
+                  {(editingCondition.dietary_implications || []).length === 0 && (
+                    <span className="text-xs text-muted-foreground">No dietary implications set</span>
+                  )}
                 </div>
               </div>
               <Button className="w-full" disabled={updateCondition.isPending} onClick={() => updateCondition.mutate(editingCondition)}>
