@@ -185,9 +185,10 @@ export default function PersonalTrainerClientDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="programs">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="programs" className="text-xs"><ClipboardList className="h-3 w-3 mr-1" />Programs</TabsTrigger>
           <TabsTrigger value="sessions" className="text-xs"><Calendar className="h-3 w-3 mr-1" />Sessions</TabsTrigger>
+          <TabsTrigger value="medical" className="text-xs"><HeartPulse className="h-3 w-3 mr-1" />Medical</TabsTrigger>
           <TabsTrigger value="metrics" className="text-xs"><Activity className="h-3 w-3 mr-1" />Metrics</TabsTrigger>
           <TabsTrigger value="checkins" className="text-xs"><ClipboardCheck className="h-3 w-3 mr-1" />Check-ins</TabsTrigger>
           <TabsTrigger value="fitness-profile" className="text-xs"><Sparkles className="h-3 w-3 mr-1" />Interests</TabsTrigger>
@@ -195,6 +196,10 @@ export default function PersonalTrainerClientDetail() {
           <TabsTrigger value="nutrition" className="text-xs"><Utensils className="h-3 w-3 mr-1" />Nutrition</TabsTrigger>
           <TabsTrigger value="billing" className="text-xs"><CreditCard className="h-3 w-3 mr-1" />Billing</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="medical" className="mt-4">
+          {id && shopId && <ClientMedicalProfile clientId={id} shopId={shopId} />}
+        </TabsContent>
 
         <TabsContent value="fitness-profile" className="mt-4 space-y-4">
           {id && shopId && <FitnessProfileScores clientId={id} shopId={shopId} />}

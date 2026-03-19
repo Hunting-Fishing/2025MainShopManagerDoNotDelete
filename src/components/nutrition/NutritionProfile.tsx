@@ -112,6 +112,28 @@ export default function NutritionProfile({ clientId, shopId }: Props) {
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
+  // Fetch medical dietary implications
+  const { data: medicalDietaryImplications = [] } = useQuery({
+    queryKey: ['pt-medical-dietary', clientId, shopId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from('pt_client_medical_conditions')
+        .select('condition_name, dietary_implications')
+        .eq('client_id', clientId)
+        .eq('shop_id', shopId)
+        .in('status', ['active', 'chronic']);
+      if (!data) return [];
+      const implications: { condition: string; implication: string }[] = [];
+      for (const cond of data) {
+        for (const imp of (cond.dietary_implications || [])) {
+          implications.push({ condition: cond.condition_name, implication: imp });
+        }
+      }
+      return implications;
+    },
+    enabled: !!clientId && !!shopId,
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -121,6 +143,23 @@ export default function NutritionProfile({ clientId, shopId }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {/* Medical Dietary Implications */}
+        {medicalDietaryImplications.length > 0 && (
+          <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
+            <div className="flex items-center gap-2 mb-2">
+              <HeartPulse className="h-4 w-4 text-amber-600" />
+              <Label className="text-sm font-medium text-amber-800 dark:text-amber-200">Medical Dietary Considerations</Label>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {medicalDietaryImplications.map((item: any, i: number) => (
+                <Badge key={i} variant="outline" className="text-xs border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300">
+                  {item.implication.replace(/_/g, ' ')} <span className="text-[10px] ml-1 opacity-70">({item.condition})</span>
+                </Badge>
+              ))}
+            </div>
+            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1.5">Auto-derived from client's medical conditions</p>
+          </div>
+        )}
         {/* Dietary Styles — Multi-select dialog */}
         <div>
           <Label className="mb-1.5 block">Dietary Style(s)</Label>

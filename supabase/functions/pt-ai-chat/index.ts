@@ -90,6 +90,7 @@ serve(async (req) => {
         { data: workoutDayTypes },
         { data: fitnessScores },
         { data: ptClient },
+        { data: medicalConditions },
       ] = await Promise.all([
         supabase.from("nt_nutrition_profiles").select("*").eq("client_id", clientId).eq("shop_id", shopId).maybeSingle(),
         supabase.from("nt_fitness_goals").select("*").eq("client_id", clientId).eq("shop_id", shopId).eq("is_active", true).limit(3),
@@ -99,10 +100,24 @@ serve(async (req) => {
         supabase.from("nt_workout_day_types").select("*").eq("shop_id", shopId),
         supabase.from("pt_fitness_scores").select("*").eq("client_id", clientId).eq("shop_id", shopId).limit(1),
         supabase.from("pt_clients").select("first_name, last_name, email, status, assigned_trainer_id, fitness_interests").eq("id", clientId).maybeSingle(),
+        supabase.from("pt_client_medical_conditions").select("*").eq("client_id", clientId).eq("shop_id", shopId).in("status", ["active", "chronic", "monitoring"]),
       ]);
 
       if (ptClient) {
         contextSections.push(`## Client Info\nName: ${ptClient.first_name} ${ptClient.last_name}\nStatus: ${ptClient.status}\nFitness Interests: ${JSON.stringify(ptClient.fitness_interests || [])}`);
+      }
+
+      // Medical conditions context
+      if (medicalConditions && medicalConditions.length > 0) {
+        const medLines = medicalConditions.map((mc: any) => {
+          let line = `- **${mc.condition_name}** (${mc.category}) — ${mc.severity}, ${mc.status}`;
+          if (mc.exercise_restrictions?.length > 0) line += `\n  Exercise restrictions: ${mc.exercise_restrictions.join(', ')}`;
+          if (mc.dietary_implications?.length > 0) line += `\n  Dietary implications: ${mc.dietary_implications.join(', ')}`;
+          if (mc.cleared_by_physician) line += `\n  ✓ Cleared by physician`;
+          if (mc.notes) line += `\n  Notes: ${mc.notes}`;
+          return line;
+        });
+        contextSections.push(`## ⚠️ Medical Conditions\n${medLines.join("\n")}\n\n**Important**: Always consider these conditions when giving exercise or nutrition advice. Do not recommend exercises that violate the listed restrictions.`);
       }
 
       if (profile) {

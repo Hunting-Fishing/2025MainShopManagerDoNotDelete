@@ -429,9 +429,24 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
                       </Select>
                     </div>
 
+                    {/* Medical conditions from selected client */}
+                    {clientMedicalConditions.length > 0 && (
+                      <div>
+                        <Label className="text-sm">Client Medical Conditions</Label>
+                        <div className="flex flex-wrap gap-1 mt-1.5 p-2 bg-muted/50 rounded-md">
+                          {clientMedicalConditions.map((c: any, i: number) => (
+                            <Badge key={i} variant={c.severity === 'severe' ? 'destructive' : c.severity === 'moderate' ? 'default' : 'secondary'} className="text-xs">
+                              {c.condition_name} ({c.severity})
+                            </Badge>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">These conditions will be sent to AI for safe program generation.</p>
+                      </div>
+                    )}
+
                     <div>
-                      <Label>Limitations / Injuries</Label>
-                      <Textarea value={aiForm.limitations} onChange={e => setAiForm(f => ({ ...f, limitations: e.target.value }))} rows={2} placeholder="e.g. Herniated disc L4-L5, avoid heavy axial loading" />
+                      <Label>Additional Limitations / Notes</Label>
+                      <Textarea value={aiForm.limitations} onChange={e => setAiForm(f => ({ ...f, limitations: e.target.value }))} rows={2} placeholder="Any extra notes beyond medical conditions..." />
                     </div>
 
                     <Button
