@@ -352,7 +352,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
 
       {/* Add Condition Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
           <DialogHeader><DialogTitle>Add Medical Condition</DialogTitle></DialogHeader>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
@@ -378,8 +378,8 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   ))}
                 </div>
               </div>
-              <ScrollArea className="flex-1 min-h-0 mt-3 [&>div>div]:!block" style={{ height: '45vh' }}>
-                <div className="space-y-1 pr-3">
+              <div className="mt-3 overflow-y-auto overscroll-contain" style={{ maxHeight: '50vh' }}>
+                <div className="space-y-1 pr-1">
                   {filteredCatalog.map((item: any) => (
                     <div key={item.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer" onClick={() => addCondition.mutate(item)}>
                       <div className="min-w-0">
@@ -391,7 +391,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   ))}
                   {filteredCatalog.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No matching conditions</p>}
                 </div>
-              </ScrollArea>
+              </div>
             </TabsContent>
 
             <TabsContent value="icd10" className="flex-1 flex flex-col min-h-0 mt-3">
@@ -409,7 +409,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   Search thousands of standardized medical conditions via the NLM Clinical Tables API. Results include ICD-10-CM codes.
                 </p>
               </div>
-              <ScrollArea className="flex-1 min-h-0 mt-3 [&>div>div]:!block" style={{ height: '45vh' }}>
+              <div className="mt-3 overflow-y-auto overscroll-contain" style={{ maxHeight: '50vh' }}>
                 <div className="space-y-1 pr-3">
                   {icd10Loading && (
                     <div className="flex justify-center py-6">
@@ -453,7 +453,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                     </p>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
             </TabsContent>
           </Tabs>
         </DialogContent>
