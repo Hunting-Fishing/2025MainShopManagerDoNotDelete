@@ -403,72 +403,97 @@ export default function PersonalTrainerExercises() {
             )}
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((ex: any) => {
-            const isExpanded = expandedId === ex.id;
+      ) : grouped ? (
+        <div className="space-y-4">
+          {grouped.map(([groupName, items]) => {
+            const isCollapsed = collapsedGroups.has(groupName);
             return (
-              <Card key={ex.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold mb-1">{ex.name}</h3>
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        <Badge variant="secondary" className="text-xs">{ex.category}</Badge>
-                        {ex.muscle_group && <Badge variant="outline" className="text-xs">{ex.muscle_group}</Badge>}
-                        <Badge variant="outline" className="text-xs">{ex.difficulty}</Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 ml-2">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(ex)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(ex.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+              <div key={groupName}>
+                <button
+                  onClick={() => toggleGroup(groupName)}
+                  className="flex items-center gap-2 w-full text-left py-2 px-1 hover:bg-muted/50 rounded-md transition-colors"
+                >
+                  {isCollapsed ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
+                  <span className="font-semibold text-sm">{groupBy === 'equipment' ? '🏋️' : '💪'} {groupName}</span>
+                  <Badge variant="secondary" className="text-xs">{items.length}</Badge>
+                </button>
+                {!isCollapsed && (
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 mt-2">
+                    {items.map((ex: any) => renderExerciseCard(ex))}
                   </div>
-                  {ex.equipment && <p className="text-xs text-muted-foreground">🏋️ {ex.equipment}</p>}
-                  {ex.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ex.description}</p>}
-
-                  <Button variant="ghost" size="sm" className="w-full mt-2 text-xs" onClick={() => setExpandedId(isExpanded ? null : ex.id)}>
-                    {isExpanded ? <><ChevronUp className="h-3 w-3 mr-1" />Less</> : <><ChevronDown className="h-3 w-3 mr-1" />Details</>}
-                  </Button>
-
-                  {isExpanded && (
-                    <div className="mt-3 space-y-3 border-t pt-3">
-                      {ex.instructions && (
-                        <div>
-                          <p className="text-xs font-medium flex items-center gap-1 mb-1"><BookOpen className="h-3 w-3" />Instructions</p>
-                          <p className="text-xs text-muted-foreground whitespace-pre-line">{ex.instructions}</p>
-                        </div>
-                      )}
-                      {ex.common_mistakes && (
-                        <div>
-                          <p className="text-xs font-medium flex items-center gap-1 mb-1 text-amber-600"><AlertTriangle className="h-3 w-3" />Common Mistakes</p>
-                          <p className="text-xs text-muted-foreground whitespace-pre-line">{ex.common_mistakes}</p>
-                        </div>
-                      )}
-                      {ex.alternatives && (
-                        <div>
-                          <p className="text-xs font-medium mb-1">🔄 Alternatives</p>
-                          <p className="text-xs text-muted-foreground">{ex.alternatives}</p>
-                        </div>
-                      )}
-                      {ex.video_url && (
-                        <a href={ex.video_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1"><Video className="h-3 w-3" />Watch Demo Video</a>
-                      )}
-                      {ex.image_url && (
-                        <img src={ex.image_url} alt={ex.name} className="rounded-lg max-h-40 object-cover w-full" />
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                )}
+              </div>
             );
           })}
+        </div>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((ex: any) => renderExerciseCard(ex))}
         </div>
       )}
     </div>
   );
+
+  function renderExerciseCard(ex: any) {
+    const isExpanded = expandedId === ex.id;
+    return (
+      <Card key={ex.id} className="hover:shadow-md transition-shadow">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold mb-1">{ex.name}</h3>
+              <div className="flex flex-wrap gap-1 mb-2">
+                <Badge variant="secondary" className="text-xs">{ex.category}</Badge>
+                {ex.muscle_group && <Badge variant="outline" className="text-xs">{ex.muscle_group}</Badge>}
+                <Badge variant="outline" className="text-xs">{ex.difficulty}</Badge>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 ml-2">
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(ex)}>
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(ex.id)}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+          {ex.equipment && <p className="text-xs text-muted-foreground">🏋️ {ex.equipment}</p>}
+          {ex.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ex.description}</p>}
+
+          <Button variant="ghost" size="sm" className="w-full mt-2 text-xs" onClick={() => setExpandedId(isExpanded ? null : ex.id)}>
+            {isExpanded ? <><ChevronUp className="h-3 w-3 mr-1" />Less</> : <><ChevronDown className="h-3 w-3 mr-1" />Details</>}
+          </Button>
+
+          {isExpanded && (
+            <div className="mt-3 space-y-3 border-t pt-3">
+              {ex.instructions && (
+                <div>
+                  <p className="text-xs font-medium flex items-center gap-1 mb-1"><BookOpen className="h-3 w-3" />Instructions</p>
+                  <p className="text-xs text-muted-foreground whitespace-pre-line">{ex.instructions}</p>
+                </div>
+              )}
+              {ex.common_mistakes && (
+                <div>
+                  <p className="text-xs font-medium flex items-center gap-1 mb-1 text-amber-600"><AlertTriangle className="h-3 w-3" />Common Mistakes</p>
+                  <p className="text-xs text-muted-foreground whitespace-pre-line">{ex.common_mistakes}</p>
+                </div>
+              )}
+              {ex.alternatives && (
+                <div>
+                  <p className="text-xs font-medium mb-1">🔄 Alternatives</p>
+                  <p className="text-xs text-muted-foreground">{ex.alternatives}</p>
+                </div>
+              )}
+              {ex.video_url && (
+                <a href={ex.video_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1"><Video className="h-3 w-3" />Watch Demo Video</a>
+              )}
+              {ex.image_url && (
+                <img src={ex.image_url} alt={ex.name} className="rounded-lg max-h-40 object-cover w-full" />
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 }
