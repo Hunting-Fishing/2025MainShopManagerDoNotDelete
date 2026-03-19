@@ -145,6 +145,17 @@ const navigationCategories = [
     ]
   },
   {
+    title: 'Personal Trainer',
+    items: [
+      { name: 'Dashboard', href: '/personal-trainer', requiredPath: '/personal-trainer' },
+      { name: 'Clients', href: '/personal-trainer/clients', requiredPath: '/personal-trainer/clients' },
+      { name: 'Programs', href: '/personal-trainer/programs', requiredPath: '/personal-trainer/programs' },
+      { name: 'Sessions', href: '/personal-trainer/sessions', requiredPath: '/personal-trainer/sessions' },
+      { name: 'Exercises', href: '/personal-trainer/exercises', requiredPath: '/personal-trainer/exercises' },
+      { name: 'Body Metrics', href: '/personal-trainer/body-metrics', requiredPath: '/personal-trainer/body-metrics' },
+    ]
+  },
+  {
     title: 'Reports',
     items: [
       { name: 'Reports', href: '/reports', requiredPath: '/reports' },
