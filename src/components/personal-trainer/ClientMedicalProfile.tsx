@@ -409,7 +409,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   Search thousands of standardized medical conditions via the NLM Clinical Tables API. Results include ICD-10-CM codes.
                 </p>
               </div>
-              <ScrollArea className="flex-1 min-h-0 mt-3 [&>div>div]:!block" style={{ height: '45vh' }}>
+              <div className="mt-3 overflow-y-auto overscroll-contain" style={{ maxHeight: '50vh' }}>
                 <div className="space-y-1 pr-3">
                   {icd10Loading && (
                     <div className="flex justify-center py-6">
