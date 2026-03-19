@@ -161,15 +161,64 @@ export default function PersonalTrainerExercises() {
     }
   };
 
-  const filtered = exercises.filter((e: any) => {
-    const matchesSearch = `${e.name} ${e.muscle_group} ${e.category} ${e.equipment}`.toLowerCase().includes(search.toLowerCase());
-    const matchesMuscle = filterMuscle === 'all' || e.muscle_group === filterMuscle;
-    const matchesCategory = filterCategory === 'all' || e.category === filterCategory;
-    const matchesDifficulty = filterDifficulty === 'all' || e.difficulty === filterDifficulty;
-    return matchesSearch && matchesMuscle && matchesCategory && matchesDifficulty;
-  });
+  // Extract unique equipment types
+  const equipmentOptions = useMemo(() => {
+    const eqSet = new Set<string>();
+    exercises.forEach((e: any) => {
+      if (e.equipment) {
+        const primary = e.equipment.split(',')[0].trim();
+        if (primary) eqSet.add(primary);
+      }
+    });
+    return Array.from(eqSet).sort();
+  }, [exercises]);
 
-  const isPending = addExercise.isPending || updateExercise.isPending;
+  const filtered = useMemo(() => {
+    let result = exercises.filter((e: any) => {
+      const matchesSearch = `${e.name} ${e.muscle_group} ${e.category} ${e.equipment}`.toLowerCase().includes(search.toLowerCase());
+      const matchesMuscle = filterMuscle === 'all' || e.muscle_group === filterMuscle;
+      const matchesCategory = filterCategory === 'all' || e.category === filterCategory;
+      const matchesDifficulty = filterDifficulty === 'all' || e.difficulty === filterDifficulty;
+      const matchesEquipment = filterEquipment === 'all' || (e.equipment && e.equipment.split(',')[0].trim() === filterEquipment);
+      return matchesSearch && matchesMuscle && matchesCategory && matchesDifficulty && matchesEquipment;
+    });
+
+    // Sort
+    const diffOrder: Record<string, number> = { beginner: 0, intermediate: 1, advanced: 2 };
+    result = [...result].sort((a: any, b: any) => {
+      switch (sortBy) {
+        case 'name-desc': return (b.name || '').localeCompare(a.name || '');
+        case 'muscle_group': return (a.muscle_group || '').localeCompare(b.muscle_group || '') || (a.name || '').localeCompare(b.name || '');
+        case 'equipment': return (a.equipment || '').localeCompare(b.equipment || '') || (a.name || '').localeCompare(b.name || '');
+        case 'difficulty': return (diffOrder[a.difficulty] ?? 1) - (diffOrder[b.difficulty] ?? 1) || (a.name || '').localeCompare(b.name || '');
+        default: return (a.name || '').localeCompare(b.name || '');
+      }
+    });
+
+    return result;
+  }, [exercises, search, filterMuscle, filterCategory, filterDifficulty, filterEquipment, sortBy]);
+
+  // Group exercises
+  const grouped = useMemo(() => {
+    if (groupBy === 'none') return null;
+    const groups: Record<string, any[]> = {};
+    filtered.forEach((ex: any) => {
+      const key = groupBy === 'equipment'
+        ? (ex.equipment ? ex.equipment.split(',')[0].trim() : 'No Equipment')
+        : (ex.muscle_group || 'Uncategorized');
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(ex);
+    });
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [filtered, groupBy]);
+
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
