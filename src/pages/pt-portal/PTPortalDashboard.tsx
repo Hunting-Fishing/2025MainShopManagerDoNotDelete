@@ -397,6 +397,13 @@ export default function PTPortalDashboard() {
             <TabsTrigger value="profile" className="text-xs"><User className="h-3 w-3 mr-1" />Profile</TabsTrigger>
           </TabsList>
 
+          {/* Health Tab */}
+          <TabsContent value="health" className="space-y-4 mt-4">
+            {client && currentUserId && (
+              <ClientPortalMedical clientId={client.id} shopId={client.shop_id} currentUserId={currentUserId} />
+            )}
+          </TabsContent>
+
           {/* Workouts Tab */}
           <TabsContent value="workouts" className="space-y-4 mt-4">
             {programs.length === 0 ? (

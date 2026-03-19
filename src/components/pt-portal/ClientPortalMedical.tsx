@@ -189,8 +189,8 @@ export default function ClientPortalMedical({ clientId, shopId, currentUserId }:
           {activeConditions.length > 0 && (
             <Badge variant="destructive" className="text-xs">{activeConditions.length} active condition{activeConditions.length > 1 ? 's' : ''}</Badge>
           )}
-          {allRestrictions.slice(0, 5).map(r => (
-            <Badge key={r} variant="outline" className="text-xs text-destructive border-destructive/30">
+          {allRestrictions.slice(0, 5).map((r, i) => (
+            <Badge key={String(r) + i} variant="outline" className="text-xs text-destructive border-destructive/30">
               ⚠️ {(r as string).replace(/_/g, ' ')}
             </Badge>
           ))}
