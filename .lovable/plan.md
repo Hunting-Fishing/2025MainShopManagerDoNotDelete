@@ -1,29 +1,40 @@
 
 
-# Make Module Hub Cards Much Smaller
+# Add Filter Bar to Personal Trainer Clients Page
 
-## Problem
-The module cards on `/module-hub` are large — each takes ~200px height with big icons, full descriptions, and full-width buttons. The grid is only 3 columns, so 9 modules requires significant scrolling.
+## What We're Doing
+
+Adding a comprehensive filter/sort toolbar to the PT Clients page (`PersonalTrainerClients.tsx`). The database already has all the fields needed — gender, fitness_level, membership_status, membership_type, preferred_workout_days, trainer_id — so this is purely a UI filtering task with no schema changes.
 
 ## Changes
 
-### 1. `src/components/module-hub/ModuleCard.tsx` — Compact layout
-- Reduce padding from `p-6` to `p-3`
-- Shrink icon from `w-14 h-14` to `w-9 h-9`, icon inner from `w-7 h-7` to `w-4 h-4`
-- Reduce title from `text-lg` to `text-sm`
-- Hide description entirely (or show as single-line `text-xs`)
-- Replace full-width "Enter Module" button with a small `size="sm"` button
-- Reduce badge size
-- Shrink gradient accent bar from `h-1` to `h-0.5`
-- Make icon and text sit on same row (horizontal layout) instead of stacked
+### 1. `src/pages/personal-trainer/PersonalTrainerClients.tsx` — Add filter bar
 
-### 2. `src/pages/ModuleHub.tsx` — More columns
-- Change grid from `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` to `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` with `gap-3` instead of `gap-6`
+Add filter state variables and a horizontal filter bar below the search input with these filters:
 
-## Files to Edit
+| Filter | Type | Options |
+|--------|------|---------|
+| Gender | Select | All, Male, Female, Other |
+| Fitness Level | Select | All, Beginner, Intermediate, Advanced |
+| Status | Select | All, Active, Inactive, Frozen |
+| Membership | Select | All, Standard, Premium, VIP |
+| Preferred Day | Multi-select buttons (Mon-Sun) | Filters clients who train on selected day(s) |
+| Trainer | Select | All, then list from `trainers` query |
+| Sort By | Select | Name A-Z, Name Z-A, Newest, Oldest, Fitness Level |
+
+Implementation details:
+- Add state: `genderFilter`, `fitnessFilter`, `statusFilter`, `membershipFilter`, `dayFilter`, `trainerFilter`, `sortBy`
+- Place filters in a collapsible row with a "Filters" toggle button and active-filter count badge
+- Update the `filtered` variable to chain all filter predicates
+- Add sort logic after filtering
+- Add a "Clear Filters" button when any filter is active
+- Use existing `Select` and `Button` components — no new dependencies
+
+### 2. Files to Edit
 
 | File | Change |
 |------|--------|
-| `src/components/module-hub/ModuleCard.tsx` | Compact horizontal card layout |
-| `src/pages/ModuleHub.tsx` | Denser grid (4 cols, smaller gaps) |
+| `src/pages/personal-trainer/PersonalTrainerClients.tsx` | Add filter bar, filter state, filter + sort logic |
+
+One file change only. No database migrations needed.
 
