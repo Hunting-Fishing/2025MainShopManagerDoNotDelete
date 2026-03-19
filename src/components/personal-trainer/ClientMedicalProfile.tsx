@@ -453,7 +453,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                     </p>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
             </TabsContent>
           </Tabs>
         </DialogContent>
