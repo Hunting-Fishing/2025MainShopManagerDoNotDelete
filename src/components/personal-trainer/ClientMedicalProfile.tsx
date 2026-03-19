@@ -315,6 +315,17 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                   {/* Expanded details */}
                   {isExpanded && (
                     <div className="mt-3 pt-3 border-t border-border space-y-2">
+                      {cond.physician_restrictions && (
+                        <div className={`rounded-md p-2 ${restrictionExpired ? 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800' : 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'}`}>
+                          <p className="text-[11px] font-medium mb-1 flex items-center gap-1">
+                            <ClipboardList className="h-3 w-3" />
+                            Doctor's Restrictions
+                            {restrictionExpired && <span className="text-amber-600 font-semibold ml-1">— EXPIRED, review needed</span>}
+                            {cond.physician_restriction_until && !restrictionExpired && <span className="text-muted-foreground font-normal ml-1">until {new Date(cond.physician_restriction_until).toLocaleDateString()}</span>}
+                          </p>
+                          <p className="text-xs">{cond.physician_restrictions}</p>
+                        </div>
+                      )}
                       {(cond.exercise_restrictions?.length > 0) && (
                         <div>
                           <p className="text-[11px] font-medium text-muted-foreground mb-1">Exercise Restrictions</p>
