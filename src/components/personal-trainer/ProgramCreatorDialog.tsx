@@ -150,15 +150,44 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
     onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
 
+  // Fetch medical conditions when a client is selected
+  const selectedClientId = aiForm.client_id && aiForm.client_id !== 'none' ? aiForm.client_id : null;
+  
+  useQuery({
+    queryKey: ['pt-client-medical-for-program', selectedClientId, shopId],
+    queryFn: async () => {
+      if (!selectedClientId || !shopId) return [];
+      const { data } = await (supabase as any).from('pt_client_medical_conditions')
+        .select('condition_name, category, severity, status, exercise_restrictions, dietary_implications')
+        .eq('client_id', selectedClientId)
+        .eq('shop_id', shopId)
+        .in('status', ['active', 'chronic']);
+      setClientMedicalConditions(data || []);
+      return data || [];
+    },
+    enabled: !!selectedClientId && !!shopId,
+  });
+
   const generateWithAI = async () => {
     setAiGenerating(true);
     setAiResult(null);
     try {
+      // Build structured medical context
+      const medicalContext = clientMedicalConditions.length > 0
+        ? clientMedicalConditions.map((c: any) => ({
+            name: c.condition_name,
+            category: c.category,
+            severity: c.severity,
+            restrictions: c.exercise_restrictions || [],
+            dietary: c.dietary_implications || [],
+          }))
+        : undefined;
+
       const { data, error } = await supabase.functions.invoke('pt-ai-assistant', {
         body: {
           action: 'generate_program_template',
           shopId,
-          clientId: aiForm.client_id && aiForm.client_id !== 'none' ? aiForm.client_id : undefined,
+          clientId: selectedClientId || undefined,
           context: {
             workout_style: aiForm.workout_style,
             training_platform: aiForm.training_platform,
@@ -168,6 +197,7 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
             session_duration_minutes: aiForm.session_duration_minutes,
             goal: aiForm.goal,
             limitations: aiForm.limitations,
+            medical_conditions: medicalContext,
           },
         },
       });
