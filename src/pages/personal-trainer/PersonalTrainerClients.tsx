@@ -84,7 +84,7 @@ export default function PersonalTrainerClients() {
       toast({ title: 'Client added successfully' });
       setDialogOpen(false);
       setForm({ first_name: '', last_name: '', email: '', phone: '', gender: '', fitness_level: 'beginner', goals: '', health_conditions: '', membership_type: 'standard', date_of_birth: '', height_cm: '', weight_kg: '', injuries: '', emergency_contact: '', emergency_phone: '', preferred_workout_days: [] });
-      setAssignTrainer('');
+      setAssignTrainer('none');
     },
     onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
