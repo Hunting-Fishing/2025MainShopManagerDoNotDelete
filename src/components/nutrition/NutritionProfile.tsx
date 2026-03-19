@@ -69,6 +69,9 @@ export default function NutritionProfile({ clientId, shopId }: Props) {
   const { data: existing, isLoading } = useNutritionProfile(clientId, shopId);
   const saveMutation = useSaveNutritionProfile(shopId);
   const [form, setForm] = useState<any>(null);
+  const [dietCategories, setDietCategories] = useState<Record<string, string[]>>({ ...INITIAL_DIETARY_STYLES });
+  const [allergyCategories, setAllergyCategories] = useState<Record<string, string[]>>({ ...INITIAL_ALLERGY_OPTIONS });
+  const [intoleranceCategories, setIntoleranceCategories] = useState<Record<string, string[]>>({ ...INITIAL_INTOLERANCE_OPTIONS });
 
   React.useEffect(() => {
     if (existing && !form) {
@@ -89,6 +92,15 @@ export default function NutritionProfile({ clientId, shopId }: Props) {
     snack_frequency: 1,
     hydration_goal_ml: 2500,
     custom_diet_suggestion: '',
+  };
+
+  const addToCategory = (
+    setter: React.Dispatch<React.SetStateAction<Record<string, string[]>>>,
+  ) => (category: string, value: string) => {
+    setter(prev => ({
+      ...prev,
+      [category]: prev[category] ? [...prev[category], value] : [value],
+    }));
   };
 
   const handleSave = () => {
@@ -112,11 +124,12 @@ export default function NutritionProfile({ clientId, shopId }: Props) {
           <MultiSelectDialog
             label="Dietary Styles"
             options={[]}
-            categorized={DIETARY_STYLES_CATEGORIZED}
+            categorized={dietCategories}
             selected={Array.isArray(currentForm.dietary_style) ? currentForm.dietary_style : currentForm.dietary_style ? [currentForm.dietary_style] : []}
             onSelectionChange={v => setForm({ ...currentForm, dietary_style: v })}
             allowCustom
             customPlaceholder="Suggest a diet..."
+            onAddCustomToCategory={addToCategory(setDietCategories)}
           />
         </div>
 
@@ -126,11 +139,12 @@ export default function NutritionProfile({ clientId, shopId }: Props) {
           <MultiSelectDialog
             label="Allergies"
             options={[]}
-            categorized={ALLERGY_OPTIONS_CATEGORIZED}
+            categorized={allergyCategories}
             selected={currentForm.allergies || []}
             onSelectionChange={v => setForm({ ...currentForm, allergies: v })}
             allowCustom
             customPlaceholder="Add custom allergy..."
+            onAddCustomToCategory={addToCategory(setAllergyCategories)}
           />
         </div>
 
@@ -140,11 +154,12 @@ export default function NutritionProfile({ clientId, shopId }: Props) {
           <MultiSelectDialog
             label="Intolerances"
             options={[]}
-            categorized={INTOLERANCE_OPTIONS_CATEGORIZED}
+            categorized={intoleranceCategories}
             selected={currentForm.intolerances || []}
             onSelectionChange={v => setForm({ ...currentForm, intolerances: v })}
             allowCustom
             customPlaceholder="Add custom intolerance..."
+            onAddCustomToCategory={addToCategory(setIntoleranceCategories)}
           />
         </div>
 
