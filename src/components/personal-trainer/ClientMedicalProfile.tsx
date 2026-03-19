@@ -243,6 +243,16 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
           ))}
         </div>
       )}
+      {/* Safe Exercise Recommendations */}
+      {conditions.length > 0 && (
+        <SafeExerciseRecommendations
+          restrictions={[]}
+          conditions={conditions.map((c: any) => ({
+            condition_name: c.condition_name,
+            exercise_restrictions: c.exercise_restrictions || [],
+          }))}
+        />
+      )}
 
       {/* Add Condition Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
