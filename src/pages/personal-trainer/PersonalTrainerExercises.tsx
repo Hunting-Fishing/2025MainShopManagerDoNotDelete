@@ -212,13 +212,15 @@ export default function PersonalTrainerExercises() {
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [filtered, groupBy]);
 
-  const isPending = addExercise.isPending || updateExercise.isPending;
+  const toggleGroup = (key: string) => {
     setCollapsedGroups(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
   };
+
+  const isPending = addExercise.isPending || updateExercise.isPending;
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
