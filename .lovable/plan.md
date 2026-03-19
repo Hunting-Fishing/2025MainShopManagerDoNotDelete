@@ -1,39 +1,58 @@
 
 
-# Fix Add Condition Dialog Scrolling + Enhance Medical Profile for Trainers
+# Deep Condition Detail: Location, Injury Level, Weight Limits & Doctor's Orders
 
-## Problems Identified
+## Overview
 
-1. **Scroll issue**: The `ScrollArea` in the Add Condition dialog uses `maxHeight: '40vh'` inline style, but the dialog itself is `max-h-[80vh]`. The flex layout combined with category badges wrapping and tabs overhead leaves insufficient visible scroll area. On smaller screens or when many category badges display, the scrollable list is nearly invisible or cut off.
+When a condition like "Herniated Disc" is added, the system currently stores it as a flat record with severity and restrictions. This enhancement adds structured sub-detail so trainers and AI know *exactly* what's affected — which disc, injury grade, weight limits, and physician-imposed restrictions with expiry dates.
 
-2. **Trainer experience gaps**: The edit dialog is functional but lacks the ability to add/remove individual exercise restrictions or dietary implications — they're read-only badges. Trainers can't customize safety parameters per client.
+## Database Changes
 
-## Plan
+Add 5 new columns to `pt_client_medical_conditions`:
 
-### 1. Fix scrollbar visibility in Add Condition dialog
+| Column | Type | Purpose |
+|--------|------|---------|
+| `affected_area` | text | Specific location (e.g., "L4-L5", "Left Shoulder", "C5-C6") |
+| `injury_grade` | text | Severity scale: Grade 1 (mild), Grade 2 (moderate), Grade 3 (severe/complete) |
+| `weight_limit_lbs` | integer | Max weight the client is allowed to lift (null = no limit) |
+| `physician_restrictions` | text | Free-text doctor's orders (e.g., "No spinal loading for 8 weeks, limit flexion to 30 degrees") |
+| `physician_restriction_until` | date | When doctor's restrictions expire — triggers a review reminder |
 
-- Remove the inline `style={{ maxHeight: '40vh' }}` from both `ScrollArea` components
-- Use proper flex layout so the `ScrollArea` fills remaining space naturally: `className="flex-1 overflow-hidden mt-3"` with the inner scroll area taking full height
-- Increase dialog height to `max-h-[85vh]` for more room
-- Add visible scrollbar styling (override `scrollbar-hide`) so the user can see the scroll indicator
+## UI Changes (Edit Condition Dialog)
 
-### 2. Enhance the Edit Condition dialog for trainers
+Add a new **"Condition Detail"** section between the Severity/Status row and the Notes field:
 
-- Make **exercise restrictions** editable: add a multi-select or chip input so trainers can add/remove restrictions from a predefined list (e.g., `no_overhead`, `no_heavy_squats`, `no_running`, `no_twisting`, `avoid_impact`, etc.)
-- Make **dietary implications** editable similarly
-- Add a **"Trainer Notes for AI"** field — a dedicated text area whose content gets injected into AI prompts, letting trainers write specific instructions like "Client has left shoulder impingement — avoid overhead pressing beyond 90°"
-- Add a quick-severity color indicator in the edit dialog header
-- Show `added_by` provenance (trainer vs client-reported) as a subtle badge
+1. **Affected Area** — Text input with smart placeholder based on condition category:
+   - Musculoskeletal: "e.g., L4-L5 disc, Left ACL, Right rotator cuff"
+   - Cardiovascular: "e.g., Left ventricle, Mitral valve"
+   - Default: "e.g., specific location or body part"
 
-### 3. Improve condition cards on the main list
+2. **Injury Grade** — Select dropdown: Grade 1 (Mild/Strain), Grade 2 (Moderate/Partial), Grade 3 (Severe/Complete), N/A
 
-- Add an expand/collapse for each card to show full details (restrictions, dietary, notes) without opening the edit dialog
-- Show the `diagnosed_date` if set
-- Add a subtle "Client reported" or "Trainer added" label based on `added_by`
+3. **Weight Limitation** — Number input with "lbs" suffix, placeholder "No limit if empty"
 
-### Files to Edit
+4. **Doctor's Restrictions** — Textarea with prominent styling (bordered, doctor icon), placeholder: "Enter physician-imposed limitations, e.g., No spinal loading for 8 weeks..."
+
+5. **Restriction Valid Until** — Date picker, shown alongside the doctor's restrictions field. When the date passes, the card shows a "⚠️ Restrictions expired — review needed" badge
+
+## Card Display Updates
+
+- Show `affected_area` right after the condition name (e.g., "Herniated Disc — L4-L5")
+- Show weight limit badge if set (e.g., "⚖️ Max 50 lbs")
+- Show doctor icon + "Dr. restrictions until [date]" if physician restrictions exist
+- In expanded view, show full physician restrictions text
+
+## AI Integration
+
+The `trainer_ai_notes` field already feeds into AI prompts. The new fields will be concatenated into the condition context that AI receives, so workout generation automatically accounts for:
+- Exact location (avoid exercises targeting that area)
+- Weight ceiling (cap all prescribed weights)
+- Doctor's specific orders (time-bound restrictions)
+
+## Files to Edit
 
 | File | Change |
 |------|--------|
-| `src/components/personal-trainer/ClientMedicalProfile.tsx` | Fix ScrollArea sizing, enhance edit dialog with editable restrictions/dietary, add trainer AI notes field, improve cards |
+| `pt_client_medical_conditions` table | Add 5 new columns via migration |
+| `src/components/personal-trainer/ClientMedicalProfile.tsx` | Add detail section to edit dialog, update card display, update insert/save logic |
 
