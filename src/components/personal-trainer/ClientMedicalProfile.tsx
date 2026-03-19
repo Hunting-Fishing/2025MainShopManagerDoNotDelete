@@ -304,7 +304,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                           {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                         </Button>
                       )}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingCondition({ ...cond })}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit condition details" onClick={() => setEditingCondition({ ...cond })}>
                         <Shield className="h-3.5 w-3.5" />
                       </Button>
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeCondition.mutate(cond.id)}>
