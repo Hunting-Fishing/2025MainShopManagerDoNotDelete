@@ -212,7 +212,7 @@ export default function PersonalTrainerExercises() {
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [filtered, groupBy]);
 
-  const toggleGroup = (key: string) => {
+  const isPending = addExercise.isPending || updateExercise.isPending;
     setCollapsedGroups(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
