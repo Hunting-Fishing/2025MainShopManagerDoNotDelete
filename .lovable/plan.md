@@ -1,40 +1,29 @@
 
 
-# Add Personal Trainer Module to All Navigation & Routing Layers
+# Make Module Hub Cards Much Smaller
 
-## What We're Doing
-
-The Personal Trainer module exists in `moduleRoutes.ts`, `pricing.ts`, and `getPostLoginDestination.ts` but is missing from 5 other integration layers needed for full visibility and routing.
+## Problem
+The module cards on `/module-hub` are large — each takes ~200px height with big icons, full descriptions, and full-width buttons. The grid is only 3 columns, so 9 modules requires significant scrolling.
 
 ## Changes
 
-### 1. `src/config/landingModules.ts` — Add to LANDING_MODULES array
+### 1. `src/components/module-hub/ModuleCard.tsx` — Compact layout
+- Reduce padding from `p-6` to `p-3`
+- Shrink icon from `w-14 h-14` to `w-9 h-9`, icon inner from `w-7 h-7` to `w-4 h-4`
+- Reduce title from `text-lg` to `text-sm`
+- Hide description entirely (or show as single-line `text-xs`)
+- Replace full-width "Enter Module" button with a small `size="sm"` button
+- Reduce badge size
+- Shrink gradient accent bar from `h-1` to `h-0.5`
+- Make icon and text sit on same row (horizontal layout) instead of stacked
 
-Add a new `LandingModule` entry after `export-company` (before the closing `];` on line 636) with slug `personal-trainer`, icon `Dumbbell`, color `bg-orange-500`, `available: true`, and core features covering client management, workout programming, session scheduling, and medical condition tracking with ICD-10 integration.
-
-### 2. `src/components/layout/sidebar/navigation.ts` — Add sidebar section
-
-Add a "Personal Trainer" navigation section after the Fuel Delivery block (after line 891) with items: Dashboard, Clients, Workout Programs, Exercises, Sessions, Body Metrics, Packages, Client Billing, Settings — all with `permissionModule: 'personal_trainer'` and `/personal-trainer/*` hrefs.
-
-### 3. `src/utils/routeGuards.ts` — Add route permission
-
-Add `{ path: '/personal-trainer', allowedRoles: ['admin', 'manager', 'technician', 'service_advisor', 'owner'] }` after the Export Company entry (line 134).
-
-### 4. `src/components/layout/Navbar.tsx` — Add to hamburger menu
-
-Add a "Personal Trainer" section to the `menuSections` array with items: Dashboard, Clients, Programs, Sessions, Exercises, Metrics.
-
-### 5. `src/components/mobile/MobileNavigation.tsx` — Add path detection
-
-Update the `getDefaultModule` function's return type union to include `'personal_trainer'` and add `if (path.startsWith('/personal-trainer')) return 'personal_trainer';` to the path checks.
+### 2. `src/pages/ModuleHub.tsx` — More columns
+- Change grid from `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` to `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` with `gap-3` instead of `gap-6`
 
 ## Files to Edit
 
 | File | Change |
 |------|--------|
-| `src/config/landingModules.ts` | Add Personal Trainer to LANDING_MODULES |
-| `src/components/layout/sidebar/navigation.ts` | Add sidebar nav section |
-| `src/utils/routeGuards.ts` | Add route permission entry |
-| `src/components/layout/Navbar.tsx` | Add hamburger menu section |
-| `src/components/mobile/MobileNavigation.tsx` | Add path detection for feedback module |
+| `src/components/module-hub/ModuleCard.tsx` | Compact horizontal card layout |
+| `src/pages/ModuleHub.tsx` | Denser grid (4 cols, smaller gaps) |
 
