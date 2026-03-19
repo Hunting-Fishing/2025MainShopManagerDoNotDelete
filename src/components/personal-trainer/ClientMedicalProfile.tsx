@@ -369,6 +369,7 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
       {/* Safe Exercise Recommendations */}
       {conditions.length > 0 && (
         <SafeExerciseRecommendations
+          shopId={shopId}
           restrictions={[]}
           conditions={conditions.map((c: any) => ({
             condition_name: c.condition_name,
