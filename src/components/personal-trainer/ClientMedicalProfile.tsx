@@ -15,6 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useICD10Search, mapICD10Category } from '@/hooks/useICD10Search';
+import SafeExerciseRecommendations from './SafeExerciseRecommendations';
 
 interface Props {
   clientId: string;
@@ -241,6 +242,16 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
             </Card>
           ))}
         </div>
+      )}
+      {/* Safe Exercise Recommendations */}
+      {conditions.length > 0 && (
+        <SafeExerciseRecommendations
+          restrictions={[]}
+          conditions={conditions.map((c: any) => ({
+            condition_name: c.condition_name,
+            exercise_restrictions: c.exercise_restrictions || [],
+          }))}
+        />
       )}
 
       {/* Add Condition Dialog */}
