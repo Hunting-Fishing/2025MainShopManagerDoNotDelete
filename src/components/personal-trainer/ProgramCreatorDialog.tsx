@@ -157,7 +157,7 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
         body: {
           action: 'generate_program_template',
           shopId,
-          clientId: aiForm.client_id || undefined,
+          clientId: aiForm.client_id && aiForm.client_id !== 'none' ? aiForm.client_id : undefined,
           context: {
             workout_style: aiForm.workout_style,
             training_platform: aiForm.training_platform,
@@ -390,7 +390,7 @@ export default function ProgramCreatorDialog({ open, onOpenChange, shopId }: Pro
                       <Select value={aiForm.client_id} onValueChange={v => setAiForm(f => ({ ...f, client_id: v }))}>
                         <SelectTrigger><SelectValue placeholder="No client (generic program)" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No client</SelectItem>
+                          <SelectItem value="none">No client (generic)</SelectItem>
                           {clients.map((c: any) => (
                             <SelectItem key={c.id} value={c.id}>{c.first_name} {c.last_name}</SelectItem>
                           ))}
