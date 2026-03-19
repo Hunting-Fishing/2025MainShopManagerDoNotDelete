@@ -156,6 +156,44 @@ serve(async (req) => {
       systemPrompt = `You are a fitness progression analyst AI. Analyze the client's workout history, biometric trends, and body metrics to identify plateaus, PRs, volume trends, and recovery signals. Provide actionable recommendations to refine their program.`;
       userPrompt = `${profile}\n\nWorkout History (last 30 sessions):\n${(workoutLogs || []).map((w: any) => `${w.completed_at}: ${w.workout_name || 'session'}, Duration: ${w.duration_minutes || '?'}min, Notes: ${w.notes || 'none'}`).join('\n') || 'No workout logs'}\n\nBody Metrics Trend:\n${(bodyMetrics || []).map((m: any) => `${m.recorded_date || m.measurement_date}: Weight=${m.weight_kg || '?'}kg, BF=${m.body_fat_percent || '?'}%`).join('\n') || 'No metrics'}\n\nBiometric History (7-14 days):\n${ctx.biometrics.map((b: any) => `${b.recorded_at}: Steps=${b.steps || '?'}, HR=${b.heart_rate_avg || '?'}, Sleep=${b.sleep_hours || '?'}h`).join('\n') || 'No biometric data'}\n\nAnalyze:\n1. Progression trends (improving, plateauing, declining)\n2. Potential PRs or milestones hit\n3. Recovery signals (overtraining, fatigue)\n4. Specific program adjustments recommended\n5. Volume/intensity periodization suggestions`;
 
+    } else if (action === 'generate_program_template') {
+      const ctx = reqContext || {};
+      let clientProfile = '';
+      if (clientId && shopId) {
+        const clientCtx = await fetchClientContext(supabase, clientId, shopId);
+        clientProfile = `\n\nClient Profile:\n${buildProfileSummary(clientCtx)}`;
+      }
+
+      const { data: exercises } = await supabase.from('pt_exercises')
+        .select('name, muscle_group, equipment, difficulty')
+        .eq('shop_id', shopId).limit(100);
+
+      systemPrompt = `You are an expert personal trainer AI that creates detailed, structured workout programs. You output complete multi-day training programs with specific exercises, sets, reps, rest periods, tempo, and progression notes. Be practical and evidence-based. Match the program to the client's equipment access, limitations, and goals.`;
+      
+      userPrompt = `Create a complete workout program with these parameters:
+- Workout Style: ${(ctx.workout_style || []).join(', ') || 'General'}
+- Training Platform: ${ctx.training_platform || 'Gym'}
+- Target Muscles: ${(ctx.target_muscles || []).join(', ') || 'Full Body'}
+- Difficulty: ${ctx.difficulty || 'intermediate'}
+- Days Per Week: ${ctx.days_per_week || 4}
+- Session Duration: ${ctx.session_duration_minutes || 60} minutes
+- Goal: ${ctx.goal || 'General Fitness'}
+- Limitations/Injuries: ${ctx.limitations || 'None'}
+${clientProfile}
+
+Available Exercises in Library: ${(exercises || []).map((e: any) => `${e.name} (${e.muscle_group}, ${e.equipment || 'bodyweight'})`).join(', ')}
+
+Generate a complete program with:
+1. Program overview and philosophy
+2. Each training day with:
+   - Day name and focus area
+   - Warm-up (5 min)
+   - Main exercises: Name, Sets x Reps, Rest period, Tempo (if relevant), RPE
+   - Cooldown
+3. Weekly progression plan (weeks 1-4)
+4. Deload recommendations
+5. Notes on exercise substitutions for equipment limitations`;
+
     } else {
       throw new Error(`Unknown action: ${action}`);
     }

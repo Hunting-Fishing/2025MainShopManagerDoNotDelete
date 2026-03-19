@@ -40217,41 +40217,65 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string | null
+          days_per_week: number | null
           description: string | null
           difficulty: string | null
           duration_weeks: number | null
           goal: string | null
           id: string
+          is_preset: boolean | null
           is_template: boolean | null
+          limitations: string | null
           name: string
-          shop_id: string
+          preset_category: string | null
+          session_duration_minutes: number | null
+          shop_id: string | null
+          target_muscles: string[] | null
+          training_platform: string | null
           updated_at: string | null
+          workout_style: string[] | null
         }
         Insert: {
           created_at?: string | null
           created_by?: string | null
+          days_per_week?: number | null
           description?: string | null
           difficulty?: string | null
           duration_weeks?: number | null
           goal?: string | null
           id?: string
+          is_preset?: boolean | null
           is_template?: boolean | null
+          limitations?: string | null
           name: string
-          shop_id: string
+          preset_category?: string | null
+          session_duration_minutes?: number | null
+          shop_id?: string | null
+          target_muscles?: string[] | null
+          training_platform?: string | null
           updated_at?: string | null
+          workout_style?: string[] | null
         }
         Update: {
           created_at?: string | null
           created_by?: string | null
+          days_per_week?: number | null
           description?: string | null
           difficulty?: string | null
           duration_weeks?: number | null
           goal?: string | null
           id?: string
+          is_preset?: boolean | null
           is_template?: boolean | null
+          limitations?: string | null
           name?: string
-          shop_id?: string
+          preset_category?: string | null
+          session_duration_minutes?: number | null
+          shop_id?: string | null
+          target_muscles?: string[] | null
+          training_platform?: string | null
           updated_at?: string | null
+          workout_style?: string[] | null
         }
         Relationships: []
       }
