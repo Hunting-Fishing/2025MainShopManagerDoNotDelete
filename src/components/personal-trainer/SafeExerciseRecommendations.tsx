@@ -23,50 +23,14 @@ interface ClassifiedExercise {
   difficulty: string | null;
   description: string | null;
   instructions: string | null;
+  secondary_muscles: string[] | null;
+  movement_pattern: string | null;
+  spinal_loading: boolean | null;
+  is_compound: boolean | null;
+  contraindicated_for: string[] | null;
   tier: RiskTier;
   reason: string;
 }
-
-// Maps restriction keywords to exercise name patterns that should be flagged
-const RESTRICTION_EXERCISE_PATTERNS: Record<string, string[]> = {
-  no_heavy_deadlifts: ['deadlift', 'dead lift'],
-  no_heavy_squats: ['squat', 'leg press'],
-  no_overhead: ['overhead', 'military press', 'shoulder press', 'snatch', 'jerk'],
-  no_spinal_loading: ['deadlift', 'squat', 'good morning', 'back extension', 'barbell row', 'clean'],
-  no_bench_press: ['bench press'],
-  no_pull_ups: ['pull up', 'pullup', 'chin up', 'chinup'],
-  no_plyometrics: ['jump', 'box jump', 'plyometric', 'burpee'],
-  no_running: ['run', 'sprint', 'jog', 'treadmill'],
-  no_jumping: ['jump', 'box jump', 'plyometric', 'burpee', 'skip'],
-  no_twisting: ['twist', 'rotation', 'russian twist', 'woodchop'],
-  avoid_impact: ['jump', 'box jump', 'burpee', 'sprint'],
-  no_grip_heavy: ['farmer', 'grip', 'wrist curl', 'hang'],
-  seated_exercises_only: ['standing', 'lunge', 'step up'],
-  no_lateral_movements: ['lateral', 'side step', 'carioca', 'shuffle'],
-};
-
-// Maps restriction keywords to muscle groups that should be avoided
-const RESTRICTION_MUSCLE_GROUPS: Record<string, string[]> = {
-  no_overhead: ['shoulders', 'deltoids'],
-  no_heavy_squats: ['quadriceps', 'quads', 'glutes', 'legs'],
-  no_heavy_deadlifts: ['back', 'hamstrings', 'lower back'],
-  no_spinal_loading: ['back', 'lower back', 'erectors'],
-  no_bench_press: ['chest', 'pectorals'],
-  avoid_bending: ['lower back', 'back'],
-  no_abdominal_exercises: ['abs', 'core', 'abdominals'],
-  no_pull_ups: ['back', 'lats', 'biceps'],
-};
-
-// Muscle groups that are adjacent/related (for caution tier)
-const ADJACENT_MUSCLES: Record<string, string[]> = {
-  'back': ['shoulders', 'core', 'abs'],
-  'lower back': ['core', 'abs', 'glutes', 'hamstrings'],
-  'chest': ['shoulders', 'triceps'],
-  'shoulders': ['chest', 'back', 'triceps'],
-  'legs': ['glutes', 'calves', 'hamstrings', 'quadriceps'],
-  'quadriceps': ['glutes', 'hamstrings', 'calves'],
-  'hamstrings': ['glutes', 'quadriceps', 'lower back'],
-};
 
 const TIER_CONFIG: Record<RiskTier, { color: string; borderColor: string; icon: React.ReactNode; label: string }> = {
   safe: {
@@ -96,42 +60,63 @@ const TIER_CONFIG: Record<RiskTier, { color: string; borderColor: string; icon: 
 };
 
 function classifyExercise(
-  exercise: { name: string; muscle_group: string | null; equipment: string | null },
-  allRestrictions: string[],
-  avoidedMuscleGroups: Set<string>,
-  adjacentToAvoided: Set<string>
+  exercise: {
+    name: string;
+    muscle_group: string | null;
+    secondary_muscles: string[] | null;
+    spinal_loading: boolean | null;
+    is_compound: boolean | null;
+    contraindicated_for: string[] | null;
+  },
+  allRestrictions: string[]
 ): { tier: RiskTier; reason: string } {
-  const nameLower = exercise.name.toLowerCase();
-  const muscleLower = (exercise.muscle_group || '').toLowerCase();
+  const contraindications = exercise.contraindicated_for || [];
 
-  // Check direct name pattern matches against restrictions (AVOID)
-  for (const restriction of allRestrictions) {
-    const patterns = RESTRICTION_EXERCISE_PATTERNS[restriction];
-    if (patterns) {
-      for (const pattern of patterns) {
-        if (nameLower.includes(pattern)) {
-          return { tier: 'avoid', reason: `Conflicts with ${restriction.replace(/_/g, ' ')}` };
-        }
-      }
-    }
+  // Direct contraindication match = AVOID
+  const directMatch = contraindications.filter(c => allRestrictions.includes(c));
+  if (directMatch.length > 0) {
+    return {
+      tier: 'avoid',
+      reason: `Contraindicated: ${directMatch.map(r => r.replace(/_/g, ' ')).join(', ')}`,
+    };
   }
 
-  // Check if exercise targets an avoided muscle group (WARNING or AVOID)
-  if (muscleLower) {
-    for (const avoided of avoidedMuscleGroups) {
-      if (muscleLower.includes(avoided) || avoided.includes(muscleLower)) {
-        return { tier: 'warning', reason: `Targets restricted area: ${avoided}` };
-      }
-    }
+  // Spinal loading check for spinal restrictions
+  const spinalRestrictions = ['no_spinal_loading', 'avoid_bending', 'no_heavy_lifting'];
+  if (exercise.spinal_loading && allRestrictions.some(r => spinalRestrictions.includes(r))) {
+    return {
+      tier: 'warning',
+      reason: 'Involves spinal loading — review with trainer',
+    };
   }
 
-  // Check if exercise targets an adjacent muscle group (CAUTION)
-  if (muscleLower) {
-    for (const adj of adjacentToAvoided) {
-      if (muscleLower.includes(adj) || adj.includes(muscleLower)) {
-        return { tier: 'caution', reason: `Near restricted area: ${adj}` };
-      }
-    }
+  // Secondary muscle overlap with restricted areas
+  const secondaryMuscles = exercise.secondary_muscles || [];
+  const restrictedMuscleKeywords = new Set<string>();
+  for (const r of allRestrictions) {
+    if (r.includes('back') || r.includes('spinal')) restrictedMuscleKeywords.add('lower back');
+    if (r.includes('overhead')) { restrictedMuscleKeywords.add('shoulders'); restrictedMuscleKeywords.add('front delts'); }
+    if (r.includes('chest')) restrictedMuscleKeywords.add('chest');
+    if (r.includes('grip')) restrictedMuscleKeywords.add('forearms');
+    if (r.includes('abdominal')) { restrictedMuscleKeywords.add('obliques'); restrictedMuscleKeywords.add('core'); }
+  }
+
+  const secondaryOverlap = secondaryMuscles.filter(m =>
+    [...restrictedMuscleKeywords].some(k => m.toLowerCase().includes(k) || k.includes(m.toLowerCase()))
+  );
+  if (secondaryOverlap.length > 0) {
+    return {
+      tier: 'caution',
+      reason: `Secondary muscles near restricted area: ${secondaryOverlap.join(', ')}`,
+    };
+  }
+
+  // Compound + high-impact exercises deserve extra scrutiny
+  if (exercise.is_compound && allRestrictions.some(r => ['low_intensity_only', 'avoid_high_intensity'].includes(r))) {
+    return {
+      tier: 'caution',
+      reason: 'Compound movement — may be too intense',
+    };
   }
 
   return { tier: 'safe', reason: 'No conflicts with current restrictions' };
@@ -149,12 +134,7 @@ function LocalExerciseCard({ exercise }: { exercise: ClassifiedExercise }) {
             <div className="flex items-center gap-2">
               {config.icon}
               <span className="text-sm font-medium capitalize">{exercise.name}</span>
-              <Badge
-                variant="outline"
-                className={`text-[10px] ${config.color}`}
-              >
-                {config.label}
-              </Badge>
+              <Badge variant="outline" className={`text-[10px] ${config.color}`}>{config.label}</Badge>
             </div>
             <div className="flex flex-wrap gap-1 mt-1">
               {exercise.muscle_group && (
@@ -166,24 +146,28 @@ function LocalExerciseCard({ exercise }: { exercise: ClassifiedExercise }) {
               {exercise.difficulty && (
                 <Badge variant="outline" className="text-[10px] capitalize">{exercise.difficulty}</Badge>
               )}
+              {exercise.movement_pattern && (
+                <Badge variant="outline" className="text-[10px] capitalize text-muted-foreground">{exercise.movement_pattern}</Badge>
+              )}
+              {exercise.spinal_loading && (
+                <Badge variant="outline" className="text-[10px] text-orange-600 border-orange-300">🦴 Spinal load</Badge>
+              )}
             </div>
             <p className="text-[10px] text-muted-foreground mt-0.5 italic">{exercise.reason}</p>
           </div>
         </div>
 
-        {(exercise.instructions || exercise.description) && (
+        {(exercise.instructions || exercise.description || (exercise.secondary_muscles?.length ?? 0) > 0) && (
           <div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 text-xs px-2 gap-1"
-              onClick={() => setExpanded(!expanded)}
-            >
+            <Button variant="ghost" size="sm" className="h-6 text-xs px-2 gap-1" onClick={() => setExpanded(!expanded)}>
               {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               {expanded ? 'Hide' : 'Show'} Details
             </Button>
             {expanded && (
               <div className="text-xs text-muted-foreground mt-1 pl-2 space-y-1">
+                {(exercise.secondary_muscles?.length ?? 0) > 0 && (
+                  <p><strong>Secondary muscles:</strong> {exercise.secondary_muscles!.join(', ')}</p>
+                )}
                 {exercise.description && <p>{exercise.description}</p>}
                 {exercise.instructions && <p>{exercise.instructions}</p>}
               </div>
@@ -202,12 +186,7 @@ function ExternalExerciseCard({ exercise }: { exercise: ExerciseDBResult }) {
     <div className="border rounded-lg p-3 space-y-2">
       <div className="flex items-start gap-3">
         {exercise.gifUrl && (
-          <img
-            src={exercise.gifUrl}
-            alt={exercise.name}
-            className="w-16 h-16 rounded-md object-cover shrink-0"
-            loading="lazy"
-          />
+          <img src={exercise.gifUrl} alt={exercise.name} className="w-16 h-16 rounded-md object-cover shrink-0" loading="lazy" />
         )}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium capitalize">{exercise.name}</p>
@@ -220,9 +199,7 @@ function ExternalExerciseCard({ exercise }: { exercise: ExerciseDBResult }) {
             ))}
           </div>
           {(exercise.equipments || []).length > 0 && (
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Equipment: {exercise.equipments.join(', ')}
-            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">Equipment: {exercise.equipments.join(', ')}</p>
           )}
         </div>
       </div>
@@ -234,9 +211,7 @@ function ExternalExerciseCard({ exercise }: { exercise: ExerciseDBResult }) {
           </Button>
           {expanded && (
             <ol className="text-xs text-muted-foreground space-y-1 mt-1 pl-4 list-decimal">
-              {exercise.instructions.map((step, i) => (
-                <li key={i}>{step}</li>
-              ))}
+              {exercise.instructions.map((step, i) => <li key={i}>{step}</li>)}
             </ol>
           )}
         </div>
@@ -263,33 +238,13 @@ export default function SafeExerciseRecommendations({ shopId, restrictions, cond
   const safeBodyParts = useMemo(() => getSafeBodyParts(allRestrictions), [allRestrictions]);
   const avoidedBodyParts = useMemo(() => getAvoidedBodyParts(allRestrictions), [allRestrictions]);
 
-  // Build avoided muscle group set from restrictions
-  const avoidedMuscleGroups = useMemo(() => {
-    const avoided = new Set<string>();
-    for (const r of allRestrictions) {
-      const groups = RESTRICTION_MUSCLE_GROUPS[r];
-      if (groups) groups.forEach(g => avoided.add(g));
-    }
-    return avoided;
-  }, [allRestrictions]);
-
-  // Build adjacent-to-avoided set
-  const adjacentToAvoided = useMemo(() => {
-    const adj = new Set<string>();
-    for (const avoided of avoidedMuscleGroups) {
-      const related = ADJACENT_MUSCLES[avoided];
-      if (related) related.forEach(r => { if (!avoidedMuscleGroups.has(r)) adj.add(r); });
-    }
-    return adj;
-  }, [avoidedMuscleGroups]);
-
-  // Load local exercises from pt_exercises
+  // Load local exercises with enrichment data
   useEffect(() => {
     if (!shopId) return;
     setLocalLoading(true);
     (supabase as any)
       .from('pt_exercises')
-      .select('id, name, muscle_group, equipment, difficulty, description, instructions')
+      .select('id, name, muscle_group, equipment, difficulty, description, instructions, secondary_muscles, movement_pattern, spinal_loading, is_compound, contraindicated_for')
       .eq('shop_id', shopId)
       .order('name')
       .then(({ data, error }: any) => {
@@ -298,13 +253,13 @@ export default function SafeExerciseRecommendations({ shopId, restrictions, cond
       });
   }, [shopId]);
 
-  // Classify all local exercises
+  // Classify using enrichment data
   const classifiedExercises = useMemo<ClassifiedExercise[]>(() => {
     return localExercises.map(ex => {
-      const { tier, reason } = classifyExercise(ex, allRestrictions, avoidedMuscleGroups, adjacentToAvoided);
+      const { tier, reason } = classifyExercise(ex, allRestrictions);
       return { ...ex, tier, reason };
     });
-  }, [localExercises, allRestrictions, avoidedMuscleGroups, adjacentToAvoided]);
+  }, [localExercises, allRestrictions]);
 
   // Group by tier
   const grouped = useMemo(() => {
@@ -369,7 +324,7 @@ export default function SafeExerciseRecommendations({ shopId, restrictions, cond
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Safe exercises */}
+            {/* Safe */}
             {grouped.safe.length > 0 && (
               <div className="space-y-1.5">
                 <p className="text-xs font-medium flex items-center gap-1.5 text-green-600">
@@ -381,7 +336,7 @@ export default function SafeExerciseRecommendations({ shopId, restrictions, cond
               </div>
             )}
 
-            {/* Caution exercises */}
+            {/* Caution */}
             {grouped.caution.length > 0 && (
               <div className="space-y-1.5">
                 <p className="text-xs font-medium flex items-center gap-1.5 text-yellow-600">
@@ -393,7 +348,7 @@ export default function SafeExerciseRecommendations({ shopId, restrictions, cond
               </div>
             )}
 
-            {/* Warning exercises */}
+            {/* Warning */}
             {grouped.warning.length > 0 && (
               <div className="space-y-1.5">
                 <p className="text-xs font-medium flex items-center gap-1.5 text-orange-600">
@@ -405,15 +360,10 @@ export default function SafeExerciseRecommendations({ shopId, restrictions, cond
               </div>
             )}
 
-            {/* Avoid exercises - collapsed by default */}
+            {/* Avoid - collapsed */}
             {grouped.avoid.length > 0 && (
               <div className="space-y-1.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs px-2 gap-1.5 text-red-600"
-                  onClick={() => setShowAvoid(!showAvoid)}
-                >
+                <Button variant="ghost" size="sm" className="h-7 text-xs px-2 gap-1.5 text-red-600" onClick={() => setShowAvoid(!showAvoid)}>
                   <XCircle className="h-3.5 w-3.5" />
                   Avoid ({grouped.avoid.length}) — Not Recommended
                   {showAvoid ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -434,14 +384,9 @@ export default function SafeExerciseRecommendations({ shopId, restrictions, cond
           </div>
         )}
 
-        {/* Explore more via ExerciseDB */}
+        {/* ExerciseDB explore */}
         <div className="border-t pt-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-1.5 text-xs"
-            onClick={() => setShowExplore(!showExplore)}
-          >
+          <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs" onClick={() => setShowExplore(!showExplore)}>
             <Sparkles className="h-3.5 w-3.5" />
             {showExplore ? 'Hide' : 'Explore More'} from ExerciseDB
             {showExplore ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -458,10 +403,7 @@ export default function SafeExerciseRecommendations({ shopId, restrictions, cond
                       key={bp}
                       variant={selectedBodyPart === bp ? 'default' : 'outline'}
                       className="text-[10px] capitalize cursor-pointer"
-                      onClick={() => {
-                        setSelectedBodyPart(prev => prev === bp ? '' : bp);
-                        setSearchQuery('');
-                      }}
+                      onClick={() => { setSelectedBodyPart(prev => prev === bp ? '' : bp); setSearchQuery(''); }}
                     >
                       {bp}
                     </Badge>
@@ -482,17 +424,13 @@ export default function SafeExerciseRecommendations({ shopId, restrictions, cond
               </p>
               <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
                 {searchLoading && (
-                  <div className="flex justify-center py-6">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  </div>
+                  <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                 )}
                 {!searchLoading && filteredSearchResults.map(ex => (
                   <ExternalExerciseCard key={ex.exerciseId || ex.name} exercise={ex} />
                 ))}
                 {!searchLoading && filteredSearchResults.length === 0 && searchQuery.length >= 2 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No safe exercises found. Try a different search.
-                  </p>
+                  <p className="text-sm text-muted-foreground text-center py-4">No safe exercises found. Try a different search.</p>
                 )}
               </div>
             </div>

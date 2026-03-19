@@ -38944,6 +38944,7 @@ export type Database = {
           alternatives: string | null
           category: string
           common_mistakes: string | null
+          contraindicated_for: string[] | null
           created_at: string | null
           description: string | null
           difficulty: string | null
@@ -38951,10 +38952,14 @@ export type Database = {
           id: string
           image_url: string | null
           instructions: string | null
+          is_compound: boolean | null
           is_custom: boolean | null
+          movement_pattern: string | null
           muscle_group: string | null
           name: string
+          secondary_muscles: string[] | null
           shop_id: string
+          spinal_loading: boolean | null
           updated_at: string | null
           video_url: string | null
         }
@@ -38962,6 +38967,7 @@ export type Database = {
           alternatives?: string | null
           category?: string
           common_mistakes?: string | null
+          contraindicated_for?: string[] | null
           created_at?: string | null
           description?: string | null
           difficulty?: string | null
@@ -38969,10 +38975,14 @@ export type Database = {
           id?: string
           image_url?: string | null
           instructions?: string | null
+          is_compound?: boolean | null
           is_custom?: boolean | null
+          movement_pattern?: string | null
           muscle_group?: string | null
           name: string
+          secondary_muscles?: string[] | null
           shop_id: string
+          spinal_loading?: boolean | null
           updated_at?: string | null
           video_url?: string | null
         }
@@ -38980,6 +38990,7 @@ export type Database = {
           alternatives?: string | null
           category?: string
           common_mistakes?: string | null
+          contraindicated_for?: string[] | null
           created_at?: string | null
           description?: string | null
           difficulty?: string | null
@@ -38987,10 +38998,14 @@ export type Database = {
           id?: string
           image_url?: string | null
           instructions?: string | null
+          is_compound?: boolean | null
           is_custom?: boolean | null
+          movement_pattern?: string | null
           muscle_group?: string | null
           name?: string
+          secondary_muscles?: string[] | null
           shop_id?: string
+          spinal_loading?: boolean | null
           updated_at?: string | null
           video_url?: string | null
         }
