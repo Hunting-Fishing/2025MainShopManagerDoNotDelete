@@ -159,7 +159,7 @@ export default function ModuleHub() {
       <div className="min-h-screen bg-background p-6 md:p-8">
         <div className="max-w-7xl mx-auto">
           <Skeleton className="h-32 w-full mb-8" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {[1, 2, 3, 4, 5, 6].map(i => (
               <Skeleton key={i} className="h-64 w-full" />
             ))}
@@ -234,7 +234,7 @@ export default function ModuleHub() {
                 ({displayAccessible.length} {isSearching ? 'found' : 'active'})
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {displayAccessible.map(module => (
                 <Card3D key={module.slug} rotationIntensity={8} glareOpacity={0.15} scale={1.02}>
                   <ModuleCard
@@ -257,7 +257,7 @@ export default function ModuleHub() {
                 ({displayLocked.length} {isSearching ? 'found' : 'available'})
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {displayLocked.map(module => (
                 <Card3D key={module.slug} rotationIntensity={6} glareOpacity={0.1} scale={1.01}>
                   <ModuleCard
