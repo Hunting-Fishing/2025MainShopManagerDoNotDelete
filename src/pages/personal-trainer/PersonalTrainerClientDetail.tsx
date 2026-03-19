@@ -178,13 +178,9 @@ export default function PersonalTrainerClientDetail() {
         </CardContent>
       </Card>
 
-      {/* Goals, Health, Injuries */}
-      {(client.goals || client.health_conditions || client.injuries) && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {client.goals && <Card><CardContent className="p-4"><p className="text-xs font-medium text-muted-foreground mb-1">Goals</p><p className="text-sm">{client.goals}</p></CardContent></Card>}
-          {client.health_conditions && <Card><CardContent className="p-4"><p className="text-xs font-medium text-muted-foreground mb-1">Health Conditions</p><p className="text-sm">{client.health_conditions}</p></CardContent></Card>}
-          {client.injuries && <Card><CardContent className="p-4"><p className="text-xs font-medium text-muted-foreground mb-1">Injuries</p><p className="text-sm">{client.injuries}</p></CardContent></Card>}
-        </div>
+      {/* Goals */}
+      {client.goals && (
+        <Card><CardContent className="p-4"><p className="text-xs font-medium text-muted-foreground mb-1">Goals</p><p className="text-sm">{client.goals}</p></CardContent></Card>
       )}
 
       {/* Tabs */}
