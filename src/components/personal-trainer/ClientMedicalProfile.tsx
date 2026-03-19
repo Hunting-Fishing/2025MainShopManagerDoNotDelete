@@ -258,11 +258,26 @@ export default function ClientMedicalProfile({ clientId, shopId }: Props) {
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => hasDetails && toggleExpanded(cond.id)}>
                       <div className="flex items-center gap-2 flex-wrap">
                         {STATUS_ICONS[cond.status] || null}
-                        <span className="font-medium text-sm">{cond.condition_name}</span>
+                        <span className="font-medium text-sm">
+                          {cond.condition_name}
+                          {cond.affected_area && <span className="text-muted-foreground font-normal"> — {cond.affected_area}</span>}
+                        </span>
                         <Badge variant="outline" className="text-xs">{cond.category}</Badge>
                         <span className={`text-xs px-1.5 py-0.5 rounded-full ${SEVERITY_COLORS[cond.severity] || ''}`}>
                           {cond.severity}
                         </span>
+                        {cond.injury_grade && cond.injury_grade !== 'na' && (
+                          <Badge variant="outline" className="text-[10px]">Grade {cond.injury_grade.replace('grade_', '')}</Badge>
+                        )}
+                        {cond.weight_limit_lbs && (
+                          <Badge variant="secondary" className="text-[10px] gap-0.5"><Weight className="h-2.5 w-2.5" /> Max {cond.weight_limit_lbs} lbs</Badge>
+                        )}
+                        {cond.physician_restrictions && (
+                          <Badge variant="outline" className={`text-[10px] gap-0.5 ${restrictionExpired ? 'border-amber-500 text-amber-600' : 'border-blue-500 text-blue-600'}`}>
+                            <ClipboardList className="h-2.5 w-2.5" />
+                            {restrictionExpired ? '⚠️ Dr. orders expired' : `Dr. orders${cond.physician_restriction_until ? ` until ${new Date(cond.physician_restriction_until).toLocaleDateString()}` : ''}`}
+                          </Badge>
+                        )}
                         <Badge variant="secondary" className="text-xs">{cond.status}</Badge>
                         {cond.cleared_by_physician && (
                           <Badge className="text-xs bg-green-600">✓ Cleared</Badge>
