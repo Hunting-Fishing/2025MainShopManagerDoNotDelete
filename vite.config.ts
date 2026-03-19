@@ -8,7 +8,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    // Force cache clearing for development
     fs: {
       strict: false,
     },
@@ -22,18 +21,29 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    // Prevent duplicate React instances and reduce memory usage
     dedupe: ["react", "react-dom", "react/jsx-runtime", "xlsx"],
   },
-  // Force rebuild dependencies to clear theme context cache
   optimizeDeps: {
     force: true,
   },
   build: {
-    // Force new build hashes
+    sourcemap: false,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks(id) {
+          // Split large vendor libs into separate chunks to reduce memory
+          if (id.includes('node_modules')) {
+            if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
+            if (id.includes('@radix-ui')) return 'vendor-radix';
+            if (id.includes('@supabase')) return 'vendor-supabase';
+            if (id.includes('mapbox-gl') || id.includes('@turf')) return 'vendor-maps';
+            if (id.includes('@mui')) return 'vendor-mui';
+            if (id.includes('xlsx') || id.includes('jspdf')) return 'vendor-export';
+            if (id.includes('framer-motion')) return 'vendor-motion';
+            if (id.includes('chart.js') || id.includes('react-chartjs')) return 'vendor-chartjs';
+          }
+        },
       },
     },
   },
