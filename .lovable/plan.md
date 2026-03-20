@@ -1,60 +1,54 @@
 
 
-# Fix Shield Tooltip, Auto-Load Safe Exercises from Local Library & Risk-Level Color Coding
+# Upgrade Client Intake Form
 
-## Problems Identified
+## Current State
+The "Add New Client" dialog has 4 sections: Personal Info, Membership, Preferred Workout Days, and Health & Goals. It only captures ~15 of the 30+ available `pt_clients` columns.
 
-1. **Shield icon has no tooltip** — the edit button uses a Shield icon with no title/hover text, so users don't know what it does.
-2. **Safe exercises don't pre-load** — the recommendations section waits for the user to click a body part or search. It should auto-load exercises from the shop's own `pt_exercises` table based on the client's conditions.
-3. **No risk-level color coding** — exercises aren't visually differentiated by how safe they are for the client's specific restrictions.
+## What Changes
 
-## Plan
+### 1. Restructure into 6 clear sections with better layout
 
-### 1. Add tooltip to Shield icon button
+**Personal Info** (existing — add profile photo upload)
+- First Name, Last Name, Email, Phone, Date of Birth, Sex, Height, Weight — keep as-is
+- Add Body Fat % field (already in DB)
 
-Add `title="Edit condition details"` to the Shield button on each condition card. Simple one-liner.
+**Membership & Training** (expand existing)
+- Membership Type, Assign Trainer — keep
+- Preferred Workout Days — keep
+- Add Join Date field (already in DB as `join_date`)
 
-### 2. Auto-load safe exercises from local `pt_exercises` library
+**Health & Medical** (rename from "Health & Goals")
+- Goals — keep
+- Injuries/Limitations — keep  
+- Medical Warnings / Health Conditions — keep
+- Add a note: "Detailed medical conditions can be added from the client profile after creation"
 
-Currently `SafeExerciseRecommendations` only uses the external ExerciseDB API and requires manual interaction. Change it to:
+**Nutrition & Diet** (new section — all columns exist in DB)
+- Calorie Target (number)
+- Protein Target (g), Carb Target (g), Fat Target (g) — 3-col row
+- Hydration Target (ml)
+- Food Habits (textarea — e.g., "Vegetarian, no dairy")
+- Supplement Notes (textarea)
+- Meal Guidance (textarea)
 
-- Accept `shopId` as a new prop
-- On mount, query `pt_exercises` from Supabase filtered to the shop
-- Cross-reference each exercise's `muscle_group` against the client's avoided body parts and restrictions
-- Classify each exercise into a **risk tier**:
-  - **Safe (green)** — targets only safe body parts, no restriction conflicts
-  - **Caution (yellow)** — targets a secondary muscle that's near a restricted area, or involves equipment that may be problematic
-  - **Warning (orange)** — partially conflicts with a restriction (e.g., exercise involves "back" when client has spinal loading restriction)
-  - **Avoid (red)** — directly targets a restricted body part or violates a named restriction (e.g., `no_heavy_deadlifts` and the exercise is "Deadlift")
-- Auto-display the **Safe** and **Caution** exercises on load — no click required
-- Keep the ExerciseDB search as a secondary "Explore more" option below
+**Emergency Contact** (existing — keep as-is)
+- Contact Name, Contact Phone
 
-### 3. Risk-tier color coding on exercise cards
+**Additional Notes** (new section)
+- Notes textarea (already in DB as `notes`)
 
-- Green left border + green shield icon for Safe
-- Yellow left border + yellow caution icon for Caution  
-- Orange left border + orange warning for Warning
-- Red left border + red X for Avoid (shown collapsed/dimmed with "Not recommended" label)
+### 2. Update form state and mutation payload
+- Add new fields to the `form` state object: `body_fat_percent`, `join_date`, `calorie_target`, `protein_target_g`, `carb_target_g`, `fat_target_g`, `hydration_target_ml`, `food_habits`, `supplement_notes`, `meal_guidance`, `notes`
+- Map all new fields into the insert payload
 
-### 4. Restriction-to-exercise name matching
+### 3. Extract form into its own component
+The dialog content is getting large. Extract the form body into `src/components/personal-trainer/ClientIntakeForm.tsx` to keep `PersonalTrainerClients.tsx` manageable.
 
-Add a mapping of specific restriction keywords to exercise name patterns so exercises are flagged accurately:
-
-```text
-no_heavy_deadlifts  → matches exercises containing "deadlift"
-no_heavy_squats     → matches "squat", "leg press"
-no_overhead         → matches "overhead", "military press", "shoulder press"
-no_spinal_loading   → matches "deadlift", "squat", "good morning", "back extension"
-no_bench_press      → matches "bench press"
-no_pull_ups         → matches "pull up", "pullup", "chin up"
-no_plyometrics      → matches "jump", "box jump", "plyometric"
-no_running          → matches "run", "sprint", "jog"
-```
-
-### Files to Edit
+## Files to Edit
 
 | File | Change |
 |------|--------|
-| `src/components/personal-trainer/ClientMedicalProfile.tsx` | Add `title` to Shield button, pass `shopId` to SafeExerciseRecommendations |
-| `src/components/personal-trainer/SafeExerciseRecommendations.tsx` | Add local exercise query, risk classification engine, auto-load on mount, color-coded cards, keep ExerciseDB as secondary search |
+| `src/components/personal-trainer/ClientIntakeForm.tsx` | New component — extracted form with all 6 sections |
+| `src/pages/personal-trainer/PersonalTrainerClients.tsx` | Replace inline form with `<ClientIntakeForm>`, pass trainers + onSubmit props |
 
