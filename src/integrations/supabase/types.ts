@@ -39424,6 +39424,65 @@ export type Database = {
           },
         ]
       }
+      pt_gym_staff: {
+        Row: {
+          created_at: string
+          department: string | null
+          email: string | null
+          first_name: string
+          hire_date: string | null
+          hourly_rate: number | null
+          id: string
+          is_active: boolean
+          last_name: string
+          notes: string | null
+          phone: string | null
+          role: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          first_name: string
+          hire_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean
+          last_name: string
+          notes?: string | null
+          phone?: string | null
+          role?: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          first_name?: string
+          hire_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          notes?: string | null
+          phone?: string | null
+          role?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_gym_staff_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_invoices: {
         Row: {
           amount: number
@@ -40251,6 +40310,70 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_time_entries: {
+        Row: {
+          break_minutes: number
+          clock_in: string
+          clock_out: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          shop_id: string
+          staff_id: string | null
+          status: string
+          total_hours: number | null
+          trainer_id: string | null
+        }
+        Insert: {
+          break_minutes?: number
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          shop_id: string
+          staff_id?: string | null
+          status?: string
+          total_hours?: number | null
+          trainer_id?: string | null
+        }
+        Update: {
+          break_minutes?: number
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          shop_id?: string
+          staff_id?: string | null
+          status?: string
+          total_hours?: number | null
+          trainer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_time_entries_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_time_entries_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "pt_gym_staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_time_entries_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "pt_trainers"
             referencedColumns: ["id"]
           },
         ]
