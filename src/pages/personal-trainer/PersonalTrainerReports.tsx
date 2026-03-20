@@ -260,6 +260,9 @@ export default function PersonalTrainerReports() {
         </Card>
       </div>
 
+      {/* Payroll Summary */}
+      <PayrollSummarySection shopId={shopId} />
+
       {/* Alerts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Expiring Packages */}
