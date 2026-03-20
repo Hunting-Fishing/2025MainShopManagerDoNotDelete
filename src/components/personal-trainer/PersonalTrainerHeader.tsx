@@ -101,6 +101,17 @@ export function PersonalTrainerHeader({ onMenuToggle }: PersonalTrainerHeaderPro
               <DropdownMenuItem onClick={() => navigate('/module-hub')}>
                 All Modules
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive cursor-pointer"
+                onClick={async () => {
+                  toast({ title: 'Logging out', description: 'Please wait...' });
+                  await AuthService.signOut();
+                }}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
