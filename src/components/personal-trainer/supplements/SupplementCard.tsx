@@ -54,8 +54,9 @@ const categoryLabels: Record<string, string> = {
 
 export function SupplementCard({
   name, category, description, recommendedDose, benefits, isSponsored,
-  imageUrl, price, affiliateLink, brandName, amazonAsin, affiliateTag, bestTimeToTake, onClick
+  imageUrl, price, affiliateLink, brandName, amazonAsin, affiliateTag, bestTimeToTake, productType, onClick
 }: SupplementCardProps) {
+  const isOil = productType === 'essential_oil' || productType === 'blend';
   return (
     <Card
       className={cn(
