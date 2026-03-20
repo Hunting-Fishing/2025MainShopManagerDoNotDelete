@@ -13,6 +13,7 @@ import ClientMedicalProfile from '@/components/personal-trainer/ClientMedicalPro
 import FitnessInterestIntake from '@/components/personal-trainer/FitnessInterestIntake';
 import FitnessProfileScores from '@/components/personal-trainer/FitnessProfileScores';
 import AIInsightsPanel from '@/components/personal-trainer/AIInsightsPanel';
+import NutritionProfile from '@/components/nutrition/NutritionProfile';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
