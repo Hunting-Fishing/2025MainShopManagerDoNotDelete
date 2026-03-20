@@ -32,9 +32,7 @@ import {
   UsersRound,
   Clock,
 } from 'lucide-react';
-  Dumbbell,
-  LayoutDashboard,
-  MessageSquare,
+import { Button } from '@/components/ui/button';
   ClipboardCheck,
   BarChart3 as BarChartIcon,
   UserCog,
