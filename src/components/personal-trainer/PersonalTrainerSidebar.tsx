@@ -89,6 +89,7 @@ const navSections: NavSection[] = [
     title: 'Scheduling',
     items: [
       { title: 'Sessions', href: '/personal-trainer/sessions', icon: Calendar, color: 'from-sky-500 to-blue-600' },
+      { title: 'Calendar', href: '/personal-trainer/calendar', icon: CalendarDays, color: 'from-teal-500 to-emerald-600' },
     ],
   },
   {
