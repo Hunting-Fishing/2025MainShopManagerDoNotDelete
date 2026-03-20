@@ -20,6 +20,8 @@ export function SidebarContent() {
   const { setIsOpen } = useSidebar();
   const isMobile = useIsMobile();
   const { data: userRoles = [] } = useUserRoles();
+  const { data: allRoles = [] } = useAllUserRoles();
+  const isPlatformDeveloper = allRoles.some(r => r.source === 'developer');
   const { data: modulePermissions = {}, isLoading: permissionsLoading } = useModulePermissions();
   const { isVisible } = useSidebarVisibility();
 
