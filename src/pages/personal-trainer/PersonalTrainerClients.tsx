@@ -155,94 +155,11 @@ export default function PersonalTrainerClients() {
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Add New Client</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Personal Info</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} /></div>
-                <div><Label>Last Name *</Label><Input value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
-                <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(f => ({ ...f, date_of_birth: e.target.value }))} /></div>
-                <div>
-                  <Label>Sex</Label>
-                  <Select value={form.gender} onValueChange={v => setForm(f => ({ ...f, gender: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div><Label>Height (cm)</Label><Input type="number" value={form.height_cm} onChange={e => setForm(f => ({ ...f, height_cm: e.target.value }))} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Weight (kg)</Label><Input type="number" value={form.weight_kg} onChange={e => setForm(f => ({ ...f, weight_kg: e.target.value }))} /></div>
-                <div>
-                  <Label>Fitness Level</Label>
-                  <Select value={form.fitness_level} onValueChange={v => setForm(f => ({ ...f, fitness_level: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide pt-2">Membership</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Membership Type</Label>
-                  <Select value={form.membership_type} onValueChange={v => setForm(f => ({ ...f, membership_type: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="premium">Premium</SelectItem>
-                      <SelectItem value="vip">VIP</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {trainers.length > 0 && (
-                  <div>
-                    <Label>Assign Trainer</Label>
-                    <Select value={assignTrainer} onValueChange={setAssignTrainer}>
-                      <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {trainers.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-              <div>
-                <Label>Preferred Workout Days</Label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {WORKOUT_DAYS.map(day => (
-                    <Button key={day} type="button" size="sm" variant={form.preferred_workout_days.includes(day) ? 'default' : 'outline'} className="text-xs h-7" onClick={() => toggleDay(day)}>
-                      {day.slice(0, 3)}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide pt-2">Health & Goals</p>
-              <div><Label>Goals</Label><Textarea value={form.goals} onChange={e => setForm(f => ({ ...f, goals: e.target.value }))} placeholder="Weight loss, muscle gain, etc." /></div>
-              <div><Label>Injuries / Limitations</Label><Textarea value={form.injuries} onChange={e => setForm(f => ({ ...f, injuries: e.target.value }))} placeholder="Knee injury, lower back issues..." /></div>
-              <div><Label>Medical Warnings / Health Conditions</Label><Textarea value={form.health_conditions} onChange={e => setForm(f => ({ ...f, health_conditions: e.target.value }))} placeholder="Asthma, diabetes, heart conditions..." /></div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide pt-2">Emergency Contact</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Contact Name</Label><Input value={form.emergency_contact} onChange={e => setForm(f => ({ ...f, emergency_contact: e.target.value }))} /></div>
-                <div><Label>Contact Phone</Label><Input value={form.emergency_phone} onChange={e => setForm(f => ({ ...f, emergency_phone: e.target.value }))} /></div>
-              </div>
-              <Button className="w-full" disabled={!form.first_name || !form.last_name || addClient.isPending} onClick={() => addClient.mutate()}>
-                {addClient.isPending ? 'Adding...' : 'Add Client'}
-              </Button>
-            </div>
+            <ClientIntakeForm
+              trainers={trainers}
+              isPending={addClient.isPending}
+              onSubmit={(payload) => addClient.mutate(payload)}
+            />
           </DialogContent>
         </Dialog>
       </div>
