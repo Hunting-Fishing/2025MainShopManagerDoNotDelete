@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles, Brain, HeartPulse, Camera, Heart, MessageCircleHeart, Send } from 'lucide-react';
+import { HeightPicker, WeightPicker } from '@/components/personal-trainer/HeightWeightPicker';
 import { HashtagBadges } from '@/components/personal-trainer/social/HashtagBadges';
 import ClientMedicalProfile from '@/components/personal-trainer/ClientMedicalProfile';
 import FitnessInterestIntake from '@/components/personal-trainer/FitnessInterestIntake';
@@ -252,6 +253,7 @@ export default function PersonalTrainerClientDetail() {
           {client.phone && <span className="flex items-center gap-2 text-sm"><Phone className="h-4 w-4 text-muted-foreground" />{client.phone}</span>}
           {client.date_of_birth && <span className="text-sm text-muted-foreground">DOB: {format(new Date(client.date_of_birth), 'MMM d, yyyy')}</span>}
           {client.height_cm && <span className="text-sm text-muted-foreground">Height: {client.height_cm} cm</span>}
+          {client.weight_kg && <span className="text-sm text-muted-foreground">Weight: {client.weight_kg} kg</span>}
           {client.gender && <span className="text-sm text-muted-foreground capitalize">Sex: {client.gender}</span>}
           {client.emergency_contact && <span className="flex items-center gap-2 text-sm"><AlertCircle className="h-4 w-4 text-destructive" />{client.emergency_contact} {client.emergency_phone && `· ${client.emergency_phone}`}</span>}
         </CardContent>
@@ -410,7 +412,7 @@ export default function PersonalTrainerClientDetail() {
                   </Select>
                 </div>
                 <div><Label>Date of Birth</Label><Input type="date" value={editForm.date_of_birth || ''} onChange={e => setEditForm((f: any) => ({ ...f, date_of_birth: e.target.value }))} /></div>
-                <div><Label>Height (cm)</Label><Input type="number" value={editForm.height_cm || ''} onChange={e => setEditForm((f: any) => ({ ...f, height_cm: e.target.value ? parseFloat(e.target.value) : null }))} /></div>
+                <HeightPicker value={editForm.height_cm} onChange={v => setEditForm((f: any) => ({ ...f, height_cm: v ? parseFloat(v) : null }))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

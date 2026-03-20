@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Droplets, Utensils, AlertTriangle, User, Dumbbell, Heart, Phone, StickyNote, Search, X, HeartPulse, Sparkles } from 'lucide-react';
+import { HeightPicker, WeightPicker } from '@/components/personal-trainer/HeightWeightPicker';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useFitnessGoals } from '@/hooks/useFitnessTaxonomy';
@@ -285,10 +286,10 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
               </SelectContent>
             </Select>
           </div>
-          <div><Label>Height (cm)</Label><Input type="number" value={form.height_cm} onChange={e => set('height_cm', e.target.value)} /></div>
+          <HeightPicker value={form.height_cm} onChange={v => set('height_cm', v)} />
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <div><Label>Weight (kg)</Label><Input type="number" value={form.weight_kg} onChange={e => set('weight_kg', e.target.value)} /></div>
+          <WeightPicker value={form.weight_kg} onChange={v => set('weight_kg', v)} />
           <div><Label>Body Fat %</Label><Input type="number" step="0.1" value={form.body_fat_percent} onChange={e => set('body_fat_percent', e.target.value)} placeholder="e.g. 18.5" /></div>
           <div>
             <Label>Fitness Level</Label>
