@@ -53,7 +53,7 @@ export function SepticHeader({ onMenuToggle }: SepticHeaderProps) {
               <DropdownMenuItem onClick={() => navigate('/septic/profile')}>Profile Settings</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/septic/settings')}>Module Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/dashboard')}>Back to Main App</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/module-hub')}>All Modules</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

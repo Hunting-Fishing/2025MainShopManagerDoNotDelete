@@ -26,7 +26,7 @@ export function KeyboardShortcuts() {
       const within = Date.now() - lastGTime < 600; // 600ms window
       if (within) {
         const k = e.key.toLowerCase();
-        if (k === 'd') { e.preventDefault(); navigate('/dashboard'); }
+        if (k === 'd') { e.preventDefault(); navigate('/module-hub'); }
         else if (k === 'w') { e.preventDefault(); navigate('/work-orders'); }
         else if (k === 'c') { e.preventDefault(); navigate('/customers'); }
         lastGTime = 0;

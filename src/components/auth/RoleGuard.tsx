@@ -46,7 +46,7 @@ export function RoleGuard({
               <p className="text-sm text-gray-600 mt-2">{error}</p>
             </div>
             <Button asChild>
-              <Link to="/dashboard">Go to Dashboard</Link>
+              <Link to="/module-hub">Go to Modules</Link>
             </Button>
           </div>
         </CardContent>
@@ -99,7 +99,7 @@ export function RoleGuard({
               </p>
             </div>
             <Button asChild>
-              <Link to="/dashboard">Go to Dashboard</Link>
+              <Link to="/module-hub">Go to Modules</Link>
             </Button>
           </div>
         </CardContent>

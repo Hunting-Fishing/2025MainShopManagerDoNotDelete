@@ -19,11 +19,11 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/module-hub')}
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
+          All Modules
         </Button>
       </div>
       
@@ -35,8 +35,8 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
           <div className="text-center py-8 text-muted-foreground">
             <p>{description || `${title} functionality will be implemented here.`}</p>
             <div className="mt-4">
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>
-                Return to Dashboard
+              <Button variant="outline" onClick={() => navigate('/module-hub')}>
+                All Modules
               </Button>
             </div>
           </div>

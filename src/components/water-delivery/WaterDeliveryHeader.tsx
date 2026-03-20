@@ -71,8 +71,8 @@ export function WaterDeliveryHeader({ onMenuToggle }: WaterDeliveryHeaderProps) 
                 Module Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/dashboard')}>
-                Back to Main App
+              <DropdownMenuItem onClick={() => navigate('/module-hub')}>
+                All Modules
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
