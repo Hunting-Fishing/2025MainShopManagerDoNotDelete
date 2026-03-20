@@ -612,7 +612,22 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
           />
         </div>
 
-        <div><Label>Supplement Notes</Label><Textarea value={form.supplement_notes} onChange={e => set('supplement_notes', e.target.value)} placeholder="Whey protein, creatine, multivitamin..." /></div>
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <Pill className="h-4 w-4 text-primary" />
+            <Label>Supplements & Vitamins</Label>
+          </div>
+          <MultiSelectDialog
+            label="Supplements"
+            options={[]}
+            selected={form.selectedSupplements}
+            onSelectionChange={v => set('selectedSupplements', v)}
+            allowCustom
+            customPlaceholder="Add custom supplement..."
+            categorized={supplementCategories}
+          />
+        </div>
+        <div><Label>Additional Supplement Notes</Label><Textarea value={form.supplement_notes} onChange={e => set('supplement_notes', e.target.value)} placeholder="Any extra notes about supplements, dosages, timing..." className="min-h-[50px]" /></div>
         <div><Label>Meal Guidance</Label><Textarea value={form.meal_guidance} onChange={e => set('meal_guidance', e.target.value)} placeholder="5 meals/day, high protein breakfast..." /></div>
       </TabsContent>
 
