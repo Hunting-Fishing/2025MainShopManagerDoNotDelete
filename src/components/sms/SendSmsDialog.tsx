@@ -64,8 +64,6 @@ export const SendSmsDialog: React.FC<SendSmsDialogProps> = ({
     setIsSending(true);
     
     try {
-      const { sendSms } = await import(/* webpackChunkName: "sms-send" */ '@/hooks/useSmsTemplates');
-      
       await sendSms(
         customer.id,
         customer.phone,
