@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Droplets, Utensils, AlertTriangle, User, Dumbbell, Heart, Phone, StickyNote, Search, X } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Droplets, Utensils, AlertTriangle, User, Dumbbell, Heart, Phone, StickyNote, Search, X, HeartPulse, Sparkles } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useFitnessGoals } from '@/hooks/useFitnessTaxonomy';
@@ -111,15 +112,6 @@ const initialForm: FormState = {
   intolerances: [],
 };
 
-function SectionHeader({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
-  return (
-    <div className="flex items-center gap-2 pt-3 pb-1 border-b border-border/50">
-      <Icon className="h-4 w-4 text-primary" />
-      <p className="text-xs font-semibold text-primary uppercase tracking-wide">{label}</p>
-    </div>
-  );
-}
-
 export default function ClientIntakeForm({ trainers, isPending, onSubmit }: ClientIntakeFormProps) {
   const [form, setForm] = useState<FormState>(initialForm);
   const [assignTrainer, setAssignTrainer] = useState('none');
@@ -204,7 +196,6 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
   );
 
   const handleSubmit = () => {
-    // Serialize structured data for DB columns
     const goalsStr = form.selectedGoals.length > 0 ? form.selectedGoals.join(', ') : null;
     const injuriesStr = [
       ...form.selectedRestrictions.map(r => r.replace(/_/g, ' ')),
@@ -255,279 +246,303 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
   };
 
   return (
-    <div className="space-y-4">
-      {/* ─── 1. Personal Info ─── */}
-      <SectionHeader icon={User} label="Personal Info" />
-      <div className="grid grid-cols-2 gap-3">
-        <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => set('first_name', e.target.value)} /></div>
-        <div><Label>Last Name *</Label><Input value={form.last_name} onChange={e => set('last_name', e.target.value)} /></div>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => set('email', e.target.value)} /></div>
-        <div><Label>Phone</Label><Input value={form.phone} onChange={e => set('phone', e.target.value)} /></div>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => set('date_of_birth', e.target.value)} /></div>
-        <div>
-          <Label>Sex</Label>
-          <Select value={form.gender} onValueChange={v => set('gender', v)}>
-            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="male">Male</SelectItem>
-              <SelectItem value="female">Female</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div><Label>Height (cm)</Label><Input type="number" value={form.height_cm} onChange={e => set('height_cm', e.target.value)} /></div>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <div><Label>Weight (kg)</Label><Input type="number" value={form.weight_kg} onChange={e => set('weight_kg', e.target.value)} /></div>
-        <div><Label>Body Fat %</Label><Input type="number" step="0.1" value={form.body_fat_percent} onChange={e => set('body_fat_percent', e.target.value)} placeholder="e.g. 18.5" /></div>
-        <div>
-          <Label>Fitness Level</Label>
-          <Select value={form.fitness_level} onValueChange={v => set('fitness_level', v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="beginner">Beginner</SelectItem>
-              <SelectItem value="intermediate">Intermediate</SelectItem>
-              <SelectItem value="advanced">Advanced</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+    <Tabs defaultValue="profile" className="w-full">
+      <TabsList className="grid w-full grid-cols-4 mb-4">
+        <TabsTrigger value="profile" className="text-xs gap-1.5">
+          <User className="h-3.5 w-3.5" />Profile
+        </TabsTrigger>
+        <TabsTrigger value="medical" className="text-xs gap-1.5">
+          <HeartPulse className="h-3.5 w-3.5" />Medical
+        </TabsTrigger>
+        <TabsTrigger value="nutrition" className="text-xs gap-1.5">
+          <Utensils className="h-3.5 w-3.5" />Nutrition
+        </TabsTrigger>
+        <TabsTrigger value="details" className="text-xs gap-1.5">
+          <StickyNote className="h-3.5 w-3.5" />Details
+        </TabsTrigger>
+      </TabsList>
 
-      {/* ─── 2. Membership & Training ─── */}
-      <SectionHeader icon={Dumbbell} label="Membership & Training" />
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label>Membership Type</Label>
-          <Select value={form.membership_type} onValueChange={v => set('membership_type', v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="standard">Standard</SelectItem>
-              <SelectItem value="premium">Premium</SelectItem>
-              <SelectItem value="vip">VIP</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* ─── Profile Tab ─── */}
+      <TabsContent value="profile" className="space-y-4 mt-0">
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => set('first_name', e.target.value)} /></div>
+          <div><Label>Last Name *</Label><Input value={form.last_name} onChange={e => set('last_name', e.target.value)} /></div>
         </div>
-        <div><Label>Join Date</Label><Input type="date" value={form.join_date} onChange={e => set('join_date', e.target.value)} /></div>
-      </div>
-      {trainers.length > 0 && (
-        <div>
-          <Label>Assign Trainer</Label>
-          <Select value={assignTrainer} onValueChange={setAssignTrainer}>
-            <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {trainers.map(t => <SelectItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => set('email', e.target.value)} /></div>
+          <div><Label>Phone</Label><Input value={form.phone} onChange={e => set('phone', e.target.value)} /></div>
         </div>
-      )}
-      <div>
-        <Label>Preferred Workout Days</Label>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {WORKOUT_DAYS.map(day => (
-            <Button key={day} type="button" size="sm" variant={form.preferred_workout_days.includes(day) ? 'default' : 'outline'} className="text-xs h-7" onClick={() => toggleDay(day)}>
-              {day.slice(0, 3)}
-            </Button>
-          ))}
+        <div className="grid grid-cols-3 gap-3">
+          <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => set('date_of_birth', e.target.value)} /></div>
+          <div>
+            <Label>Sex</Label>
+            <Select value={form.gender} onValueChange={v => set('gender', v)}>
+              <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="male">Male</SelectItem>
+                <SelectItem value="female">Female</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div><Label>Height (cm)</Label><Input type="number" value={form.height_cm} onChange={e => set('height_cm', e.target.value)} /></div>
         </div>
-      </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div><Label>Weight (kg)</Label><Input type="number" value={form.weight_kg} onChange={e => set('weight_kg', e.target.value)} /></div>
+          <div><Label>Body Fat %</Label><Input type="number" step="0.1" value={form.body_fat_percent} onChange={e => set('body_fat_percent', e.target.value)} placeholder="e.g. 18.5" /></div>
+          <div>
+            <Label>Fitness Level</Label>
+            <Select value={form.fitness_level} onValueChange={v => set('fitness_level', v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="beginner">Beginner</SelectItem>
+                <SelectItem value="intermediate">Intermediate</SelectItem>
+                <SelectItem value="advanced">Advanced</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-      {/* ─── 3. Health & Medical ─── */}
-      <SectionHeader icon={Heart} label="Health & Medical" />
+        {/* Membership & Training */}
+        <div className="flex items-center gap-2 pt-3 pb-1 border-b border-border/50">
+          <Dumbbell className="h-4 w-4 text-primary" />
+          <p className="text-xs font-semibold text-primary uppercase tracking-wide">Membership & Training</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Membership Type</Label>
+            <Select value={form.membership_type} onValueChange={v => set('membership_type', v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="premium">Premium</SelectItem>
+                <SelectItem value="vip">VIP</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div><Label>Join Date</Label><Input type="date" value={form.join_date} onChange={e => set('join_date', e.target.value)} /></div>
+        </div>
+        {trainers.length > 0 && (
+          <div>
+            <Label>Assign Trainer</Label>
+            <Select value={assignTrainer} onValueChange={setAssignTrainer}>
+              <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {trainers.map(t => <SelectItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        <div>
+          <Label>Preferred Workout Days</Label>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {WORKOUT_DAYS.map(day => (
+              <Button key={day} type="button" size="sm" variant={form.preferred_workout_days.includes(day) ? 'default' : 'outline'} className="text-xs h-7" onClick={() => toggleDay(day)}>
+                {day.slice(0, 3)}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </TabsContent>
 
-      {/* Goals — fitness goals grid */}
-      <div>
-        <Label>Goals</Label>
-        {goalsLoading ? (
-          <p className="text-xs text-muted-foreground py-2">Loading goals...</p>
-        ) : (
-          <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {fitnessGoals.map((goal: any) => {
-              const isActive = form.selectedGoals.includes(goal.name);
+      {/* ─── Medical Tab ─── */}
+      <TabsContent value="medical" className="space-y-4 mt-0">
+        {/* Goals */}
+        <div>
+          <Label>Goals</Label>
+          {goalsLoading ? (
+            <p className="text-xs text-muted-foreground py-2">Loading goals...</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {fitnessGoals.map((goal: any) => {
+                const isActive = form.selectedGoals.includes(goal.name);
+                return (
+                  <Badge
+                    key={goal.id}
+                    variant={isActive ? 'default' : 'outline'}
+                    className="cursor-pointer text-xs px-2.5 py-1 transition-colors"
+                    onClick={() => toggleGoal(goal.name)}
+                  >
+                    {goal.emoji && <span className="mr-1">{goal.emoji}</span>}
+                    {goal.name}
+                  </Badge>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Injuries / Restrictions */}
+        <div>
+          <Label>Injuries / Limitations</Label>
+          <p className="text-[11px] text-muted-foreground mb-1.5">Tap to toggle restrictions. Active restrictions are highlighted.</p>
+          <div className="flex flex-wrap gap-1.5">
+            {ALL_EXERCISE_RESTRICTIONS.map(r => {
+              const isActive = form.selectedRestrictions.includes(r);
               return (
                 <Badge
-                  key={goal.id}
+                  key={r}
                   variant={isActive ? 'default' : 'outline'}
-                  className="cursor-pointer text-xs px-2.5 py-1 transition-colors"
-                  onClick={() => toggleGoal(goal.name)}
+                  className={`cursor-pointer text-xs capitalize transition-colors ${isActive ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : 'hover:bg-accent'}`}
+                  onClick={() => toggleRestriction(r)}
                 >
-                  {goal.emoji && <span className="mr-1">{goal.emoji}</span>}
-                  {goal.name}
+                  {r.replace(/_/g, ' ')}
                 </Badge>
               );
             })}
           </div>
-        )}
-      </div>
-
-      {/* Injuries — exercise restriction badge toggles */}
-      <div>
-        <Label>Injuries / Limitations</Label>
-        <p className="text-[11px] text-muted-foreground mb-1.5">Tap to toggle restrictions. Active restrictions are highlighted.</p>
-        <div className="flex flex-wrap gap-1.5">
-          {ALL_EXERCISE_RESTRICTIONS.map(r => {
-            const isActive = form.selectedRestrictions.includes(r);
-            return (
-              <Badge
-                key={r}
-                variant={isActive ? 'default' : 'outline'}
-                className={`cursor-pointer text-xs capitalize transition-colors ${isActive ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : 'hover:bg-accent'}`}
-                onClick={() => toggleRestriction(r)}
-              >
-                {r.replace(/_/g, ' ')}
-              </Badge>
-            );
-          })}
-        </div>
-        <Input
-          className="mt-2"
-          placeholder="Other injuries not listed above..."
-          value={form.otherInjuries}
-          onChange={e => set('otherInjuries', e.target.value)}
-        />
-      </div>
-
-      {/* Health Conditions — searchable medical catalog + ICD-10 */}
-      <div>
-        <Label>Medical Warnings / Health Conditions</Label>
-        {form.selectedConditions.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-1.5 mb-2">
-            {form.selectedConditions.map(c => (
-              <Badge key={c.code} variant="secondary" className="gap-1 text-xs cursor-pointer" onClick={() => removeCondition(c.code)}>
-                {c.name}
-                <X className="h-3 w-3" />
-              </Badge>
-            ))}
-          </div>
-        )}
-        <div className="relative mt-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search conditions (e.g. diabetes, asthma, hypertension)..."
-            className="pl-9"
-            value={conditionSearch}
-            onChange={e => {
-              setConditionSearch(e.target.value);
-              setIcd10Search(e.target.value);
-            }}
+            className="mt-2"
+            placeholder="Other injuries not listed above..."
+            value={form.otherInjuries}
+            onChange={e => set('otherInjuries', e.target.value)}
           />
         </div>
-        {conditionSearch.length >= 2 && (filteredCatalog.length > 0 || filteredIcd10.length > 0) && (
-          <div className="border rounded-md mt-1 max-h-40 overflow-y-auto bg-popover">
-            {filteredCatalog.map((c: any) => (
-              <button
-                key={c.code}
-                type="button"
-                className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between"
-                onClick={() => addCondition(c.code, c.name)}
-              >
-                <span>{c.name}</span>
-                <span className="text-xs text-muted-foreground">{c.code}</span>
-              </button>
-            ))}
-            {filteredIcd10.length > 0 && filteredCatalog.length > 0 && (
-              <div className="px-3 py-1 text-[10px] text-muted-foreground uppercase tracking-wider border-t">ICD-10 Results</div>
-            )}
-            {filteredIcd10.slice(0, 10).map(r => (
-              <button
-                key={r.code}
-                type="button"
-                className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between"
-                onClick={() => addCondition(r.code, r.name)}
-              >
-                <span>{r.name}</span>
-                <span className="text-xs text-muted-foreground">{r.code}</span>
-              </button>
-            ))}
+
+        {/* Health Conditions — searchable catalog + ICD-10 */}
+        <div>
+          <Label>Medical Warnings / Health Conditions</Label>
+          {form.selectedConditions.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-1.5 mb-2">
+              {form.selectedConditions.map(c => (
+                <Badge key={c.code} variant="secondary" className="gap-1 text-xs cursor-pointer" onClick={() => removeCondition(c.code)}>
+                  {c.name}
+                  <X className="h-3 w-3" />
+                </Badge>
+              ))}
+            </div>
+          )}
+          <div className="relative mt-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search conditions (e.g. diabetes, asthma, hypertension)..."
+              className="pl-9"
+              value={conditionSearch}
+              onChange={e => {
+                setConditionSearch(e.target.value);
+                setIcd10Search(e.target.value);
+              }}
+            />
           </div>
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground italic flex items-center gap-1.5">
-        <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
-        Detailed medical conditions can be added from the client profile after creation.
-      </p>
-
-      {/* ─── 4. Nutrition & Diet ─── */}
-      <SectionHeader icon={Utensils} label="Nutrition & Diet" />
-      <div className="grid grid-cols-2 gap-3">
-        <div><Label>Calorie Target</Label><Input type="number" value={form.calorie_target} onChange={e => set('calorie_target', e.target.value)} placeholder="e.g. 2200" /></div>
-        <div className="flex items-end gap-1">
-          <Droplets className="h-4 w-4 text-blue-500 mb-2.5 shrink-0" />
-          <div className="flex-1"><Label>Hydration Target (ml)</Label><Input type="number" value={form.hydration_target_ml} onChange={e => set('hydration_target_ml', e.target.value)} placeholder="e.g. 3000" /></div>
+          {conditionSearch.length >= 2 && (filteredCatalog.length > 0 || filteredIcd10.length > 0) && (
+            <div className="border rounded-md mt-1 max-h-40 overflow-y-auto bg-popover">
+              {filteredCatalog.map((c: any) => (
+                <button
+                  key={c.code}
+                  type="button"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between"
+                  onClick={() => addCondition(c.code, c.name)}
+                >
+                  <span>{c.name}</span>
+                  <span className="text-xs text-muted-foreground">{c.code}</span>
+                </button>
+              ))}
+              {filteredIcd10.length > 0 && filteredCatalog.length > 0 && (
+                <div className="px-3 py-1 text-[10px] text-muted-foreground uppercase tracking-wider border-t">ICD-10 Results</div>
+              )}
+              {filteredIcd10.slice(0, 10).map(r => (
+                <button
+                  key={r.code}
+                  type="button"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between"
+                  onClick={() => addCondition(r.code, r.name)}
+                >
+                  <span>{r.name}</span>
+                  <span className="text-xs text-muted-foreground">{r.code}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <div><Label>Protein (g)</Label><Input type="number" value={form.protein_target_g} onChange={e => set('protein_target_g', e.target.value)} placeholder="150" /></div>
-        <div><Label>Carbs (g)</Label><Input type="number" value={form.carb_target_g} onChange={e => set('carb_target_g', e.target.value)} placeholder="200" /></div>
-        <div><Label>Fat (g)</Label><Input type="number" value={form.fat_target_g} onChange={e => set('fat_target_g', e.target.value)} placeholder="70" /></div>
-      </div>
+        <p className="text-xs text-muted-foreground italic flex items-center gap-1.5">
+          <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
+          Detailed medical conditions can be added from the client profile after creation.
+        </p>
+      </TabsContent>
 
-      {/* Dietary Styles — MultiSelectDialog */}
-      <div>
-        <Label className="mb-1.5 block">Dietary Style(s)</Label>
-        <MultiSelectDialog
-          label="Dietary Styles"
-          options={[]}
-          selected={form.dietaryStyles}
-          onSelectionChange={v => set('dietaryStyles', v)}
-          allowCustom
-          customPlaceholder="Add custom diet..."
-          categorized={dietCategories}
-          onAddCustomToCategory={(cat, val) => setDietCategories(prev => ({ ...prev, [cat]: [...(prev[cat] || []), val] }))}
-        />
-      </div>
+      {/* ─── Nutrition Tab ─── */}
+      <TabsContent value="nutrition" className="space-y-4 mt-0">
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Calorie Target</Label><Input type="number" value={form.calorie_target} onChange={e => set('calorie_target', e.target.value)} placeholder="e.g. 2200" /></div>
+          <div className="flex items-end gap-1">
+            <Droplets className="h-4 w-4 text-primary mb-2.5 shrink-0" />
+            <div className="flex-1"><Label>Hydration Target (ml)</Label><Input type="number" value={form.hydration_target_ml} onChange={e => set('hydration_target_ml', e.target.value)} placeholder="e.g. 3000" /></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div><Label>Protein (g)</Label><Input type="number" value={form.protein_target_g} onChange={e => set('protein_target_g', e.target.value)} placeholder="150" /></div>
+          <div><Label>Carbs (g)</Label><Input type="number" value={form.carb_target_g} onChange={e => set('carb_target_g', e.target.value)} placeholder="200" /></div>
+          <div><Label>Fat (g)</Label><Input type="number" value={form.fat_target_g} onChange={e => set('fat_target_g', e.target.value)} placeholder="70" /></div>
+        </div>
 
-      {/* Allergies — MultiSelectDialog */}
-      <div>
-        <Label className="mb-1.5 block">Allergies</Label>
-        <MultiSelectDialog
-          label="Allergies"
-          options={[]}
-          selected={form.allergies}
-          onSelectionChange={v => set('allergies', v)}
-          allowCustom
-          customPlaceholder="Add custom allergy..."
-          categorized={allergyCategories}
-          onAddCustomToCategory={(cat, val) => setAllergyCategories(prev => ({ ...prev, [cat]: [...(prev[cat] || []), val] }))}
-        />
-      </div>
+        <div>
+          <Label className="mb-1.5 block">Dietary Style(s)</Label>
+          <MultiSelectDialog
+            label="Dietary Styles"
+            options={[]}
+            selected={form.dietaryStyles}
+            onSelectionChange={v => set('dietaryStyles', v)}
+            allowCustom
+            customPlaceholder="Add custom diet..."
+            categorized={dietCategories}
+            onAddCustomToCategory={(cat, val) => setDietCategories(prev => ({ ...prev, [cat]: [...(prev[cat] || []), val] }))}
+          />
+        </div>
 
-      {/* Intolerances — MultiSelectDialog */}
-      <div>
-        <Label className="mb-1.5 block">Intolerances</Label>
-        <MultiSelectDialog
-          label="Intolerances"
-          options={[]}
-          selected={form.intolerances}
-          onSelectionChange={v => set('intolerances', v)}
-          allowCustom
-          customPlaceholder="Add custom intolerance..."
-          categorized={intoleranceCategories}
-          onAddCustomToCategory={(cat, val) => setIntoleranceCategories(prev => ({ ...prev, [cat]: [...(prev[cat] || []), val] }))}
-        />
-      </div>
+        <div>
+          <Label className="mb-1.5 block">Allergies</Label>
+          <MultiSelectDialog
+            label="Allergies"
+            options={[]}
+            selected={form.allergies}
+            onSelectionChange={v => set('allergies', v)}
+            allowCustom
+            customPlaceholder="Add custom allergy..."
+            categorized={allergyCategories}
+            onAddCustomToCategory={(cat, val) => setAllergyCategories(prev => ({ ...prev, [cat]: [...(prev[cat] || []), val] }))}
+          />
+        </div>
 
-      <div><Label>Supplement Notes</Label><Textarea value={form.supplement_notes} onChange={e => set('supplement_notes', e.target.value)} placeholder="Whey protein, creatine, multivitamin..." /></div>
-      <div><Label>Meal Guidance</Label><Textarea value={form.meal_guidance} onChange={e => set('meal_guidance', e.target.value)} placeholder="5 meals/day, high protein breakfast..." /></div>
+        <div>
+          <Label className="mb-1.5 block">Intolerances</Label>
+          <MultiSelectDialog
+            label="Intolerances"
+            options={[]}
+            selected={form.intolerances}
+            onSelectionChange={v => set('intolerances', v)}
+            allowCustom
+            customPlaceholder="Add custom intolerance..."
+            categorized={intoleranceCategories}
+            onAddCustomToCategory={(cat, val) => setIntoleranceCategories(prev => ({ ...prev, [cat]: [...(prev[cat] || []), val] }))}
+          />
+        </div>
 
-      {/* ─── 5. Emergency Contact ─── */}
-      <SectionHeader icon={Phone} label="Emergency Contact" />
-      <div className="grid grid-cols-2 gap-3">
-        <div><Label>Contact Name</Label><Input value={form.emergency_contact} onChange={e => set('emergency_contact', e.target.value)} /></div>
-        <div><Label>Contact Phone</Label><Input value={form.emergency_phone} onChange={e => set('emergency_phone', e.target.value)} /></div>
-      </div>
+        <div><Label>Supplement Notes</Label><Textarea value={form.supplement_notes} onChange={e => set('supplement_notes', e.target.value)} placeholder="Whey protein, creatine, multivitamin..." /></div>
+        <div><Label>Meal Guidance</Label><Textarea value={form.meal_guidance} onChange={e => set('meal_guidance', e.target.value)} placeholder="5 meals/day, high protein breakfast..." /></div>
+      </TabsContent>
 
-      {/* ─── 6. Additional Notes ─── */}
-      <SectionHeader icon={StickyNote} label="Additional Notes" />
-      <div><Textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Any additional notes about this client..." className="min-h-[60px]" /></div>
+      {/* ─── Details Tab ─── */}
+      <TabsContent value="details" className="space-y-4 mt-0">
+        <div className="flex items-center gap-2 pb-1 border-b border-border/50">
+          <Phone className="h-4 w-4 text-primary" />
+          <p className="text-xs font-semibold text-primary uppercase tracking-wide">Emergency Contact</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Contact Name</Label><Input value={form.emergency_contact} onChange={e => set('emergency_contact', e.target.value)} /></div>
+          <div><Label>Contact Phone</Label><Input value={form.emergency_phone} onChange={e => set('emergency_phone', e.target.value)} /></div>
+        </div>
 
-      <Button className="w-full" disabled={!form.first_name || !form.last_name || isPending} onClick={handleSubmit}>
-        {isPending ? 'Adding...' : 'Add Client'}
-      </Button>
-    </div>
+        <div className="flex items-center gap-2 pt-3 pb-1 border-b border-border/50">
+          <StickyNote className="h-4 w-4 text-primary" />
+          <p className="text-xs font-semibold text-primary uppercase tracking-wide">Additional Notes</p>
+        </div>
+        <div><Textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Any additional notes about this client..." className="min-h-[60px]" /></div>
+
+        <Button className="w-full" disabled={!form.first_name || !form.last_name || isPending} onClick={handleSubmit}>
+          {isPending ? 'Adding...' : 'Add Client'}
+        </Button>
+      </TabsContent>
+    </Tabs>
   );
 }
