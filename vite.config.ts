@@ -26,6 +26,9 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     force: true,
   },
+  esbuild: {
+    logOverride: { 'duplicate-attribute': 'silent' },
+  },
   build: {
     sourcemap: false,
     chunkSizeWarningLimit: 1500,
