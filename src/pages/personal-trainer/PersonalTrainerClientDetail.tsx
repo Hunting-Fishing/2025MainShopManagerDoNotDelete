@@ -36,6 +36,10 @@ export default function PersonalTrainerClientDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [editTab, setEditTab] = useState('profile');
+  const [encourageOpen, setEncourageOpen] = useState(false);
+  const [encourageMessage, setEncourageMessage] = useState('');
+  const [encourageTags, setEncourageTags] = useState<string[]>(['#WellDoneJob', '#KeepItUp']);
+  const [postingEncouragement, setPostingEncouragement] = useState(false);
 
   const { data: client, isLoading } = useQuery({
     queryKey: ['pt-client-detail', id, shopId],
