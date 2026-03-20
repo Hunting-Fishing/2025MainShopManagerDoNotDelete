@@ -39956,6 +39956,191 @@ export type Database = {
           },
         ]
       }
+      pt_social_comments: {
+        Row: {
+          author_profile_id: string
+          content: string
+          created_at: string
+          id: string
+          parent_comment_id: string | null
+          post_id: string
+          shop_id: string
+        }
+        Insert: {
+          author_profile_id: string
+          content: string
+          created_at?: string
+          id?: string
+          parent_comment_id?: string | null
+          post_id: string
+          shop_id: string
+        }
+        Update: {
+          author_profile_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          parent_comment_id?: string | null
+          post_id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_social_comments_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_social_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "pt_social_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_social_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "pt_social_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_social_comments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_social_posts: {
+        Row: {
+          author_client_id: string | null
+          author_profile_id: string | null
+          caption: string
+          created_at: string
+          id: string
+          is_pinned: boolean
+          media_urls: string[] | null
+          milestone_id: string | null
+          post_type: string
+          shop_id: string
+          tags: string[] | null
+          thumbnail_url: string | null
+          visibility: string
+        }
+        Insert: {
+          author_client_id?: string | null
+          author_profile_id?: string | null
+          caption?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          media_urls?: string[] | null
+          milestone_id?: string | null
+          post_type?: string
+          shop_id: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          visibility?: string
+        }
+        Update: {
+          author_client_id?: string | null
+          author_profile_id?: string | null
+          caption?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          media_urls?: string[] | null
+          milestone_id?: string | null
+          post_type?: string
+          shop_id?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_social_posts_author_client_id_fkey"
+            columns: ["author_client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_social_posts_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_social_posts_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "pt_client_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_social_posts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_social_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          reaction_type: string
+          reactor_profile_id: string
+          shop_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          reaction_type: string
+          reactor_profile_id: string
+          shop_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          reaction_type?: string
+          reactor_profile_id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_social_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "pt_social_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_social_reactions_reactor_profile_id_fkey"
+            columns: ["reactor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_social_reactions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_trainers: {
         Row: {
           avatar_url: string | null
