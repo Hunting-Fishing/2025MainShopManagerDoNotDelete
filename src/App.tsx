@@ -411,6 +411,8 @@ const PersonalTrainerSocialFeed = lazy(() => import('@/pages/personal-trainer/Pe
 const PersonalTrainerCalendar = lazy(() => import('@/pages/personal-trainer/PersonalTrainerCalendar'));
 const PersonalTrainerGymStaff = lazy(() => import('@/pages/personal-trainer/PersonalTrainerGymStaff'));
 const PersonalTrainerTimeTracking = lazy(() => import('@/pages/personal-trainer/PersonalTrainerTimeTracking'));
+const PersonalTrainerSupplements = lazy(() => import('@/pages/personal-trainer/PersonalTrainerSupplements'));
+const PersonalTrainerAbout = lazy(() => import('@/pages/personal-trainer/PersonalTrainerAbout'));
 import { PersonalTrainerLayout } from '@/components/personal-trainer';
 
 // Personal Trainer Portal
