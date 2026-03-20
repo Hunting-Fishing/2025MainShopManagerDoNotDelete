@@ -253,6 +253,7 @@ export default function PersonalTrainerClientDetail() {
           {client.phone && <span className="flex items-center gap-2 text-sm"><Phone className="h-4 w-4 text-muted-foreground" />{client.phone}</span>}
           {client.date_of_birth && <span className="text-sm text-muted-foreground">DOB: {format(new Date(client.date_of_birth), 'MMM d, yyyy')}</span>}
           {client.height_cm && <span className="text-sm text-muted-foreground">Height: {client.height_cm} cm</span>}
+          {client.weight_kg && <span className="text-sm text-muted-foreground">Weight: {client.weight_kg} kg</span>}
           {client.gender && <span className="text-sm text-muted-foreground capitalize">Sex: {client.gender}</span>}
           {client.emergency_contact && <span className="flex items-center gap-2 text-sm"><AlertCircle className="h-4 w-4 text-destructive" />{client.emergency_contact} {client.emergency_phone && `· ${client.emergency_phone}`}</span>}
         </CardContent>
