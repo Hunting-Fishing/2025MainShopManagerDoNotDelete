@@ -128,6 +128,9 @@ export function SupplementDetailDialog({ open, onOpenChange, supplement, affilia
           </TabsContent>
 
           <TabsContent value="nutrition" className="space-y-3 mt-3">
+            {s.nutrition_facts && Object.keys(s.nutrition_facts).length > 0 && (
+              <NutritionFactsPanel nutritionFacts={s.nutrition_facts} servingSize={s.serving_size} />
+            )}
             {s.food_sources && s.food_sources.length > 0 && (
               <Card>
                 <CardContent className="p-3">
@@ -161,7 +164,7 @@ export function SupplementDetailDialog({ open, onOpenChange, supplement, affilia
                 </CardContent>
               </Card>
             )}
-            {(!s.food_sources || s.food_sources.length === 0) && (!s.deficiency_signs || s.deficiency_signs.length === 0) && (
+            {(!s.nutrition_facts || Object.keys(s.nutrition_facts).length === 0) && (!s.food_sources || s.food_sources.length === 0) && (!s.deficiency_signs || s.deficiency_signs.length === 0) && (
               <p className="text-sm text-muted-foreground text-center py-6">No nutrition data available yet.</p>
             )}
           </TabsContent>
