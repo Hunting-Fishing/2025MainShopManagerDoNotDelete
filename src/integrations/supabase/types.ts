@@ -38827,6 +38827,70 @@ export type Database = {
           },
         ]
       }
+      pt_client_supplements: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          custom_name: string | null
+          dosage: string | null
+          end_date: string | null
+          frequency: string | null
+          id: string
+          notes: string | null
+          shop_id: string
+          start_date: string | null
+          supplement_id: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          custom_name?: string | null
+          dosage?: string | null
+          end_date?: string | null
+          frequency?: string | null
+          id?: string
+          notes?: string | null
+          shop_id: string
+          start_date?: string | null
+          supplement_id?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          custom_name?: string | null
+          dosage?: string | null
+          end_date?: string | null
+          frequency?: string | null
+          id?: string
+          notes?: string | null
+          shop_id?: string
+          start_date?: string | null
+          supplement_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_client_supplements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_client_supplements_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_client_supplements_supplement_id_fkey"
+            columns: ["supplement_id"]
+            isOneToOne: false
+            referencedRelation: "pt_supplements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_clients: {
         Row: {
           body_fat_percent: number | null
@@ -40385,6 +40449,149 @@ export type Database = {
           },
           {
             foreignKeyName: "pt_social_reactions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_sponsors: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          shop_id: string
+          tier: string | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          shop_id: string
+          tier?: string | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          shop_id?: string
+          tier?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_sponsors_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_supplement_brands: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_sponsor: boolean | null
+          logo_url: string | null
+          name: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_sponsor?: boolean | null
+          logo_url?: string | null
+          name: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_sponsor?: boolean | null
+          logo_url?: string | null
+          name?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      pt_supplements: {
+        Row: {
+          affiliate_link: string | null
+          barcode: string | null
+          benefits: string[] | null
+          brand_id: string | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_sponsored: boolean | null
+          name: string
+          price: number | null
+          recommended_dose: string | null
+          shop_id: string | null
+          warnings: string | null
+        }
+        Insert: {
+          affiliate_link?: string | null
+          barcode?: string | null
+          benefits?: string[] | null
+          brand_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_sponsored?: boolean | null
+          name: string
+          price?: number | null
+          recommended_dose?: string | null
+          shop_id?: string | null
+          warnings?: string | null
+        }
+        Update: {
+          affiliate_link?: string | null
+          barcode?: string | null
+          benefits?: string[] | null
+          brand_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_sponsored?: boolean | null
+          name?: string
+          price?: number | null
+          recommended_dose?: string | null
+          shop_id?: string | null
+          warnings?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_supplements_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "pt_supplement_brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_supplements_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
