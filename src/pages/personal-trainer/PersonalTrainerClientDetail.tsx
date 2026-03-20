@@ -411,7 +411,7 @@ export default function PersonalTrainerClientDetail() {
                   </Select>
                 </div>
                 <div><Label>Date of Birth</Label><Input type="date" value={editForm.date_of_birth || ''} onChange={e => setEditForm((f: any) => ({ ...f, date_of_birth: e.target.value }))} /></div>
-                <div><Label>Height (cm)</Label><Input type="number" value={editForm.height_cm || ''} onChange={e => setEditForm((f: any) => ({ ...f, height_cm: e.target.value ? parseFloat(e.target.value) : null }))} /></div>
+                <HeightPicker value={editForm.height_cm} onChange={v => setEditForm((f: any) => ({ ...f, height_cm: v ? parseFloat(v) : null }))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
