@@ -129,6 +129,13 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: 'Business',
+    items: [
+      { title: 'Gym Staff', href: '/personal-trainer/staff', icon: UsersRound, color: 'from-blue-500 to-indigo-600' },
+      { title: 'Time Tracking', href: '/personal-trainer/time-tracking', icon: Clock, color: 'from-green-500 to-teal-600' },
+    ],
+  },
+  {
     title: 'Engagement',
     items: [
       { title: 'Social Feed', href: '/personal-trainer/social-feed', icon: Clapperboard, color: 'from-rose-500 to-orange-500' },
