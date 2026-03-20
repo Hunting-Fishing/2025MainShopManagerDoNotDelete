@@ -146,6 +146,15 @@ export default function PersonalTrainerClientDetail() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/personal-trainer/clients')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
+        {id && (
+          <ClientAvatar
+            clientId={id}
+            firstName={client.first_name}
+            lastName={client.last_name}
+            photoUrl={client.profile_photo_url}
+            onUpdated={() => queryClient.invalidateQueries({ queryKey: ['pt-client-detail', id] })}
+          />
+        )}
         <div className="flex-1">
           <h1 className="text-2xl font-bold">{client.first_name} {client.last_name}</h1>
           <div className="flex items-center gap-2 mt-1">
@@ -154,7 +163,22 @@ export default function PersonalTrainerClientDetail() {
             {client.membership_type && <Badge variant="outline">{client.membership_type}</Badge>}
           </div>
         </div>
-        <Button variant="outline" onClick={openEdit}><Pencil className="h-4 w-4 mr-2" />Edit</Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-pink-600 border-pink-200 hover:bg-pink-50 hover:text-pink-700"
+            onClick={() => {
+              if (client.email) {
+                window.open(`mailto:${client.email}?subject=Keep It Up! 💪&body=Hey ${client.first_name}! Just wanted to say you're doing amazing. Keep pushing! 🔥`, '_blank');
+              }
+            }}
+          >
+            <MessageCircleHeart className="h-4 w-4 mr-1" />
+            Encourage
+          </Button>
+          <Button variant="outline" onClick={openEdit}><Pencil className="h-4 w-4 mr-2" />Edit</Button>
+        </div>
       </div>
 
       {/* Contact Info */}
