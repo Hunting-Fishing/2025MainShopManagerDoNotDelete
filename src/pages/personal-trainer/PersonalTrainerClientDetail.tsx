@@ -213,6 +213,22 @@ export default function PersonalTrainerClientDetail() {
           <TabsTrigger value="billing" className="text-xs"><CreditCard className="h-3 w-3 mr-1" />Billing</TabsTrigger>
         </TabsList>
 
+        {/* Photos & Milestones Tab */}
+        <TabsContent value="photos" className="mt-4 space-y-6">
+          {id && shopId && (
+            <>
+              <MilestoneCards
+                clientId={id}
+                shopId={shopId}
+                photoCount={0}
+                checkInCount={checkIns.length}
+                metrics={metrics}
+              />
+              <ClientProgressPhotos clientId={id} shopId={shopId} />
+            </>
+          )}
+        </TabsContent>
+
         <TabsContent value="medical" className="mt-4">
           {id && shopId && <ClientMedicalProfile clientId={id} shopId={shopId} />}
         </TabsContent>
