@@ -38975,6 +38975,45 @@ export type Database = {
           },
         ]
       }
+      pt_event_signups: {
+        Row: {
+          client_id: string
+          event_id: string
+          id: string
+          signed_up_at: string | null
+          status: string | null
+        }
+        Insert: {
+          client_id: string
+          event_id: string
+          id?: string
+          signed_up_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          client_id?: string
+          event_id?: string
+          id?: string
+          signed_up_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_event_signups_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_event_signups_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "pt_gym_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_exercises: {
         Row: {
           alternatives: string | null
@@ -39305,6 +39344,81 @@ export type Database = {
             foreignKeyName: "pt_gym_branding_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_gym_events: {
+        Row: {
+          all_day: boolean | null
+          color: string | null
+          created_at: string | null
+          created_by: string | null
+          current_signups: number | null
+          description: string | null
+          end_time: string
+          event_type: string
+          id: string
+          is_recurring: boolean | null
+          location: string | null
+          max_signups: number | null
+          recurrence_rule: string | null
+          shop_id: string
+          start_time: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          all_day?: boolean | null
+          color?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_signups?: number | null
+          description?: string | null
+          end_time: string
+          event_type?: string
+          id?: string
+          is_recurring?: boolean | null
+          location?: string | null
+          max_signups?: number | null
+          recurrence_rule?: string | null
+          shop_id: string
+          start_time: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          all_day?: boolean | null
+          color?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_signups?: number | null
+          description?: string | null
+          end_time?: string
+          event_type?: string
+          id?: string
+          is_recurring?: boolean | null
+          location?: string | null
+          max_signups?: number | null
+          recurrence_rule?: string | null
+          shop_id?: string
+          start_time?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_gym_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_gym_events_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
             referencedRelation: "shops"
             referencedColumns: ["id"]
           },
