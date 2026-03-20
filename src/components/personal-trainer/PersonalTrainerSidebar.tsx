@@ -99,6 +99,7 @@ const navSections: NavSection[] = [
   {
     title: 'Engagement',
     items: [
+      { title: 'Social Feed', href: '/personal-trainer/social-feed', icon: Clapperboard, color: 'from-rose-500 to-orange-500' },
       { title: 'Automations', href: '/personal-trainer/automations', icon: Zap, color: 'from-yellow-500 to-orange-600' },
       { title: 'Community', href: '/personal-trainer/community', icon: Users, color: 'from-blue-500 to-indigo-600' },
       { title: 'Challenges', href: '/personal-trainer/challenges', icon: Trophy, color: 'from-amber-500 to-yellow-600' },
