@@ -3,8 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Pill, Clock, CheckCircle2, XCircle, Apple, AlertTriangle, BookOpen } from 'lucide-react';
+import { Pill, Clock, CheckCircle2, XCircle, Apple, AlertTriangle, BookOpen, Droplets } from 'lucide-react';
 import { AmazonBuyButton } from './AmazonBuyButton';
+import { NutritionFactsPanel } from './NutritionFactsPanel';
 import { cn } from '@/lib/utils';
 
 interface SupplementDetailDialogProps {
@@ -18,13 +19,14 @@ export function SupplementDetailDialog({ open, onOpenChange, supplement, affilia
   if (!supplement) return null;
 
   const s = supplement;
+  const isOil = s.product_type === 'essential_oil' || s.product_type === 'blend';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Pill className="h-5 w-5 text-primary" />
+            {isOil ? <Droplets className="h-5 w-5 text-primary" /> : <Pill className="h-5 w-5 text-primary" />}
             {s.name}
           </DialogTitle>
           {s.pt_supplement_brands?.name && (
@@ -126,6 +128,9 @@ export function SupplementDetailDialog({ open, onOpenChange, supplement, affilia
           </TabsContent>
 
           <TabsContent value="nutrition" className="space-y-3 mt-3">
+            {s.nutrition_facts && Object.keys(s.nutrition_facts).length > 0 && (
+              <NutritionFactsPanel nutritionFacts={s.nutrition_facts} servingSize={s.serving_size} />
+            )}
             {s.food_sources && s.food_sources.length > 0 && (
               <Card>
                 <CardContent className="p-3">
@@ -159,7 +164,7 @@ export function SupplementDetailDialog({ open, onOpenChange, supplement, affilia
                 </CardContent>
               </Card>
             )}
-            {(!s.food_sources || s.food_sources.length === 0) && (!s.deficiency_signs || s.deficiency_signs.length === 0) && (
+            {(!s.nutrition_facts || Object.keys(s.nutrition_facts).length === 0) && (!s.food_sources || s.food_sources.length === 0) && (!s.deficiency_signs || s.deficiency_signs.length === 0) && (
               <p className="text-sm text-muted-foreground text-center py-6">No nutrition data available yet.</p>
             )}
           </TabsContent>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Pill, Star, Clock } from 'lucide-react';
+import { Pill, Star, Clock, Droplets } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SupplementCardProps {
@@ -18,6 +18,7 @@ interface SupplementCardProps {
   amazonAsin?: string;
   affiliateTag?: string;
   bestTimeToTake?: string;
+  productType?: string;
   onClick?: () => void;
 }
 
@@ -31,6 +32,8 @@ const categoryColors: Record<string, string> = {
   post_workout: 'bg-teal-500/15 text-teal-700 border-teal-200',
   fat_burner: 'bg-red-500/15 text-red-700 border-red-200',
   joint_support: 'bg-cyan-500/15 text-cyan-700 border-cyan-200',
+  essential_oil: 'bg-purple-500/15 text-purple-700 border-purple-200',
+  oil_blend: 'bg-violet-500/15 text-violet-700 border-violet-200',
   other: 'bg-slate-500/15 text-slate-700 border-slate-200',
 };
 
@@ -44,13 +47,16 @@ const categoryLabels: Record<string, string> = {
   post_workout: 'Post-Workout',
   fat_burner: 'Fat Burner',
   joint_support: 'Joint Support',
+  essential_oil: 'Essential Oil',
+  oil_blend: 'Oil Blend',
   other: 'Supplement',
 };
 
 export function SupplementCard({
   name, category, description, recommendedDose, benefits, isSponsored,
-  imageUrl, price, affiliateLink, brandName, amazonAsin, affiliateTag, bestTimeToTake, onClick
+  imageUrl, price, affiliateLink, brandName, amazonAsin, affiliateTag, bestTimeToTake, productType, onClick
 }: SupplementCardProps) {
+  const isOil = productType === 'essential_oil' || productType === 'blend';
   return (
     <Card
       className={cn(
@@ -63,7 +69,7 @@ export function SupplementCard({
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-primary/10">
-              <Pill className="h-4 w-4 text-primary" />
+              {isOil ? <Droplets className="h-4 w-4 text-primary" /> : <Pill className="h-4 w-4 text-primary" />}
             </div>
             <div>
               <h3 className="font-semibold text-sm text-foreground leading-tight">{name}</h3>
