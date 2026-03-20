@@ -312,3 +312,164 @@ export default function PersonalTrainerReports() {
     </div>
   );
 }
+
+function PayrollSummarySection({ shopId }: { shopId: string | null }) {
+  const [period, setPeriod] = useState<'week' | 'month'>('week');
+
+  const periodRange = useMemo(() => {
+    const now = new Date();
+    if (period === 'week') {
+      return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
+    }
+    return { start: startOfMonth(now), end: endOfMonth(now) };
+  }, [period]);
+
+  const { data: timeEntries = [], isLoading } = useQuery({
+    queryKey: ['pt-payroll-report', shopId, period],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from('pt_time_entries')
+        .select('*, pt_gym_staff(first_name, last_name, hourly_rate, role)')
+        .eq('shop_id', shopId)
+        .gte('clock_in', periodRange.start.toISOString())
+        .lte('clock_in', periodRange.end.toISOString())
+        .order('clock_in', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId,
+  });
+
+  const summaries = useMemo(() => {
+    const map: Record<string, { name: string; role: string; hours: number; rate: number; shifts: number }> = {};
+    timeEntries.forEach((e: any) => {
+      const key = e.staff_id || e.trainer_id || 'unknown';
+      if (!map[key]) {
+        const s = e.pt_gym_staff;
+        map[key] = {
+          name: s ? `${s.first_name} ${s.last_name}` : 'Unknown',
+          role: s?.role || 'trainer',
+          hours: 0,
+          rate: Number(s?.hourly_rate || 0),
+          shifts: 0,
+        };
+      }
+      map[key].hours += Number(e.total_hours || 0);
+      map[key].shifts += 1;
+    });
+    return Object.values(map).sort((a, b) => b.hours - a.hours);
+  }, [timeEntries]);
+
+  const totalHours = summaries.reduce((s, r) => s + r.hours, 0);
+  const totalPay = summaries.reduce((s, r) => s + r.hours * r.rate, 0);
+  const totalShifts = summaries.reduce((s, r) => s + r.shifts, 0);
+
+  const chartData = summaries.map(s => ({
+    name: s.name.length > 12 ? s.name.slice(0, 12) + '…' : s.name,
+    hours: parseFloat(s.hours.toFixed(1)),
+    pay: parseFloat((s.hours * s.rate).toFixed(2)),
+  }));
+
+  return (
+    <Card className="border-0 shadow-md">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-green-500" />
+            Payroll Summary
+          </CardTitle>
+          <Select value={period} onValueChange={(v) => setPeriod(v as 'week' | 'month')}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {/* Summary KPIs */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="p-3 rounded-lg bg-muted/50 text-center">
+            <p className="text-lg font-bold text-foreground">{totalShifts}</p>
+            <p className="text-[10px] text-muted-foreground">Total Shifts</p>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/50 text-center">
+            <p className="text-lg font-bold text-foreground">{totalHours.toFixed(1)}</p>
+            <p className="text-[10px] text-muted-foreground">Total Hours</p>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/50 text-center">
+            <p className="text-lg font-bold text-foreground">${totalPay.toFixed(2)}</p>
+            <p className="text-[10px] text-muted-foreground">Est. Payroll</p>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        ) : summaries.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">No time entries for this period</p>
+        ) : (
+          <Tabs defaultValue="table">
+            <TabsList className="mb-3">
+              <TabsTrigger value="table">Table</TabsTrigger>
+              <TabsTrigger value="chart">Chart</TabsTrigger>
+            </TabsList>
+            <TabsContent value="table">
+              <div className="rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Staff Member</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead className="text-right">Shifts</TableHead>
+                      <TableHead className="text-right">Hours</TableHead>
+                      <TableHead className="text-right">Rate</TableHead>
+                      <TableHead className="text-right">Est. Pay</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {summaries.map((s, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{s.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs capitalize">{s.role.replace('_', ' ')}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{s.shifts}</TableCell>
+                        <TableCell className="text-right">{s.hours.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">${s.rate.toFixed(2)}/hr</TableCell>
+                        <TableCell className="text-right font-semibold">${(s.hours * s.rate).toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/30 font-bold">
+                      <TableCell colSpan={2}>Total</TableCell>
+                      <TableCell className="text-right">{totalShifts}</TableCell>
+                      <TableCell className="text-right">{totalHours.toFixed(2)}</TableCell>
+                      <TableCell />
+                      <TableCell className="text-right">${totalPay.toFixed(2)}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+            <TabsContent value="chart">
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={100} className="text-xs" />
+                  <Tooltip formatter={(v: number, name: string) => [name === 'pay' ? `$${v}` : `${v}h`, name === 'pay' ? 'Est. Pay' : 'Hours']} />
+                  <Legend />
+                  <Bar dataKey="hours" fill="#06b6d4" name="Hours" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="pay" fill="#10b981" name="Est. Pay ($)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </TabsContent>
+          </Tabs>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
