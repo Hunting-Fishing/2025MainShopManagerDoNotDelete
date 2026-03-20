@@ -345,7 +345,43 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
         </div>
         <div className="grid grid-cols-3 gap-3">
           <WeightPicker value={form.weight_kg} onChange={v => set('weight_kg', v)} />
-          <div><Label>Body Fat %</Label><Input type="number" step="0.1" value={form.body_fat_percent} onChange={e => set('body_fat_percent', e.target.value)} placeholder="e.g. 18.5" /></div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs">Body Fat % {!bodyFatOverride && estimatedBodyFat ? '(est.)' : ''}</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[220px] text-xs">
+                    Estimated using BMI formula: (1.20×BMI) + (0.23×age) − (10.8×sex) − 5.4. Toggle to override manually.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <button
+                type="button"
+                className="ml-auto text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors"
+                onClick={() => {
+                  setBodyFatOverride(!bodyFatOverride);
+                  if (!bodyFatOverride && estimatedBodyFat) {
+                    set('body_fat_percent', estimatedBodyFat.toString());
+                  }
+                }}
+              >
+                {bodyFatOverride ? <ToggleRight className="h-3.5 w-3.5 text-primary" /> : <ToggleLeft className="h-3.5 w-3.5" />}
+                {bodyFatOverride ? 'Auto' : 'Override'}
+              </button>
+            </div>
+            <Input
+              type="number"
+              step="0.1"
+              value={displayBodyFat}
+              onChange={e => { if (bodyFatOverride) set('body_fat_percent', e.target.value); }}
+              readOnly={!bodyFatOverride}
+              placeholder={estimatedBodyFat ? `~${estimatedBodyFat}%` : 'Enter height & weight'}
+              className={!bodyFatOverride ? 'bg-muted/50 cursor-default' : ''}
+            />
+          </div>
           <div>
             <Label>Fitness Level</Label>
             <Select value={form.fitness_level} onValueChange={v => set('fitness_level', v)}>
