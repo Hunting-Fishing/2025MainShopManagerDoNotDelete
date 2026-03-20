@@ -282,7 +282,9 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
       date_of_birth: form.date_of_birth || null,
       height_cm: form.height_cm ? parseFloat(form.height_cm) : null,
       weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
-      body_fat_percent: form.body_fat_percent ? parseFloat(form.body_fat_percent) : null,
+      body_fat_percent: bodyFatOverride
+        ? (form.body_fat_percent ? parseFloat(form.body_fat_percent) : null)
+        : (estimatedBodyFat || null),
       injuries: injuriesStr,
       emergency_contact: form.emergency_contact || null,
       emergency_phone: form.emergency_phone || null,
