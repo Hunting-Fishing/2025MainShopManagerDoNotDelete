@@ -2,11 +2,51 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Droplets, Utensils, AlertTriangle, User, Dumbbell, Heart, Phone, StickyNote } from 'lucide-react';
+import { Droplets, Utensils, AlertTriangle, User, Dumbbell, Heart, Phone, StickyNote, Search, X } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useFitnessGoals } from '@/hooks/useFitnessTaxonomy';
+import { useICD10Search } from '@/hooks/useICD10Search';
+import MultiSelectDialog from '@/components/nutrition/MultiSelectDialog';
 
 const WORKOUT_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+const ALL_EXERCISE_RESTRICTIONS = [
+  'no_overhead', 'no_heavy_squats', 'no_running', 'no_twisting', 'avoid_impact',
+  'no_jumping', 'no_heavy_deadlifts', 'no_bench_press', 'no_pull_ups',
+  'limit_range_of_motion', 'no_contact_sports', 'no_prolonged_standing',
+  'no_spinal_loading', 'no_lateral_movements', 'no_plyometrics',
+  'low_intensity_only', 'seated_exercises_only', 'no_grip_heavy',
+];
+
+const INITIAL_DIETARY_STYLES: Record<string, string[]> = {
+  'Popular': ['omnivore', 'vegetarian', 'vegan', 'pescatarian', 'flexitarian'],
+  'Low-Carb / High-Fat': ['keto', 'paleo', 'carnivore', 'atkins', 'low_carb'],
+  'Cultural & Regional': ['mediterranean', 'nordic', 'japanese', 'indian_vegetarian', 'middle_eastern', 'african_heritage'],
+  'Health-Focused': ['whole30', 'anti_inflammatory', 'dash', 'fodmap_friendly', 'autoimmune_protocol', 'diabetic_friendly', 'heart_healthy'],
+  'Plant-Forward': ['raw_vegan', 'fruitarian', 'macrobiotic', 'whole_food_plant_based'],
+  'Performance': ['high_protein', 'zone_diet', 'iifym', 'intermittent_fasting', 'carb_cycling'],
+  'Other': ['halal', 'kosher', 'organic_only', 'clean_eating'],
+};
+
+const INITIAL_ALLERGY_OPTIONS: Record<string, string[]> = {
+  'Common (Top 9)': ['milk', 'eggs', 'peanuts', 'tree_nuts', 'wheat', 'soy', 'fish', 'shellfish', 'sesame'],
+  'Grains & Gluten': ['gluten', 'barley', 'rye', 'oats', 'corn'],
+  'Fruits & Vegetables': ['banana', 'avocado', 'kiwi', 'mango', 'strawberry', 'tomato', 'celery', 'bell_pepper'],
+  'Seeds & Legumes': ['mustard', 'sunflower_seeds', 'flaxseed', 'lentils', 'chickpeas', 'lupin'],
+  'Animal Products': ['red_meat', 'poultry', 'gelatin'],
+  'Other': ['sulfites', 'msg', 'food_coloring', 'latex_related', 'nickel_related'],
+};
+
+const INITIAL_INTOLERANCE_OPTIONS: Record<string, string[]> = {
+  'Common': ['lactose', 'gluten_sensitivity', 'fructose', 'histamine', 'caffeine'],
+  'Digestive': ['fodmap', 'sorbitol', 'mannitol', 'xylitol', 'fructan', 'galactan'],
+  'Additives': ['sulfites', 'salicylates', 'amines', 'msg_sensitivity', 'artificial_sweeteners', 'food_preservatives'],
+  'Other': ['alcohol', 'nightshades', 'oxalates', 'lectins', 'tyramine'],
+};
 
 interface Trainer {
   id: string;
@@ -20,15 +60,55 @@ interface ClientIntakeFormProps {
   onSubmit: (payload: Record<string, any>) => void;
 }
 
-const initialForm = {
+interface FormState {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  gender: string;
+  fitness_level: string;
+  membership_type: string;
+  date_of_birth: string;
+  height_cm: string;
+  weight_kg: string;
+  body_fat_percent: string;
+  join_date: string;
+  calorie_target: string;
+  protein_target_g: string;
+  carb_target_g: string;
+  fat_target_g: string;
+  hydration_target_ml: string;
+  supplement_notes: string;
+  meal_guidance: string;
+  notes: string;
+  emergency_contact: string;
+  emergency_phone: string;
+  preferred_workout_days: string[];
+  selectedGoals: string[];
+  selectedRestrictions: string[];
+  otherInjuries: string;
+  selectedConditions: { code: string; name: string }[];
+  dietaryStyles: string[];
+  allergies: string[];
+  intolerances: string[];
+}
+
+const initialForm: FormState = {
   first_name: '', last_name: '', email: '', phone: '', gender: '',
-  fitness_level: 'beginner', goals: '', health_conditions: '', membership_type: 'standard',
-  date_of_birth: '', height_cm: '', weight_kg: '', injuries: '',
-  emergency_contact: '', emergency_phone: '', preferred_workout_days: [] as string[],
-  body_fat_percent: '', join_date: '',
+  fitness_level: 'beginner', membership_type: 'standard',
+  date_of_birth: '', height_cm: '', weight_kg: '', body_fat_percent: '',
+  join_date: '',
   calorie_target: '', protein_target_g: '', carb_target_g: '', fat_target_g: '',
-  hydration_target_ml: '', food_habits: '', supplement_notes: '', meal_guidance: '',
-  notes: '',
+  hydration_target_ml: '', supplement_notes: '', meal_guidance: '',
+  notes: '', emergency_contact: '', emergency_phone: '',
+  preferred_workout_days: [],
+  selectedGoals: [],
+  selectedRestrictions: [],
+  otherInjuries: '',
+  selectedConditions: [],
+  dietaryStyles: [],
+  allergies: [],
+  intolerances: [],
 };
 
 function SectionHeader({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
@@ -41,10 +121,32 @@ function SectionHeader({ icon: Icon, label }: { icon: React.ElementType; label: 
 }
 
 export default function ClientIntakeForm({ trainers, isPending, onSubmit }: ClientIntakeFormProps) {
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState<FormState>(initialForm);
   const [assignTrainer, setAssignTrainer] = useState('none');
+  const [conditionSearch, setConditionSearch] = useState('');
+  const [icd10Search, setIcd10Search] = useState('');
 
-  const set = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }));
+  const { data: fitnessGoals = [], isLoading: goalsLoading } = useFitnessGoals();
+
+  const { data: catalog = [] } = useQuery({
+    queryKey: ['pt-medical-catalog'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('pt_medical_condition_catalog')
+        .select('*')
+        .order('category, name');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { results: icd10Results } = useICD10Search(icd10Search);
+
+  const [dietCategories, setDietCategories] = useState<Record<string, string[]>>({ ...INITIAL_DIETARY_STYLES });
+  const [allergyCategories, setAllergyCategories] = useState<Record<string, string[]>>({ ...INITIAL_ALLERGY_OPTIONS });
+  const [intoleranceCategories, setIntoleranceCategories] = useState<Record<string, string[]>>({ ...INITIAL_INTOLERANCE_OPTIONS });
+
+  const set = (key: keyof FormState, value: any) => setForm(f => ({ ...f, [key]: value }));
 
   const toggleDay = (day: string) => {
     setForm(f => ({
@@ -55,7 +157,71 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
     }));
   };
 
+  const toggleGoal = (goalName: string) => {
+    setForm(f => ({
+      ...f,
+      selectedGoals: f.selectedGoals.includes(goalName)
+        ? f.selectedGoals.filter(g => g !== goalName)
+        : [...f.selectedGoals, goalName],
+    }));
+  };
+
+  const toggleRestriction = (r: string) => {
+    setForm(f => ({
+      ...f,
+      selectedRestrictions: f.selectedRestrictions.includes(r)
+        ? f.selectedRestrictions.filter(x => x !== r)
+        : [...f.selectedRestrictions, r],
+    }));
+  };
+
+  const addCondition = (code: string, name: string) => {
+    if (form.selectedConditions.some(c => c.code === code)) return;
+    setForm(f => ({
+      ...f,
+      selectedConditions: [...f.selectedConditions, { code, name }],
+    }));
+    setConditionSearch('');
+    setIcd10Search('');
+  };
+
+  const removeCondition = (code: string) => {
+    setForm(f => ({
+      ...f,
+      selectedConditions: f.selectedConditions.filter(c => c.code !== code),
+    }));
+  };
+
+  const filteredCatalog = catalog.filter((c: any) => {
+    if (!conditionSearch || conditionSearch.length < 2) return false;
+    const matchSearch = c.name.toLowerCase().includes(conditionSearch.toLowerCase()) || c.code?.toLowerCase().includes(conditionSearch.toLowerCase());
+    const notAlreadyAdded = !form.selectedConditions.some(ex => ex.code === c.code);
+    return matchSearch && notAlreadyAdded;
+  });
+
+  const filteredIcd10 = icd10Results.filter(
+    r => !form.selectedConditions.some(c => c.code === r.code) && !filteredCatalog.some((c: any) => c.code === r.code)
+  );
+
   const handleSubmit = () => {
+    // Serialize structured data for DB columns
+    const goalsStr = form.selectedGoals.length > 0 ? form.selectedGoals.join(', ') : null;
+    const injuriesStr = [
+      ...form.selectedRestrictions.map(r => r.replace(/_/g, ' ')),
+      ...(form.otherInjuries ? [form.otherInjuries] : []),
+    ].join(', ') || null;
+    const conditionsStr = form.selectedConditions.length > 0
+      ? form.selectedConditions.map(c => c.name).join(', ')
+      : null;
+    const foodHabitsData = {
+      dietary_styles: form.dietaryStyles,
+      allergies: form.allergies,
+      intolerances: form.intolerances,
+    };
+    const foodHabitsStr = (form.dietaryStyles.length > 0 || form.allergies.length > 0 || form.intolerances.length > 0)
+      ? JSON.stringify(foodHabitsData)
+      : null;
+
     onSubmit({
       first_name: form.first_name,
       last_name: form.last_name,
@@ -63,14 +229,14 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
       phone: form.phone || null,
       gender: form.gender || null,
       fitness_level: form.fitness_level,
-      goals: form.goals || null,
-      health_conditions: form.health_conditions || null,
+      goals: goalsStr,
+      health_conditions: conditionsStr,
       membership_type: form.membership_type,
       date_of_birth: form.date_of_birth || null,
       height_cm: form.height_cm ? parseFloat(form.height_cm) : null,
       weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
       body_fat_percent: form.body_fat_percent ? parseFloat(form.body_fat_percent) : null,
-      injuries: form.injuries || null,
+      injuries: injuriesStr,
       emergency_contact: form.emergency_contact || null,
       emergency_phone: form.emergency_phone || null,
       preferred_workout_days: form.preferred_workout_days.length > 0 ? form.preferred_workout_days : null,
@@ -81,7 +247,7 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
       carb_target_g: form.carb_target_g ? parseInt(form.carb_target_g) : null,
       fat_target_g: form.fat_target_g ? parseInt(form.fat_target_g) : null,
       hydration_target_ml: form.hydration_target_ml ? parseInt(form.hydration_target_ml) : null,
-      food_habits: form.food_habits || null,
+      food_habits: foodHabitsStr,
       supplement_notes: form.supplement_notes || null,
       meal_guidance: form.meal_guidance || null,
       notes: form.notes || null,
@@ -172,9 +338,114 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
 
       {/* ─── 3. Health & Medical ─── */}
       <SectionHeader icon={Heart} label="Health & Medical" />
-      <div><Label>Goals</Label><Textarea value={form.goals} onChange={e => set('goals', e.target.value)} placeholder="Weight loss, muscle gain, etc." /></div>
-      <div><Label>Injuries / Limitations</Label><Textarea value={form.injuries} onChange={e => set('injuries', e.target.value)} placeholder="Knee injury, lower back issues..." /></div>
-      <div><Label>Medical Warnings / Health Conditions</Label><Textarea value={form.health_conditions} onChange={e => set('health_conditions', e.target.value)} placeholder="Asthma, diabetes, heart conditions..." /></div>
+
+      {/* Goals — fitness goals grid */}
+      <div>
+        <Label>Goals</Label>
+        {goalsLoading ? (
+          <p className="text-xs text-muted-foreground py-2">Loading goals...</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
+            {fitnessGoals.map((goal: any) => {
+              const isActive = form.selectedGoals.includes(goal.name);
+              return (
+                <Badge
+                  key={goal.id}
+                  variant={isActive ? 'default' : 'outline'}
+                  className="cursor-pointer text-xs px-2.5 py-1 transition-colors"
+                  onClick={() => toggleGoal(goal.name)}
+                >
+                  {goal.emoji && <span className="mr-1">{goal.emoji}</span>}
+                  {goal.name}
+                </Badge>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Injuries — exercise restriction badge toggles */}
+      <div>
+        <Label>Injuries / Limitations</Label>
+        <p className="text-[11px] text-muted-foreground mb-1.5">Tap to toggle restrictions. Active restrictions are highlighted.</p>
+        <div className="flex flex-wrap gap-1.5">
+          {ALL_EXERCISE_RESTRICTIONS.map(r => {
+            const isActive = form.selectedRestrictions.includes(r);
+            return (
+              <Badge
+                key={r}
+                variant={isActive ? 'default' : 'outline'}
+                className={`cursor-pointer text-xs capitalize transition-colors ${isActive ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : 'hover:bg-accent'}`}
+                onClick={() => toggleRestriction(r)}
+              >
+                {r.replace(/_/g, ' ')}
+              </Badge>
+            );
+          })}
+        </div>
+        <Input
+          className="mt-2"
+          placeholder="Other injuries not listed above..."
+          value={form.otherInjuries}
+          onChange={e => set('otherInjuries', e.target.value)}
+        />
+      </div>
+
+      {/* Health Conditions — searchable medical catalog + ICD-10 */}
+      <div>
+        <Label>Medical Warnings / Health Conditions</Label>
+        {form.selectedConditions.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-1.5 mb-2">
+            {form.selectedConditions.map(c => (
+              <Badge key={c.code} variant="secondary" className="gap-1 text-xs cursor-pointer" onClick={() => removeCondition(c.code)}>
+                {c.name}
+                <X className="h-3 w-3" />
+              </Badge>
+            ))}
+          </div>
+        )}
+        <div className="relative mt-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search conditions (e.g. diabetes, asthma, hypertension)..."
+            className="pl-9"
+            value={conditionSearch}
+            onChange={e => {
+              setConditionSearch(e.target.value);
+              setIcd10Search(e.target.value);
+            }}
+          />
+        </div>
+        {conditionSearch.length >= 2 && (filteredCatalog.length > 0 || filteredIcd10.length > 0) && (
+          <div className="border rounded-md mt-1 max-h-40 overflow-y-auto bg-popover">
+            {filteredCatalog.map((c: any) => (
+              <button
+                key={c.code}
+                type="button"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between"
+                onClick={() => addCondition(c.code, c.name)}
+              >
+                <span>{c.name}</span>
+                <span className="text-xs text-muted-foreground">{c.code}</span>
+              </button>
+            ))}
+            {filteredIcd10.length > 0 && filteredCatalog.length > 0 && (
+              <div className="px-3 py-1 text-[10px] text-muted-foreground uppercase tracking-wider border-t">ICD-10 Results</div>
+            )}
+            {filteredIcd10.slice(0, 10).map(r => (
+              <button
+                key={r.code}
+                type="button"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between"
+                onClick={() => addCondition(r.code, r.name)}
+              >
+                <span>{r.name}</span>
+                <span className="text-xs text-muted-foreground">{r.code}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <p className="text-xs text-muted-foreground italic flex items-center gap-1.5">
         <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
         Detailed medical conditions can be added from the client profile after creation.
@@ -194,7 +465,52 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
         <div><Label>Carbs (g)</Label><Input type="number" value={form.carb_target_g} onChange={e => set('carb_target_g', e.target.value)} placeholder="200" /></div>
         <div><Label>Fat (g)</Label><Input type="number" value={form.fat_target_g} onChange={e => set('fat_target_g', e.target.value)} placeholder="70" /></div>
       </div>
-      <div><Label>Food Habits / Dietary Restrictions</Label><Textarea value={form.food_habits} onChange={e => set('food_habits', e.target.value)} placeholder="Vegetarian, no dairy, keto..." /></div>
+
+      {/* Dietary Styles — MultiSelectDialog */}
+      <div>
+        <Label className="mb-1.5 block">Dietary Style(s)</Label>
+        <MultiSelectDialog
+          label="Dietary Styles"
+          options={[]}
+          selected={form.dietaryStyles}
+          onSelectionChange={v => set('dietaryStyles', v)}
+          allowCustom
+          customPlaceholder="Add custom diet..."
+          categorized={dietCategories}
+          onAddCustomToCategory={(cat, val) => setDietCategories(prev => ({ ...prev, [cat]: [...(prev[cat] || []), val] }))}
+        />
+      </div>
+
+      {/* Allergies — MultiSelectDialog */}
+      <div>
+        <Label className="mb-1.5 block">Allergies</Label>
+        <MultiSelectDialog
+          label="Allergies"
+          options={[]}
+          selected={form.allergies}
+          onSelectionChange={v => set('allergies', v)}
+          allowCustom
+          customPlaceholder="Add custom allergy..."
+          categorized={allergyCategories}
+          onAddCustomToCategory={(cat, val) => setAllergyCategories(prev => ({ ...prev, [cat]: [...(prev[cat] || []), val] }))}
+        />
+      </div>
+
+      {/* Intolerances — MultiSelectDialog */}
+      <div>
+        <Label className="mb-1.5 block">Intolerances</Label>
+        <MultiSelectDialog
+          label="Intolerances"
+          options={[]}
+          selected={form.intolerances}
+          onSelectionChange={v => set('intolerances', v)}
+          allowCustom
+          customPlaceholder="Add custom intolerance..."
+          categorized={intoleranceCategories}
+          onAddCustomToCategory={(cat, val) => setIntoleranceCategories(prev => ({ ...prev, [cat]: [...(prev[cat] || []), val] }))}
+        />
+      </div>
+
       <div><Label>Supplement Notes</Label><Textarea value={form.supplement_notes} onChange={e => set('supplement_notes', e.target.value)} placeholder="Whey protein, creatine, multivitamin..." /></div>
       <div><Label>Meal Guidance</Label><Textarea value={form.meal_guidance} onChange={e => set('meal_guidance', e.target.value)} placeholder="5 meals/day, high protein breakfast..." /></div>
 
