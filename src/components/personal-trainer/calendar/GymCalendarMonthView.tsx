@@ -71,7 +71,7 @@ export function GymCalendarMonthView({ currentDate, events, onEventClick, onDate
                     key={ev.id}
                     event={ev}
                     compact
-                    onClick={(e) => { e.stopPropagation?.(); onEventClick(ev); }}
+                    onClick={(clickedEv) => onEventClick(clickedEv)}
                   />
                 ))}
                 {dayEvents.length > 3 && (
