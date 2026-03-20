@@ -1,146 +1,117 @@
 
 
-# Supplements Section, About Page & Sponsors Tab
+# Supplements Enhancement — Amazon Affiliate, Vitamin Education & Brand Tracking
 
 ## Overview
 
-Build a dedicated Supplements section within the PT module for browsing vitamins, minerals, and supplement products with brand information. Add an About page for the app with a Sponsors tab for future brand partnerships. Use the Open Food Facts API (free, no key required) for product/brand data, supplemented by a local curated vitamin/supplement database.
+Transform the supplements section into a comprehensive vitamin education and affiliate revenue platform. Add Amazon Associates affiliate links to every supplement, build a vitamin interaction/timing guide, and enhance brand capture across the catalog.
 
-## Database — New Tables
+## Database Changes
 
-### `pt_supplements`
-Curated supplement catalog (seeded with common vitamins/minerals, expandable).
+### Alter `pt_supplements` — add new columns
+
+| Column | Type | Notes |
+|--------|------|-------|
+| amazon_asin | text | Amazon product ASIN for affiliate link generation |
+| amazon_affiliate_tag | text | Shop's Amazon Associates tag (stored per-shop in settings) |
+| best_time_to_take | text | e.g. "Morning with food", "Before bed" |
+| take_with | text[] | Vitamins/supplements that pair well |
+| avoid_with | text[] | Vitamins/supplements to NOT take together |
+| food_sources | text[] | Natural food sources of this vitamin |
+| deficiency_signs | text[] | Signs of deficiency |
+| health_guide | text | Extended educational content about the vitamin |
+
+### New table: `pt_shop_affiliate_settings`
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | uuid PK | |
-| shop_id | uuid FK → shops, nullable | null = global/shared |
-| name | text NOT NULL | e.g. "Vitamin D3" |
-| category | text | `vitamin`, `mineral`, `amino_acid`, `herb`, `protein`, `pre_workout`, `post_workout`, `fat_burner`, `joint_support`, `other` |
-| description | text | Benefits, usage |
-| recommended_dose | text | e.g. "1000 IU daily" |
-| benefits | text[] | Array of benefit tags |
-| warnings | text | Contraindications |
-| image_url | text | Product image |
-| barcode | text | For scanner integration |
-| brand_id | uuid FK → pt_supplement_brands | |
-| price | numeric | Retail price |
-| affiliate_link | text | For sponsor products |
-| is_sponsored | boolean DEFAULT false | |
+| shop_id | uuid FK → shops, UNIQUE | |
+| amazon_associate_tag | text | e.g. "mygym-20" |
 | created_at | timestamptz | |
 
-### `pt_supplement_brands`
-Brand directory for supplements.
+RLS: Scoped by `shop_id = get_current_user_shop_id()`.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid PK | |
-| name | text NOT NULL | e.g. "Optimum Nutrition" |
-| logo_url | text | |
-| website | text | |
-| is_sponsor | boolean DEFAULT false | Sponsor badge |
-| description | text | |
-| created_at | timestamptz | |
+### Update seed data
 
-### `pt_client_supplements`
-Track which supplements a client is taking.
+Update all ~45 existing supplement seed records to include `best_time_to_take`, `take_with`, `avoid_with`, `food_sources`, `deficiency_signs`, and `amazon_asin` (popular ASINs for top vitamin brands like Nature Made, NOW Foods, Garden of Life).
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid PK | |
-| client_id | uuid FK → pt_clients | |
-| shop_id | uuid FK → shops | |
-| supplement_id | uuid FK → pt_supplements, nullable | Linked product |
-| custom_name | text | If not in catalog |
-| dosage | text | |
-| frequency | text | daily, twice_daily, as_needed |
-| start_date | date | |
-| end_date | date, nullable | |
-| notes | text | |
-| created_at | timestamptz | |
+## Amazon Affiliate Link Generation
 
-### `pt_sponsors`
-Sponsor partnerships for the About page.
+Links will be constructed as:
+```
+https://www.amazon.com/dp/{ASIN}?tag={ASSOCIATE_TAG}
+```
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid PK | |
-| shop_id | uuid FK → shops | |
-| name | text NOT NULL | |
-| logo_url | text | |
-| website | text | |
-| tier | text | `platinum`, `gold`, `silver`, `bronze` |
-| description | text | |
-| is_active | boolean DEFAULT true | |
-| created_at | timestamptz | |
+If no shop-level `amazon_associate_tag` is set, a default placeholder is used with a prompt to configure it. The tag is stored per-shop so each gym earns their own commissions.
 
-## API Integration
+## UI Changes
 
-**Open Food Facts** (free, no key, already pattern-matched in project):
-- Search: `https://world.openfoodfacts.org/cgi/search.pl?search_terms=whey+protein&json=1`
-- Product by barcode: `https://world.openfoodfacts.org/api/v0/product/{barcode}.json`
-- Use for browsing branded supplement products, pulling nutrition facts, images, and brand info
+### 1. Enhanced Supplement Card
+- Add "Buy on Amazon" button with Amazon icon linking to `amazon.com/dp/{asin}?tag={tag}`
+- Show brand name prominently
+- Add timing badge ("Morning", "Evening", "Pre-Workout")
 
-**Local Seeded Data**: Pre-populate `pt_supplements` with ~50 common vitamins/minerals/supplements (Vitamin A–K, Iron, Zinc, Magnesium, Creatine, Whey Protein, BCAAs, Fish Oil, etc.) with dosage recommendations and benefits.
+### 2. Supplement Detail Dialog (new)
+When clicking a supplement card, open a detailed dialog with tabs:
+- **Overview**: Description, dose, benefits, brand, price
+- **Health Guide**: Extended educational content about the vitamin
+- **When to Take**: Best time, with meals or empty stomach
+- **Interactions**: What to take it WITH (green list) and what to AVOID (red list)
+- **Food Sources**: Natural dietary sources
+- **Deficiency Signs**: Symptoms of low levels
+- **Buy**: Amazon affiliate link with prominent CTA button
 
-## New Pages
+### 3. New "Vitamin Guide" Tab on Supplements Page
+Add a fourth tab alongside Browse/Search/Stacks:
+- **Vitamin Guide**: Educational grid showing all vitamins with interaction matrix
+- Visual chart showing which vitamins pair well together and which conflict
+- Timing guide showing morning vs evening vs with-meals recommendations
+- Searchable/filterable by benefit (e.g. "immune", "energy", "sleep")
 
-### 1. Supplements Page (`/personal-trainer/supplements`)
-- **Browse tab**: Searchable grid of supplements by category (Vitamins, Minerals, Amino Acids, Proteins, Herbs, etc.)
-- **Search tab**: Search Open Food Facts API for branded products, import into local catalog
-- **Client Stacks tab**: View/manage which supplements each client is taking with dosage tracking
-- Each supplement card shows: name, category badge, brand, recommended dose, benefits tags, sponsor badge if applicable
-
-### 2. About Page (`/personal-trainer/about`)
-- **About tab**: App description, version, mission statement, features overview
-- **Sponsors tab**: Grid of sponsor logos with tier badges (Platinum/Gold/Silver/Bronze), links, descriptions
-- **Contact tab**: Support info, feedback form placeholder
+### 4. Affiliate Settings (in About or Settings)
+Simple form for the shop owner to enter their Amazon Associates tag, stored in `pt_shop_affiliate_settings`.
 
 ## New Components
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `SupplementsPage.tsx` | `src/pages/personal-trainer/` | Main supplements page with tabs |
-| `SupplementCard.tsx` | `src/components/personal-trainer/supplements/` | Product display card |
-| `SupplementSearch.tsx` | `src/components/personal-trainer/supplements/` | Open Food Facts search |
-| `ClientSupplementStack.tsx` | `src/components/personal-trainer/supplements/` | Client's supplement list with add/edit |
-| `VitaminReferenceGrid.tsx` | `src/components/personal-trainer/supplements/` | A–Z vitamin/mineral reference |
-| `AboutPage.tsx` | `src/pages/personal-trainer/` | About + Sponsors page |
-| `SponsorCard.tsx` | `src/components/personal-trainer/about/` | Sponsor logo tile with tier |
+| Component | Purpose |
+|-----------|---------|
+| `SupplementDetailDialog.tsx` | Full detail view with tabs for education, interactions, buying |
+| `VitaminGuide.tsx` | Educational vitamin reference with interaction matrix |
+| `VitaminInteractionChart.tsx` | Visual take-with / avoid-with display |
+| `VitaminTimingGuide.tsx` | When-to-take visual guide |
+| `AmazonBuyButton.tsx` | Styled Amazon affiliate CTA with tracking |
+| `AffiliateSettingsCard.tsx` | Shop owner enters Amazon Associates tag |
 
-## Sidebar Changes
-
-Add to the **Training** section:
-- "Supplements" with a `Pill` icon
-
-Add to the **Configuration** section:
-- "About" with an `Info` icon
-
-## Route Changes
-
-- `/personal-trainer/supplements`
-- `/personal-trainer/about`
-
-## Seeded Vitamin/Mineral Data
-
-Pre-populate the supplements table with comprehensive entries including:
-- **Vitamins**: A, B1–B12, C, D3, E, K1, K2
-- **Minerals**: Iron, Zinc, Magnesium, Calcium, Potassium, Selenium, Chromium
-- **Amino Acids**: BCAAs, L-Glutamine, L-Carnitine, Creatine
-- **Sports**: Whey Protein, Casein, Pre-Workout, Post-Workout, Fish Oil
-- **Herbs**: Ashwagandha, Turmeric, Green Tea Extract
-
-Each with recommended dosage, benefits array, and category classification.
+All in `src/components/personal-trainer/supplements/`.
 
 ## Files to Create/Edit
 
 | File | Action |
 |------|--------|
-| Migration SQL | Create 4 tables, seed ~50 supplements |
-| `PersonalTrainerSupplements.tsx` | New page |
-| `PersonalTrainerAbout.tsx` | New page with About + Sponsors tabs |
-| `src/components/personal-trainer/supplements/` | New directory (5 components) |
-| `src/components/personal-trainer/about/SponsorCard.tsx` | New |
-| `PersonalTrainerSidebar.tsx` | Add Supplements + About nav items |
-| `App.tsx` | Add routes |
+| Migration SQL | Add columns to `pt_supplements`, create `pt_shop_affiliate_settings`, update seed data with education content and ASINs |
+| `SupplementCard.tsx` | Add Amazon buy button, timing badge, brand display |
+| `PersonalTrainerSupplements.tsx` | Add "Vitamin Guide" tab, click-to-detail on cards |
+| `SupplementDetailDialog.tsx` | New — tabbed detail with education + affiliate |
+| `VitaminGuide.tsx` | New — educational reference grid |
+| `VitaminInteractionChart.tsx` | New — interaction pairing display |
+| `VitaminTimingGuide.tsx` | New — timing recommendations |
+| `AmazonBuyButton.tsx` | New — Amazon affiliate CTA |
+| `AffiliateSettingsCard.tsx` | New — Associates tag configuration |
+| `PersonalTrainerAbout.tsx` | Add Affiliate Settings section |
+| `src/main.tsx` | Fix duplicate attribute build error |
+
+## Interaction Data Examples
+
+| Vitamin | Take With | Avoid With |
+|---------|-----------|------------|
+| Vitamin D3 | Vitamin K2, Magnesium, Fat-containing meal | High-dose Calcium alone |
+| Iron | Vitamin C | Calcium, Zinc, Coffee/Tea |
+| Vitamin C | Iron, Collagen | High-dose B12 (same time) |
+| Calcium | Vitamin D3, Vitamin K2 | Iron, Zinc, Magnesium (same time) |
+| Zinc | Empty stomach or with protein | Iron, Calcium, Copper (same time) |
+| Magnesium | Vitamin D3, B6 | Calcium (same time) |
+| B12 | Folate | Vitamin C (high dose, same time) |
+
+This interaction data will be seeded directly into the database for all ~45 supplements.
 
