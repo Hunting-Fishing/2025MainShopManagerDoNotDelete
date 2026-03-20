@@ -117,8 +117,8 @@ export function SidebarContent() {
           
         </div>
 
-        {/* Developer Sections - Admin/Owner only */}
-        {(userRoles.includes('admin') || userRoles.includes('owner')) && (
+        {/* Developer Sections - Platform Developer only */}
+        {isPlatformDeveloper && (
           <div className="mb-3 space-y-1 pt-2 border-t border-gray-200">
             <span className="px-4 text-xs font-semibold text-orange-600 uppercase tracking-wider">
               Developer
