@@ -1,33 +1,46 @@
 
 
-# Restrict Developer Section to Developer Role Only
+# Auto Body Fat Estimation & Supplement Selector for Intake Form
 
-## Problem
+## Changes
 
-The Developer section in the left sidebar (line 118 of `SidebarContent.tsx`) currently checks for `admin` or `owner` roles. This means Chrissy (who has the `owner` role) sees the Developer links, but she should not — only the platform developer (`jordilwbailey@gmail.com`) should see them.
+### 1. Auto-Estimate Body Fat % from Height + Weight
 
-## Fix
+Replace the manual Body Fat % input with an auto-estimated value using the U.S. Navy / BMI-derived formula:
 
-In `src/components/layout/sidebar/SidebarContent.tsx`:
+```text
+BMI = weight_kg / (height_m²)
+Adult Body Fat % ≈ (1.20 × BMI) + (0.23 × age) − (10.8 × sex) − 5.4
+  where sex = 1 for male, 0 for female
+```
 
-1. **Import `useAllUserRoles`** instead of (or in addition to) the existing `useUserRoles` hook — since the developer status is determined via the `is_platform_developer` RPC, which is only checked in `useAllUserRoles`.
+- When height, weight, gender, or date of birth changes, recalculate and pre-fill the body fat field
+- Show it as a read-only estimated value with an "Override" toggle that lets the user type a manual value
+- Label: "Body Fat % (est.)" with a small info tooltip explaining the formula is an estimate
 
-2. **Change the guard on line 118** from:
-   ```
-   (userRoles.includes('admin') || userRoles.includes('owner'))
-   ```
-   to:
-   ```
-   isDeveloper
-   ```
-   where `isDeveloper` comes from checking `useAllUserRoles` roles for `source === 'developer'`.
+**File**: `ClientIntakeForm.tsx` — add a `useEffect`/`useMemo` that watches `height_cm`, `weight_kg`, `gender`, and `date_of_birth` to compute estimated body fat. Update the body fat input to show the estimate but allow manual override.
 
-3. **Also fix `src/main.tsx`** — re-save to clear the recurring duplicate attribute build error.
+### 2. Supplement Selector on Nutrition Tab
+
+Replace the plain "Supplement Notes" textarea with a supplement picker that queries the existing `pt_supplements` table, plus keeps a free-text notes area.
+
+- Add a searchable multi-select component (similar to the existing `MultiSelectDialog` pattern) that fetches supplements from `pt_supplements`
+- Group by category: Vitamins, Minerals, Amino Acids, Proteins, Herbs, etc.
+- Selected supplements show as badges below the selector
+- Keep a smaller textarea underneath for additional free-text notes
+- On submit, store selected supplement names as a JSON array in a new form field (`selected_supplements`), and keep `supplement_notes` for free text
+
+**File**: `ClientIntakeForm.tsx`
+- Add state for `selectedSupplements: string[]`
+- Query `pt_supplements` for the categorized list
+- Replace line 522's simple textarea with a `MultiSelectDialog` for supplements + a smaller notes textarea below it
+- On submit, include `selected_supplements` in the payload
 
 ## Files to Edit
 
 | File | Change |
 |------|--------|
-| `src/components/layout/sidebar/SidebarContent.tsx` | Import `useAllUserRoles`, replace admin/owner check with developer role check |
-| `src/main.tsx` | Re-save to fix build error |
+| `src/components/personal-trainer/ClientIntakeForm.tsx` | Add body fat auto-estimation logic + supplement multi-select picker |
+
+No database changes needed — body fat estimate is a client-side calculation, and supplement selection uses existing `pt_supplements` table data.
 
