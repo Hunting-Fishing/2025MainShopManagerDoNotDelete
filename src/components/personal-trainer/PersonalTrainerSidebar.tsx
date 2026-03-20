@@ -27,6 +27,7 @@ import {
   Utensils,
   Zap,
   Bot,
+  Clapperboard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
