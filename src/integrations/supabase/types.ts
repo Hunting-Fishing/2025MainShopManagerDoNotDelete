@@ -40531,33 +40531,50 @@ export type Database = {
       }
       pt_supplement_brands: {
         Row: {
+          category: string | null
+          country: string | null
           created_at: string | null
           description: string | null
           id: string
           is_sponsor: boolean | null
           logo_url: string | null
           name: string
+          shop_id: string | null
           website: string | null
         }
         Insert: {
+          category?: string | null
+          country?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           is_sponsor?: boolean | null
           logo_url?: string | null
           name: string
+          shop_id?: string | null
           website?: string | null
         }
         Update: {
+          category?: string | null
+          country?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           is_sponsor?: boolean | null
           logo_url?: string | null
           name?: string
+          shop_id?: string | null
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pt_supplement_brands_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pt_supplements: {
         Row: {
@@ -40578,8 +40595,11 @@ export type Database = {
           image_url: string | null
           is_sponsored: boolean | null
           name: string
+          nutrition_facts: Json | null
           price: number | null
+          product_type: string | null
           recommended_dose: string | null
+          serving_size: string | null
           shop_id: string | null
           take_with: string[] | null
           warnings: string | null
@@ -40602,8 +40622,11 @@ export type Database = {
           image_url?: string | null
           is_sponsored?: boolean | null
           name: string
+          nutrition_facts?: Json | null
           price?: number | null
+          product_type?: string | null
           recommended_dose?: string | null
+          serving_size?: string | null
           shop_id?: string | null
           take_with?: string[] | null
           warnings?: string | null
@@ -40626,8 +40649,11 @@ export type Database = {
           image_url?: string | null
           is_sponsored?: boolean | null
           name?: string
+          nutrition_facts?: Json | null
           price?: number | null
+          product_type?: string | null
           recommended_dose?: string | null
+          serving_size?: string | null
           shop_id?: string | null
           take_with?: string[] | null
           warnings?: string | null
