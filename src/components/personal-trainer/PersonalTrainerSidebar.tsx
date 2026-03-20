@@ -32,6 +32,8 @@ import {
   Clapperboard,
   UsersRound,
   Clock,
+  Pill,
+  Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -80,6 +82,7 @@ const navSections: NavSection[] = [
       { title: 'Exercise Library', href: '/personal-trainer/exercises', icon: Target, color: 'from-pink-500 to-rose-500' },
       { title: 'Nutrition', href: '/personal-trainer/nutrition', icon: Utensils, color: 'from-green-500 to-emerald-500' },
       { title: 'AI Coach', href: '/personal-trainer/ai-chat', icon: Bot, color: 'from-orange-500 to-red-600' },
+      { title: 'Supplements', href: '/personal-trainer/supplements', icon: Pill, color: 'from-emerald-500 to-teal-600' },
     ],
   },
   {
@@ -124,6 +127,7 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Branding', href: '/personal-trainer/branding', icon: Palette, color: 'from-violet-500 to-purple-600' },
       { title: 'Settings', href: '/personal-trainer/settings', icon: Settings, color: 'from-slate-500 to-gray-600' },
+      { title: 'About', href: '/personal-trainer/about', icon: Info, color: 'from-blue-500 to-indigo-600' },
     ],
   },
 ];
