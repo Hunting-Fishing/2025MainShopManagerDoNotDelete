@@ -19,11 +19,11 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/module-hub')}
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
+          All Modules
         </Button>
       </div>
       
