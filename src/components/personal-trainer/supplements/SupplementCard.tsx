@@ -69,7 +69,7 @@ export function SupplementCard({
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-primary/10">
-              <Pill className="h-4 w-4 text-primary" />
+              {isOil ? <Droplets className="h-4 w-4 text-primary" /> : <Pill className="h-4 w-4 text-primary" />}
             </div>
             <div>
               <h3 className="font-semibold text-sm text-foreground leading-tight">{name}</h3>
