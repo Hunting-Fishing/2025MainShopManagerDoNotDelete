@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Customer } from "@/types/customer";
-import { useSmsTemplates } from "@/hooks/useSmsTemplates";
+import { useSmsTemplates, sendSms } from "@/hooks/useSmsTemplates";
 
 interface SendSmsDialogProps {
   open: boolean;
@@ -64,8 +64,6 @@ export const SendSmsDialog: React.FC<SendSmsDialogProps> = ({
     setIsSending(true);
     
     try {
-      const { sendSms } = await import('@/hooks/useSmsTemplates');
-      
       await sendSms(
         customer.id,
         customer.phone,
