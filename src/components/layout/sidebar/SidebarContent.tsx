@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useAllUserRoles } from '@/hooks/useAllUserRoles';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { hasRoutePermission } from '@/utils/routeGuards';
 import { getSectionColorScheme } from '@/utils/sectionColors';
@@ -19,6 +20,8 @@ export function SidebarContent() {
   const { setIsOpen } = useSidebar();
   const isMobile = useIsMobile();
   const { data: userRoles = [] } = useUserRoles();
+  const { data: allRoles = [] } = useAllUserRoles();
+  const isPlatformDeveloper = allRoles.some(r => r.source === 'developer');
   const { data: modulePermissions = {}, isLoading: permissionsLoading } = useModulePermissions();
   const { isVisible } = useSidebarVisibility();
 
@@ -114,8 +117,8 @@ export function SidebarContent() {
           
         </div>
 
-        {/* Developer Sections - Admin/Owner only */}
-        {(userRoles.includes('admin') || userRoles.includes('owner')) && (
+        {/* Developer Sections - Platform Developer only */}
+        {isPlatformDeveloper && (
           <div className="mb-3 space-y-1 pt-2 border-t border-gray-200">
             <span className="px-4 text-xs font-semibold text-orange-600 uppercase tracking-wider">
               Developer
