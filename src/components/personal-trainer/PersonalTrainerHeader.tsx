@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Bell, Search, User } from 'lucide-react';
+import { Menu, Bell, Search, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -16,6 +16,8 @@ import { useAuthUser } from '@/hooks/useAuthUser';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { AuthService } from '@/lib/services/AuthService';
+import { toast } from '@/hooks/use-toast';
 
 interface PersonalTrainerHeaderProps {
   onMenuToggle?: () => void;
@@ -98,6 +100,17 @@ export function PersonalTrainerHeader({ onMenuToggle }: PersonalTrainerHeaderPro
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/module-hub')}>
                 All Modules
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive cursor-pointer"
+                onClick={async () => {
+                  toast({ title: 'Logging out', description: 'Please wait...' });
+                  await AuthService.signOut();
+                }}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
