@@ -28,6 +28,7 @@ export default function PersonalTrainerClientDetail() {
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
+  const [editTab, setEditTab] = useState('profile');
 
   const { data: client, isLoading } = useQuery({
     queryKey: ['pt-client-detail', id, shopId],
@@ -110,19 +111,6 @@ export default function PersonalTrainerClientDetail() {
     onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
 
-  const updateNutrition = useMutation({
-    mutationFn: async (payload: any) => {
-      if (!id) throw new Error('No client');
-      const { error } = await (supabase as any).from('pt_clients').update(payload).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pt-client-detail', id] });
-      toast({ title: 'Nutrition updated' });
-    },
-    onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
-  });
-
   if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   if (!client) return <div className="p-6 text-center"><p className="text-muted-foreground">Client not found</p></div>;
 
@@ -136,15 +124,13 @@ export default function PersonalTrainerClientDetail() {
       date_of_birth: client.date_of_birth || '',
       height_cm: client.height_cm || '',
       fitness_level: client.fitness_level || 'beginner',
-      goals: client.goals || '',
-      health_conditions: client.health_conditions || '',
-      injuries: client.injuries || '',
       emergency_contact: client.emergency_contact || '',
       emergency_phone: client.emergency_phone || '',
       membership_type: client.membership_type || 'standard',
       membership_status: client.membership_status || 'active',
       preferred_workout_days: (client.preferred_workout_days || []).join(', '),
     });
+    setEditTab('profile');
     setEditOpen(true);
   };
 
@@ -174,7 +160,7 @@ export default function PersonalTrainerClientDetail() {
           {client.date_of_birth && <span className="text-sm text-muted-foreground">DOB: {format(new Date(client.date_of_birth), 'MMM d, yyyy')}</span>}
           {client.height_cm && <span className="text-sm text-muted-foreground">Height: {client.height_cm} cm</span>}
           {client.gender && <span className="text-sm text-muted-foreground capitalize">Sex: {client.gender}</span>}
-          {client.emergency_contact && <span className="flex items-center gap-2 text-sm"><AlertCircle className="h-4 w-4 text-red-500" />{client.emergency_contact} {client.emergency_phone && `· ${client.emergency_phone}`}</span>}
+          {client.emergency_contact && <span className="flex items-center gap-2 text-sm"><AlertCircle className="h-4 w-4 text-destructive" />{client.emergency_contact} {client.emergency_phone && `· ${client.emergency_phone}`}</span>}
         </CardContent>
       </Card>
 
@@ -258,15 +244,15 @@ export default function PersonalTrainerClientDetail() {
                 {ci.workout_compliance && <div><p className="text-xs text-muted-foreground">Workout</p><p className="font-semibold text-sm">{ci.workout_compliance}/10</p></div>}
                 {ci.soreness_level && <div><p className="text-xs text-muted-foreground">Soreness</p><p className="font-semibold text-sm">{ci.soreness_level}/10</p></div>}
               </div>
-              {ci.pain_issues && <p className="text-xs text-red-500 mt-2">⚠️ Pain: {ci.pain_issues}</p>}
+              {ci.pain_issues && <p className="text-xs text-destructive mt-2">⚠️ Pain: {ci.pain_issues}</p>}
               {ci.notes && <p className="text-xs text-muted-foreground mt-2">{ci.notes}</p>}
             </CardContent></Card>
           ))}
         </TabsContent>
 
-        {/* Nutrition Tab */}
+        {/* Nutrition Tab — Full NutritionProfile component */}
         <TabsContent value="nutrition" className="mt-4">
-          <NutritionCard client={client} onSave={(payload: any) => updateNutrition.mutate(payload)} saving={updateNutrition.isPending} />
+          {id && shopId && <NutritionProfile clientId={id} shopId={shopId} />}
         </TabsContent>
 
         <TabsContent value="billing" className="mt-4 space-y-3">
@@ -279,109 +265,106 @@ export default function PersonalTrainerClientDetail() {
         </TabsContent>
       </Tabs>
 
-      {/* Edit Client Dialog */}
+      {/* Edit Client Dialog — Tabbed Layout */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Edit Client Profile</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>First Name</Label><Input value={editForm.first_name || ''} onChange={e => setEditForm((f: any) => ({ ...f, first_name: e.target.value }))} /></div>
-              <div><Label>Last Name</Label><Input value={editForm.last_name || ''} onChange={e => setEditForm((f: any) => ({ ...f, last_name: e.target.value }))} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Email</Label><Input type="email" value={editForm.email || ''} onChange={e => setEditForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
-              <div><Label>Phone</Label><Input value={editForm.phone || ''} onChange={e => setEditForm((f: any) => ({ ...f, phone: e.target.value }))} /></div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label>Sex</Label>
-                <Select value={editForm.gender || ''} onValueChange={v => setEditForm((f: any) => ({ ...f, gender: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+          <Tabs value={editTab} onValueChange={setEditTab}>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="profile"><User className="h-3.5 w-3.5 mr-1.5" />Profile</TabsTrigger>
+              <TabsTrigger value="medical"><HeartPulse className="h-3.5 w-3.5 mr-1.5" />Medical</TabsTrigger>
+              <TabsTrigger value="interests"><Sparkles className="h-3.5 w-3.5 mr-1.5" />Interests</TabsTrigger>
+              <TabsTrigger value="nutrition"><Utensils className="h-3.5 w-3.5 mr-1.5" />Nutrition</TabsTrigger>
+            </TabsList>
+
+            {/* Profile Tab */}
+            <TabsContent value="profile" className="mt-4 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>First Name</Label><Input value={editForm.first_name || ''} onChange={e => setEditForm((f: any) => ({ ...f, first_name: e.target.value }))} /></div>
+                <div><Label>Last Name</Label><Input value={editForm.last_name || ''} onChange={e => setEditForm((f: any) => ({ ...f, last_name: e.target.value }))} /></div>
               </div>
-              <div><Label>Date of Birth</Label><Input type="date" value={editForm.date_of_birth || ''} onChange={e => setEditForm((f: any) => ({ ...f, date_of_birth: e.target.value }))} /></div>
-              <div><Label>Height (cm)</Label><Input type="number" value={editForm.height_cm || ''} onChange={e => setEditForm((f: any) => ({ ...f, height_cm: e.target.value ? parseFloat(e.target.value) : null }))} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Fitness Level</Label>
-                <Select value={editForm.fitness_level || 'beginner'} onValueChange={v => setEditForm((f: any) => ({ ...f, fitness_level: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="beginner">Beginner</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Email</Label><Input type="email" value={editForm.email || ''} onChange={e => setEditForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
+                <div><Label>Phone</Label><Input value={editForm.phone || ''} onChange={e => setEditForm((f: any) => ({ ...f, phone: e.target.value }))} /></div>
               </div>
-              <div>
-                <Label>Status</Label>
-                <Select value={editForm.membership_status || 'active'} onValueChange={v => setEditForm((f: any) => ({ ...f, membership_status: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="paused">Paused</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label>Sex</Label>
+                  <Select value={editForm.gender || ''} onValueChange={v => setEditForm((f: any) => ({ ...f, gender: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Date of Birth</Label><Input type="date" value={editForm.date_of_birth || ''} onChange={e => setEditForm((f: any) => ({ ...f, date_of_birth: e.target.value }))} /></div>
+                <div><Label>Height (cm)</Label><Input type="number" value={editForm.height_cm || ''} onChange={e => setEditForm((f: any) => ({ ...f, height_cm: e.target.value ? parseFloat(e.target.value) : null }))} /></div>
               </div>
-            </div>
-            <div><Label>Goals</Label><Textarea value={editForm.goals || ''} onChange={e => setEditForm((f: any) => ({ ...f, goals: e.target.value }))} /></div>
-            <div><Label>Health Conditions</Label><Textarea value={editForm.health_conditions || ''} onChange={e => setEditForm((f: any) => ({ ...f, health_conditions: e.target.value }))} /></div>
-            <div><Label>Injuries / Limitations</Label><Textarea value={editForm.injuries || ''} onChange={e => setEditForm((f: any) => ({ ...f, injuries: e.target.value }))} /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Emergency Contact</Label><Input value={editForm.emergency_contact || ''} onChange={e => setEditForm((f: any) => ({ ...f, emergency_contact: e.target.value }))} /></div>
-              <div><Label>Emergency Phone</Label><Input value={editForm.emergency_phone || ''} onChange={e => setEditForm((f: any) => ({ ...f, emergency_phone: e.target.value }))} /></div>
-            </div>
-            <div><Label>Preferred Workout Days</Label><Input value={editForm.preferred_workout_days || ''} onChange={e => setEditForm((f: any) => ({ ...f, preferred_workout_days: e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean) }))} placeholder="Mon, Wed, Fri" /></div>
-            <Button className="w-full" disabled={updateClient.isPending} onClick={() => updateClient.mutate()}>
-              {updateClient.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Fitness Level</Label>
+                  <Select value={editForm.fitness_level || 'beginner'} onValueChange={v => setEditForm((f: any) => ({ ...f, fitness_level: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <Select value={editForm.membership_status || 'active'} onValueChange={v => setEditForm((f: any) => ({ ...f, membership_status: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="paused">Paused</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Emergency Contact</Label><Input value={editForm.emergency_contact || ''} onChange={e => setEditForm((f: any) => ({ ...f, emergency_contact: e.target.value }))} /></div>
+                <div><Label>Emergency Phone</Label><Input value={editForm.emergency_phone || ''} onChange={e => setEditForm((f: any) => ({ ...f, emergency_phone: e.target.value }))} /></div>
+              </div>
+              <div><Label>Preferred Workout Days</Label><Input value={editForm.preferred_workout_days || ''} onChange={e => setEditForm((f: any) => ({ ...f, preferred_workout_days: e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean) }))} placeholder="Mon, Wed, Fri" /></div>
+              <Button className="w-full" disabled={updateClient.isPending} onClick={() => updateClient.mutate()}>
+                {updateClient.isPending ? 'Saving...' : 'Save Profile Changes'}
+              </Button>
+            </TabsContent>
+
+            {/* Medical Tab — Embeds full ClientMedicalProfile */}
+            <TabsContent value="medical" className="mt-4">
+              {id && shopId ? (
+                <ClientMedicalProfile clientId={id} shopId={shopId} />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">Client data unavailable</p>
+              )}
+            </TabsContent>
+
+            {/* Interests Tab — Embeds full FitnessInterestIntake */}
+            <TabsContent value="interests" className="mt-4">
+              {id && shopId ? (
+                <FitnessInterestIntake clientId={id} shopId={shopId} embedded />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">Client data unavailable</p>
+              )}
+            </TabsContent>
+
+            {/* Nutrition Tab — Embeds full NutritionProfile */}
+            <TabsContent value="nutrition" className="mt-4">
+              {id && shopId ? (
+                <NutritionProfile clientId={id} shopId={shopId} />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">Client data unavailable</p>
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-// Nutrition Lite sub-component
-function NutritionCard({ client, onSave, saving }: { client: any; onSave: (p: any) => void; saving: boolean }) {
-  const [form, setForm] = useState({
-    calorie_target: client.calorie_target || '',
-    protein_target_g: client.protein_target_g || '',
-    carb_target_g: client.carb_target_g || '',
-    fat_target_g: client.fat_target_g || '',
-    hydration_target_ml: client.hydration_target_ml || 2500,
-    meal_guidance: client.meal_guidance || '',
-    supplement_notes: client.supplement_notes || '',
-    food_habits: client.food_habits || '',
-  });
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2"><Utensils className="h-5 w-5 text-green-500" />Nutrition Plan</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div><Label>Calories</Label><Input type="number" value={form.calorie_target} onChange={e => setForm(f => ({ ...f, calorie_target: e.target.value ? parseInt(e.target.value) : '' }))} placeholder="2000" /></div>
-          <div><Label>Protein (g)</Label><Input type="number" value={form.protein_target_g} onChange={e => setForm(f => ({ ...f, protein_target_g: e.target.value ? parseInt(e.target.value) : '' }))} placeholder="150" /></div>
-          <div><Label>Carbs (g)</Label><Input type="number" value={form.carb_target_g} onChange={e => setForm(f => ({ ...f, carb_target_g: e.target.value ? parseInt(e.target.value) : '' }))} placeholder="200" /></div>
-          <div><Label>Fat (g)</Label><Input type="number" value={form.fat_target_g} onChange={e => setForm(f => ({ ...f, fat_target_g: e.target.value ? parseInt(e.target.value) : '' }))} placeholder="70" /></div>
-        </div>
-        <div><Label>Hydration Target (ml)</Label><Input type="number" value={form.hydration_target_ml} onChange={e => setForm(f => ({ ...f, hydration_target_ml: parseInt(e.target.value) || 2500 }))} /></div>
-        <div><Label>Meal Guidance</Label><Textarea value={form.meal_guidance} onChange={e => setForm(f => ({ ...f, meal_guidance: e.target.value }))} placeholder="General meal structure, timing, etc." rows={3} /></div>
-        <div><Label>Supplement Notes</Label><Textarea value={form.supplement_notes} onChange={e => setForm(f => ({ ...f, supplement_notes: e.target.value }))} placeholder="Creatine, whey protein, etc." rows={2} /></div>
-        <div><Label>Food Habits / Preferences</Label><Textarea value={form.food_habits} onChange={e => setForm(f => ({ ...f, food_habits: e.target.value }))} placeholder="Vegetarian, dairy-free, etc." rows={2} /></div>
-        <Button onClick={() => onSave(form)} disabled={saving} className="w-full">
-          <Save className="h-4 w-4 mr-2" />{saving ? 'Saving...' : 'Save Nutrition Plan'}
-        </Button>
-      </CardContent>
-    </Card>
   );
 }
