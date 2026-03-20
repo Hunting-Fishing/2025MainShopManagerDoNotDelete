@@ -29,6 +29,8 @@ import {
   Zap,
   Bot,
   Clapperboard,
+  UsersRound,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -97,6 +99,13 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Packages', href: '/personal-trainer/packages', icon: Package, color: 'from-amber-500 to-orange-600' },
       { title: 'Client Billing', href: '/personal-trainer/billing', icon: CreditCard, color: 'from-green-500 to-emerald-600' },
+    ],
+  },
+  {
+    title: 'Business',
+    items: [
+      { title: 'Gym Staff', href: '/personal-trainer/staff', icon: UsersRound, color: 'from-blue-500 to-indigo-600' },
+      { title: 'Time Tracking', href: '/personal-trainer/time-tracking', icon: Clock, color: 'from-green-500 to-teal-600' },
     ],
   },
   {
