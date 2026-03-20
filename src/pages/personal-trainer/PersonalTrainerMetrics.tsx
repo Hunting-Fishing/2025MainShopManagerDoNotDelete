@@ -117,10 +117,10 @@ export default function PersonalTrainerMetrics() {
 
       {/* Client filter */}
       <div className="max-w-xs">
-        <Select value={selectedClient} onValueChange={setSelectedClient}>
+        <Select value={selectedClient || '__all__'} onValueChange={v => setSelectedClient(v === '__all__' ? '' : v)}>
           <SelectTrigger><SelectValue placeholder="All clients" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Clients</SelectItem>
+            <SelectItem value="__all__">All Clients</SelectItem>
             {clients.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.first_name} {c.last_name}</SelectItem>)}
           </SelectContent>
         </Select>
