@@ -94,6 +94,7 @@ interface FormState {
   dietaryStyles: string[];
   allergies: string[];
   intolerances: string[];
+  selectedSupplements: string[];
 }
 
 const initialForm: FormState = {
