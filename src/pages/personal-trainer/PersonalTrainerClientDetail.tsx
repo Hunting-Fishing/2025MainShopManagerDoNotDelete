@@ -20,6 +20,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
+const WORKOUT_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 export default function PersonalTrainerClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
