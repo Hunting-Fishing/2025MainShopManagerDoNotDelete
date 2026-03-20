@@ -113,6 +113,7 @@ const initialForm: FormState = {
   dietaryStyles: [],
   allergies: [],
   intolerances: [],
+  selectedSupplements: [],
 };
 
 export default function ClientIntakeForm({ trainers, isPending, onSubmit }: ClientIntakeFormProps) {
