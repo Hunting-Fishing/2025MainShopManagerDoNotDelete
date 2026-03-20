@@ -20,6 +20,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
+const WORKOUT_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 export default function PersonalTrainerClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -128,7 +130,7 @@ export default function PersonalTrainerClientDetail() {
       emergency_phone: client.emergency_phone || '',
       membership_type: client.membership_type || 'standard',
       membership_status: client.membership_status || 'active',
-      preferred_workout_days: (client.preferred_workout_days || []).join(', '),
+      preferred_workout_days: client.preferred_workout_days || [],
     });
     setEditTab('profile');
     setEditOpen(true);
@@ -330,7 +332,23 @@ export default function PersonalTrainerClientDetail() {
                 <div><Label>Emergency Contact</Label><Input value={editForm.emergency_contact || ''} onChange={e => setEditForm((f: any) => ({ ...f, emergency_contact: e.target.value }))} /></div>
                 <div><Label>Emergency Phone</Label><Input value={editForm.emergency_phone || ''} onChange={e => setEditForm((f: any) => ({ ...f, emergency_phone: e.target.value }))} /></div>
               </div>
-              <div><Label>Preferred Workout Days</Label><Input value={editForm.preferred_workout_days || ''} onChange={e => setEditForm((f: any) => ({ ...f, preferred_workout_days: e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean) }))} placeholder="Mon, Wed, Fri" /></div>
+              <div>
+                <Label>Preferred Workout Days</Label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {WORKOUT_DAYS.map(day => (
+                    <Button key={day} type="button" size="sm"
+                      variant={editForm.preferred_workout_days?.includes(day) ? 'default' : 'outline'}
+                      className="text-xs h-7"
+                      onClick={() => setEditForm((f: any) => ({
+                        ...f,
+                        preferred_workout_days: f.preferred_workout_days?.includes(day)
+                          ? f.preferred_workout_days.filter((d: string) => d !== day)
+                          : [...(f.preferred_workout_days || []), day]
+                      }))}
+                    >{day.slice(0, 3)}</Button>
+                  ))}
+                </div>
+              </div>
               <Button className="w-full" disabled={updateClient.isPending} onClick={() => updateClient.mutate()}>
                 {updateClient.isPending ? 'Saving...' : 'Save Profile Changes'}
               </Button>
