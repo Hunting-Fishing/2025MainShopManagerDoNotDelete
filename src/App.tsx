@@ -408,6 +408,7 @@ const PersonalTrainerWearables = lazy(() => import('@/pages/personal-trainer/Per
 const PersonalTrainerAutomations = lazy(() => import('@/pages/personal-trainer/PersonalTrainerAutomations'));
 const PersonalTrainerAIChat = lazy(() => import('@/components/personal-trainer/PTAIChatPage'));
 const PersonalTrainerSocialFeed = lazy(() => import('@/pages/personal-trainer/PersonalTrainerSocialFeed'));
+const PersonalTrainerCalendar = lazy(() => import('@/pages/personal-trainer/PersonalTrainerCalendar'));
 import { PersonalTrainerLayout } from '@/components/personal-trainer';
 
 // Personal Trainer Portal
@@ -1649,6 +1650,7 @@ function App() {
                   <Route path="/programs/:programId/builder" element={<PersonalTrainerWorkoutBuilder />} />
                   <Route path="/exercises" element={<PersonalTrainerExercises />} />
                   <Route path="/sessions" element={<PersonalTrainerSessions />} />
+                  <Route path="/calendar" element={<PersonalTrainerCalendar />} />
                   <Route path="/metrics" element={<PersonalTrainerMetrics />} />
                   <Route path="/check-ins" element={<PersonalTrainerCheckIns />} />
                   <Route path="/messages" element={<PersonalTrainerMessages />} />
