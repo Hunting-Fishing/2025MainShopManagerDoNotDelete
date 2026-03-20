@@ -59,52 +59,24 @@ export default function PersonalTrainerClients() {
     enabled: !!shopId,
   });
 
-  const [assignTrainer, setAssignTrainer] = useState('none');
 
   const addClient = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (formPayload: Record<string, any>) => {
       if (!shopId) throw new Error('No shop');
-      const payload: any = {
+      const { error } = await (supabase as any).from('pt_clients').insert({
         shop_id: shopId,
-        first_name: form.first_name,
-        last_name: form.last_name,
-        email: form.email || null,
-        phone: form.phone || null,
-        gender: form.gender || null,
-        fitness_level: form.fitness_level,
-        goals: form.goals || null,
-        health_conditions: form.health_conditions || null,
-        membership_type: form.membership_type,
-        date_of_birth: form.date_of_birth || null,
-        height_cm: form.height_cm ? parseFloat(form.height_cm) : null,
-        weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
-        injuries: form.injuries || null,
-        emergency_contact: form.emergency_contact || null,
-        emergency_phone: form.emergency_phone || null,
-        preferred_workout_days: form.preferred_workout_days.length > 0 ? form.preferred_workout_days : null,
-        trainer_id: assignTrainer && assignTrainer !== 'none' ? assignTrainer : null,
-      };
-      const { error } = await (supabase as any).from('pt_clients').insert(payload);
+        ...formPayload,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pt-clients'] });
       toast({ title: 'Client added successfully' });
       setDialogOpen(false);
-      setForm({ first_name: '', last_name: '', email: '', phone: '', gender: '', fitness_level: 'beginner', goals: '', health_conditions: '', membership_type: 'standard', date_of_birth: '', height_cm: '', weight_kg: '', injuries: '', emergency_contact: '', emergency_phone: '', preferred_workout_days: [] });
-      setAssignTrainer('none');
     },
     onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
 
-  const toggleDay = (day: string) => {
-    setForm(f => ({
-      ...f,
-      preferred_workout_days: f.preferred_workout_days.includes(day)
-        ? f.preferred_workout_days.filter(d => d !== day)
-        : [...f.preferred_workout_days, day],
-    }));
-  };
 
   const toggleDayFilter = (day: string) => {
     setDayFilter(prev =>
