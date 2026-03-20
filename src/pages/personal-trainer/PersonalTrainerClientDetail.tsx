@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles, Brain, HeartPulse, Camera, Heart, MessageCircleHeart, Send } from 'lucide-react';
+import { HeightPicker, WeightPicker } from '@/components/personal-trainer/HeightWeightPicker';
 import { HashtagBadges } from '@/components/personal-trainer/social/HashtagBadges';
 import ClientMedicalProfile from '@/components/personal-trainer/ClientMedicalProfile';
 import FitnessInterestIntake from '@/components/personal-trainer/FitnessInterestIntake';
