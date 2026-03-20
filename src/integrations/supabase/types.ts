@@ -38191,50 +38191,80 @@ export type Database = {
       pt_body_metrics: {
         Row: {
           arm_cm: number | null
+          blood_pressure_diastolic: number | null
+          blood_pressure_systolic: number | null
+          bmi: number | null
+          bmr_calories: number | null
           body_fat_percent: number | null
+          bone_mass_kg: number | null
           chest_cm: number | null
           client_id: string
           created_at: string | null
           hips_cm: number | null
           id: string
+          muscle_mass_kg: number | null
           notes: string | null
           progress_photos_url: string | null
           recorded_by: string | null
           recorded_date: string
+          resting_heart_rate: number | null
+          source: string | null
           thigh_cm: number | null
+          visceral_fat: number | null
           waist_cm: number | null
+          water_percent: number | null
           weight_kg: number | null
         }
         Insert: {
           arm_cm?: number | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          bmi?: number | null
+          bmr_calories?: number | null
           body_fat_percent?: number | null
+          bone_mass_kg?: number | null
           chest_cm?: number | null
           client_id: string
           created_at?: string | null
           hips_cm?: number | null
           id?: string
+          muscle_mass_kg?: number | null
           notes?: string | null
           progress_photos_url?: string | null
           recorded_by?: string | null
           recorded_date?: string
+          resting_heart_rate?: number | null
+          source?: string | null
           thigh_cm?: number | null
+          visceral_fat?: number | null
           waist_cm?: number | null
+          water_percent?: number | null
           weight_kg?: number | null
         }
         Update: {
           arm_cm?: number | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          bmi?: number | null
+          bmr_calories?: number | null
           body_fat_percent?: number | null
+          bone_mass_kg?: number | null
           chest_cm?: number | null
           client_id?: string
           created_at?: string | null
           hips_cm?: number | null
           id?: string
+          muscle_mass_kg?: number | null
           notes?: string | null
           progress_photos_url?: string | null
           recorded_by?: string | null
           recorded_date?: string
+          resting_heart_rate?: number | null
+          source?: string | null
           thigh_cm?: number | null
+          visceral_fat?: number | null
           waist_cm?: number | null
+          water_percent?: number | null
           weight_kg?: number | null
         }
         Relationships: [
@@ -39476,6 +39506,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "pt_gym_staff_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_health_integrations: {
+        Row: {
+          access_token_encrypted: string | null
+          client_id: string
+          created_at: string | null
+          id: string
+          is_connected: boolean | null
+          last_synced_at: string | null
+          provider: string
+          shop_id: string
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          client_id: string
+          created_at?: string | null
+          id?: string
+          is_connected?: boolean | null
+          last_synced_at?: string | null
+          provider: string
+          shop_id: string
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          is_connected?: boolean | null
+          last_synced_at?: string | null
+          provider?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_health_integrations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pt_health_integrations_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"

@@ -1,4 +1,3 @@
-
 // React app entry point
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -43,9 +42,7 @@ const queryClient = new QueryClient({
 });
 
 const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error('Root element not found');
-}
+if (!rootElement) throw new Error('Root element not found');
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
@@ -60,10 +57,7 @@ ReactDOM.createRoot(rootElement).render(
                     <BrowserRouter>
                       <ConsoleErrorLogger />
                       <App />
-                      <ReactQueryDevtools 
-                        initialIsOpen={false} 
-                        position="bottom"
-                      />
+                      <ReactQueryDevtools initialIsOpen={false} position="bottom" />
                     </BrowserRouter>
                   </CompanyProvider>
                 </NotificationsProvider>
