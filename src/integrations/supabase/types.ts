@@ -40271,6 +40271,35 @@ export type Database = {
           },
         ]
       }
+      pt_shop_affiliate_settings: {
+        Row: {
+          amazon_associate_tag: string | null
+          created_at: string | null
+          id: string
+          shop_id: string
+        }
+        Insert: {
+          amazon_associate_tag?: string | null
+          created_at?: string | null
+          id?: string
+          shop_id: string
+        }
+        Update: {
+          amazon_associate_tag?: string | null
+          created_at?: string | null
+          id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_shop_affiliate_settings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_social_comments: {
         Row: {
           author_profile_id: string
@@ -40533,12 +40562,18 @@ export type Database = {
       pt_supplements: {
         Row: {
           affiliate_link: string | null
+          amazon_asin: string | null
+          avoid_with: string[] | null
           barcode: string | null
           benefits: string[] | null
+          best_time_to_take: string | null
           brand_id: string | null
           category: string | null
           created_at: string | null
+          deficiency_signs: string[] | null
           description: string | null
+          food_sources: string[] | null
+          health_guide: string | null
           id: string
           image_url: string | null
           is_sponsored: boolean | null
@@ -40546,16 +40581,23 @@ export type Database = {
           price: number | null
           recommended_dose: string | null
           shop_id: string | null
+          take_with: string[] | null
           warnings: string | null
         }
         Insert: {
           affiliate_link?: string | null
+          amazon_asin?: string | null
+          avoid_with?: string[] | null
           barcode?: string | null
           benefits?: string[] | null
+          best_time_to_take?: string | null
           brand_id?: string | null
           category?: string | null
           created_at?: string | null
+          deficiency_signs?: string[] | null
           description?: string | null
+          food_sources?: string[] | null
+          health_guide?: string | null
           id?: string
           image_url?: string | null
           is_sponsored?: boolean | null
@@ -40563,16 +40605,23 @@ export type Database = {
           price?: number | null
           recommended_dose?: string | null
           shop_id?: string | null
+          take_with?: string[] | null
           warnings?: string | null
         }
         Update: {
           affiliate_link?: string | null
+          amazon_asin?: string | null
+          avoid_with?: string[] | null
           barcode?: string | null
           benefits?: string[] | null
+          best_time_to_take?: string | null
           brand_id?: string | null
           category?: string | null
           created_at?: string | null
+          deficiency_signs?: string[] | null
           description?: string | null
+          food_sources?: string[] | null
+          health_guide?: string | null
           id?: string
           image_url?: string | null
           is_sponsored?: boolean | null
@@ -40580,6 +40629,7 @@ export type Database = {
           price?: number | null
           recommended_dose?: string | null
           shop_id?: string | null
+          take_with?: string[] | null
           warnings?: string | null
         }
         Relationships: [
