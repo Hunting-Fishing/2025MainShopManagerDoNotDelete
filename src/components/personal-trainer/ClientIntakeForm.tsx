@@ -121,6 +121,7 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
   const [assignTrainer, setAssignTrainer] = useState('none');
   const [conditionSearch, setConditionSearch] = useState('');
   const [icd10Search, setIcd10Search] = useState('');
+  const [bodyFatOverride, setBodyFatOverride] = useState(false);
 
   const { data: fitnessGoals = [], isLoading: goalsLoading } = useFitnessGoals();
 
