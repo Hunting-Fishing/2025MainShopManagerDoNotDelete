@@ -38646,6 +38646,42 @@ export type Database = {
         }
         Relationships: []
       }
+      pt_client_milestones: {
+        Row: {
+          achieved_at: string
+          card_image_url: string | null
+          client_id: string
+          created_at: string
+          id: string
+          milestone_type: string
+          milestone_value: string | null
+          shared: boolean | null
+          shop_id: string
+        }
+        Insert: {
+          achieved_at?: string
+          card_image_url?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          milestone_type: string
+          milestone_value?: string | null
+          shared?: boolean | null
+          shop_id: string
+        }
+        Update: {
+          achieved_at?: string
+          card_image_url?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          milestone_type?: string
+          milestone_value?: string | null
+          shared?: boolean | null
+          shop_id?: string
+        }
+        Relationships: []
+      }
       pt_client_packages: {
         Row: {
           amount_paid: number | null
@@ -39670,6 +39706,7 @@ export type Database = {
           photo_date: string | null
           photo_url: string
           shop_id: string
+          trainer_reaction: string | null
         }
         Insert: {
           category?: string | null
@@ -39680,6 +39717,7 @@ export type Database = {
           photo_date?: string | null
           photo_url: string
           shop_id: string
+          trainer_reaction?: string | null
         }
         Update: {
           category?: string | null
@@ -39690,6 +39728,7 @@ export type Database = {
           photo_date?: string | null
           photo_url?: string
           shop_id?: string
+          trainer_reaction?: string | null
         }
         Relationships: [
           {
