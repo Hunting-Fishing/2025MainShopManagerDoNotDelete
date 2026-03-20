@@ -8,12 +8,15 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles, Brain, HeartPulse } from 'lucide-react';
+import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles, Brain, HeartPulse, Camera, Heart, MessageCircleHeart } from 'lucide-react';
 import ClientMedicalProfile from '@/components/personal-trainer/ClientMedicalProfile';
 import FitnessInterestIntake from '@/components/personal-trainer/FitnessInterestIntake';
 import FitnessProfileScores from '@/components/personal-trainer/FitnessProfileScores';
 import AIInsightsPanel from '@/components/personal-trainer/AIInsightsPanel';
 import NutritionProfile from '@/components/nutrition/NutritionProfile';
+import ClientAvatar from '@/components/personal-trainer/ClientAvatar';
+import ClientProgressPhotos from '@/components/personal-trainer/ClientProgressPhotos';
+import MilestoneCards from '@/components/personal-trainer/MilestoneCards';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -143,6 +146,15 @@ export default function PersonalTrainerClientDetail() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/personal-trainer/clients')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
+        {id && (
+          <ClientAvatar
+            clientId={id}
+            firstName={client.first_name}
+            lastName={client.last_name}
+            photoUrl={client.profile_photo_url}
+            onUpdated={() => queryClient.invalidateQueries({ queryKey: ['pt-client-detail', id] })}
+          />
+        )}
         <div className="flex-1">
           <h1 className="text-2xl font-bold">{client.first_name} {client.last_name}</h1>
           <div className="flex items-center gap-2 mt-1">
@@ -151,7 +163,22 @@ export default function PersonalTrainerClientDetail() {
             {client.membership_type && <Badge variant="outline">{client.membership_type}</Badge>}
           </div>
         </div>
-        <Button variant="outline" onClick={openEdit}><Pencil className="h-4 w-4 mr-2" />Edit</Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-pink-600 border-pink-200 hover:bg-pink-50 hover:text-pink-700"
+            onClick={() => {
+              if (client.email) {
+                window.open(`mailto:${client.email}?subject=Keep It Up! 💪&body=Hey ${client.first_name}! Just wanted to say you're doing amazing. Keep pushing! 🔥`, '_blank');
+              }
+            }}
+          >
+            <MessageCircleHeart className="h-4 w-4 mr-1" />
+            Encourage
+          </Button>
+          <Button variant="outline" onClick={openEdit}><Pencil className="h-4 w-4 mr-2" />Edit</Button>
+        </div>
       </div>
 
       {/* Contact Info */}
@@ -173,9 +200,10 @@ export default function PersonalTrainerClientDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="programs">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-10">
           <TabsTrigger value="programs" className="text-xs"><ClipboardList className="h-3 w-3 mr-1" />Programs</TabsTrigger>
           <TabsTrigger value="sessions" className="text-xs"><Calendar className="h-3 w-3 mr-1" />Sessions</TabsTrigger>
+          <TabsTrigger value="photos" className="text-xs"><Camera className="h-3 w-3 mr-1" />Photos</TabsTrigger>
           <TabsTrigger value="medical" className="text-xs"><HeartPulse className="h-3 w-3 mr-1" />Medical</TabsTrigger>
           <TabsTrigger value="metrics" className="text-xs"><Activity className="h-3 w-3 mr-1" />Metrics</TabsTrigger>
           <TabsTrigger value="checkins" className="text-xs"><ClipboardCheck className="h-3 w-3 mr-1" />Check-ins</TabsTrigger>
@@ -184,6 +212,22 @@ export default function PersonalTrainerClientDetail() {
           <TabsTrigger value="nutrition" className="text-xs"><Utensils className="h-3 w-3 mr-1" />Nutrition</TabsTrigger>
           <TabsTrigger value="billing" className="text-xs"><CreditCard className="h-3 w-3 mr-1" />Billing</TabsTrigger>
         </TabsList>
+
+        {/* Photos & Milestones Tab */}
+        <TabsContent value="photos" className="mt-4 space-y-6">
+          {id && shopId && (
+            <>
+              <MilestoneCards
+                clientId={id}
+                shopId={shopId}
+                photoCount={0}
+                checkInCount={checkIns.length}
+                metrics={metrics}
+              />
+              <ClientProgressPhotos clientId={id} shopId={shopId} />
+            </>
+          )}
+        </TabsContent>
 
         <TabsContent value="medical" className="mt-4">
           {id && shopId && <ClientMedicalProfile clientId={id} shopId={shopId} />}
