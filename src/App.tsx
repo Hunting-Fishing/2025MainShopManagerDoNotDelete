@@ -408,6 +408,7 @@ const PersonalTrainerWearables = lazy(() => import('@/pages/personal-trainer/Per
 const PersonalTrainerAutomations = lazy(() => import('@/pages/personal-trainer/PersonalTrainerAutomations'));
 const PersonalTrainerAIChat = lazy(() => import('@/components/personal-trainer/PTAIChatPage'));
 const PersonalTrainerSocialFeed = lazy(() => import('@/pages/personal-trainer/PersonalTrainerSocialFeed'));
+const PersonalTrainerCalendar = lazy(() => import('@/pages/personal-trainer/PersonalTrainerCalendar'));
 import { PersonalTrainerLayout } from '@/components/personal-trainer';
 
 // Personal Trainer Portal
