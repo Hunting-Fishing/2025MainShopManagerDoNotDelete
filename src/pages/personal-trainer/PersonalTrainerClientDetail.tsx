@@ -6,9 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles, Brain, HeartPulse, Camera, Heart, MessageCircleHeart } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, User, ClipboardList, Calendar, Activity, ClipboardCheck, CreditCard, Loader2, Mail, Phone, AlertCircle, Pencil, Utensils, Save, Sparkles, Brain, HeartPulse, Camera, Heart, MessageCircleHeart, Send } from 'lucide-react';
+import { HashtagBadges } from '@/components/personal-trainer/social/HashtagBadges';
 import ClientMedicalProfile from '@/components/personal-trainer/ClientMedicalProfile';
 import FitnessInterestIntake from '@/components/personal-trainer/FitnessInterestIntake';
 import FitnessProfileScores from '@/components/personal-trainer/FitnessProfileScores';
@@ -34,6 +36,10 @@ export default function PersonalTrainerClientDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [editTab, setEditTab] = useState('profile');
+  const [encourageOpen, setEncourageOpen] = useState(false);
+  const [encourageMessage, setEncourageMessage] = useState('');
+  const [encourageTags, setEncourageTags] = useState<string[]>(['#WellDoneJob', '#KeepItUp']);
+  const [postingEncouragement, setPostingEncouragement] = useState(false);
 
   const { data: client, isLoading } = useQuery({
     queryKey: ['pt-client-detail', id, shopId],
@@ -164,14 +170,14 @@ export default function PersonalTrainerClientDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
+           <Button
             variant="outline"
             size="sm"
             className="text-pink-600 border-pink-200 hover:bg-pink-50 hover:text-pink-700"
             onClick={() => {
-              if (client.email) {
-                window.open(`mailto:${client.email}?subject=Keep It Up! 💪&body=Hey ${client.first_name}! Just wanted to say you're doing amazing. Keep pushing! 🔥`, '_blank');
-              }
+              setEncourageMessage(`Hey ${client.first_name}! Just wanted to say you're doing amazing. Keep pushing! 🔥💪`);
+              setEncourageTags(['#WellDoneJob', '#KeepItUp']);
+              setEncourageOpen(true);
             }}
           >
             <MessageCircleHeart className="h-4 w-4 mr-1" />
@@ -180,6 +186,64 @@ export default function PersonalTrainerClientDetail() {
           <Button variant="outline" onClick={openEdit}><Pencil className="h-4 w-4 mr-2" />Edit</Button>
         </div>
       </div>
+
+      {/* Encouragement Dialog */}
+      <Dialog open={encourageOpen} onOpenChange={setEncourageOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircleHeart className="h-5 w-5 text-pink-500" />
+              Send Encouragement to {client.first_name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Textarea
+              value={encourageMessage}
+              onChange={(e) => setEncourageMessage(e.target.value)}
+              placeholder="Write an encouraging message..."
+              className="min-h-[100px]"
+            />
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Hashtags</p>
+              <HashtagBadges tags={encourageTags} editable onToggle={(tag) => {
+                setEncourageTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+              }} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEncourageOpen(false)}>Cancel</Button>
+            <Button
+              disabled={!encourageMessage.trim() || postingEncouragement}
+              onClick={async () => {
+                if (!shopId || !encourageMessage.trim()) return;
+                setPostingEncouragement(true);
+                try {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  const { error } = await (supabase as any).from('pt_social_posts').insert({
+                    shop_id: shopId,
+                    author_profile_id: user?.id,
+                    post_type: 'text',
+                    caption: encourageMessage.trim(),
+                    tags: encourageTags,
+                    visibility: 'everyone',
+                  });
+                  if (error) throw error;
+                  toast({ title: 'Encouragement posted! 🎉', description: `Your message to ${client.first_name} is now on the Social Feed.` });
+                  setEncourageOpen(false);
+                } catch (err: any) {
+                  toast({ title: 'Error', description: err.message, variant: 'destructive' });
+                } finally {
+                  setPostingEncouragement(false);
+                }
+              }}
+              className="bg-gradient-to-r from-pink-500 to-orange-500 text-white hover:from-pink-600 hover:to-orange-600"
+            >
+              {postingEncouragement ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+              Post Encouragement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Contact Info */}
       <Card className="border-0 shadow-md">
