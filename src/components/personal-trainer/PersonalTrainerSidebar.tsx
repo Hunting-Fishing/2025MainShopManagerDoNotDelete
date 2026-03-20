@@ -210,7 +210,7 @@ export function PersonalTrainerSidebar({ collapsed = false, onToggle }: Personal
       {/* Navigation */}
       <ScrollArea className="flex-1 px-2">
         <div className="py-4 space-y-6">
-          {navSections.map((section) => (
+          {filteredSections.map((section) => (
             <div key={section.title}>
               {!collapsed && (
                 <h3 className="px-3 mb-2 text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
