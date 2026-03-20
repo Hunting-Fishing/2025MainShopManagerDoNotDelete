@@ -127,6 +127,7 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Branding', href: '/personal-trainer/branding', icon: Palette, color: 'from-violet-500 to-purple-600' },
       { title: 'Settings', href: '/personal-trainer/settings', icon: Settings, color: 'from-slate-500 to-gray-600' },
+      { title: 'About', href: '/personal-trainer/about', icon: Info, color: 'from-blue-500 to-indigo-600' },
     ],
   },
 ];
