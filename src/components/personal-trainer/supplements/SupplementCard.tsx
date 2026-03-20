@@ -47,6 +47,8 @@ const categoryLabels: Record<string, string> = {
   post_workout: 'Post-Workout',
   fat_burner: 'Fat Burner',
   joint_support: 'Joint Support',
+  essential_oil: 'Essential Oil',
+  oil_blend: 'Oil Blend',
   other: 'Supplement',
 };
 
