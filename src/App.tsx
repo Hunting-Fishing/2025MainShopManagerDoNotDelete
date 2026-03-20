@@ -1664,6 +1664,7 @@ function App() {
                   <Route path="/wearables" element={<PersonalTrainerWearables />} />
                   <Route path="/automations" element={<PersonalTrainerAutomations />} />
                   <Route path="/ai-chat" element={<PersonalTrainerAIChat />} />
+                  <Route path="/social-feed" element={<PersonalTrainerSocialFeed />} />
                 </Routes>
               </PersonalTrainerLayout>
             </AuthGate>
