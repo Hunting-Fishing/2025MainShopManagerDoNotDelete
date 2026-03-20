@@ -1,5 +1,5 @@
 
-// React app entry point - AGGRESSIVE CACHE BUST v3.0 - Force complete rebuild - Theme completely removed
+// React app entry point
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -14,20 +14,18 @@ import { NotificationsProvider } from '@/context/notifications';
 import { CompanyProvider } from '@/contexts/CompanyContext';
 import { ConsoleErrorLogger } from '@/components/debug/ConsoleErrorLogger';
 import { GlobalErrorBoundary } from '@/components/error/GlobalErrorBoundary';
-import i18n from './i18n/config'; // Initialize i18n before rendering
+import i18n from './i18n/config';
 import App from './App';
 import './index.css';
 import '@fontsource/plus-jakarta-sans/latin.css';
 import './styles/mobile.css';
 
-// Optimized query client configuration for better performance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       retry: (failureCount, error: any) => {
-        // Don't retry on 4xx errors except 408, 429
         if (error?.status >= 400 && error?.status < 500 && ![408, 429].includes(error?.status)) {
           return false;
         }
