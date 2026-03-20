@@ -1,46 +1,47 @@
 
 
-# Auto Body Fat Estimation & Supplement Selector for Intake Form
+# Fix Developer Section Visibility & Personal Trainer Navigation for Non-Developer Users
 
-## Changes
+## Problems Identified
 
-### 1. Auto-Estimate Body Fat % from Height + Weight
+1. **`/personal-trainer` missing from `moduleRoutePatterns`** (line 59 of `SidebarContent.tsx`): The sidebar doesn't recognize `/personal-trainer` as a module route, so when Chrissy is on any PT page, all generic dashboard sections (Dashboard, Customers, Inventory, etc.) still show instead of being hidden.
 
-Replace the manual Body Fat % input with an auto-estimated value using the U.S. Navy / BMI-derived formula:
+2. **`/export` also missing** from the patterns — minor but should be added for consistency.
 
-```text
-BMI = weight_kg / (height_m²)
-Adult Body Fat % ≈ (1.20 × BMI) + (0.23 × age) − (10.8 × sex) − 5.4
-  where sex = 1 for male, 0 for female
+3. **Post-login destination**: The `getPostLoginDestination` logic looks correct (single module → redirect to that module's route). If Chrissy has only `personal-trainer` enabled, she should land on `/personal-trainer`. She may be navigating to `/dashboard` manually or via a cached route. The fix to `moduleRoutePatterns` will ensure that even if she visits `/dashboard`, the sidebar shows the correct module-scoped navigation.
+
+4. **Developer section**: The `isPlatformDeveloper` guard (line 121) is already correctly checking `allRoles.some(r => r.source === 'developer')`. If Chrissy is seeing Developer links, it means either:
+   - The `is_platform_developer` RPC is returning true for her (needs DB check), OR
+   - She was seeing a cached/stale page before the fix was deployed
+
+## Fix
+
+### File: `src/components/layout/sidebar/SidebarContent.tsx`
+
+**Line 59** — Add `/personal-trainer` and `/export` to `moduleRoutePatterns`:
+
+```typescript
+const moduleRoutePatterns = [
+  '/gunsmith', '/automotive', '/powersports', '/marine-services', 
+  '/power-washing', '/water-delivery', '/fuel-delivery', '/septic',
+  '/personal-trainer', '/export'
+];
 ```
 
-- When height, weight, gender, or date of birth changes, recalculate and pre-fill the body fat field
-- Show it as a read-only estimated value with an "Override" toggle that lets the user type a manual value
-- Label: "Body Fat % (est.)" with a small info tooltip explaining the formula is an estimate
+This single change ensures that when Chrissy (or any user) is on a Personal Trainer page, the generic dashboard/inventory/customers sections are hidden, and only the PT module navigation shows.
 
-**File**: `ClientIntakeForm.tsx` — add a `useEffect`/`useMemo` that watches `height_cm`, `weight_kg`, `gender`, and `date_of_birth` to compute estimated body fat. Update the body fat input to show the estimate but allow manual override.
+### Verification: `is_platform_developer` RPC
 
-### 2. Supplement Selector on Nutrition Tab
+Run a quick DB query to confirm the `platform_developers` table doesn't accidentally include Chrissy's user ID. If it does, remove her entry.
 
-Replace the plain "Supplement Notes" textarea with a supplement picker that queries the existing `pt_supplements` table, plus keeps a free-text notes area.
+### File: `src/main.tsx`
 
-- Add a searchable multi-select component (similar to the existing `MultiSelectDialog` pattern) that fetches supplements from `pt_supplements`
-- Group by category: Vitamins, Minerals, Amino Acids, Proteins, Herbs, etc.
-- Selected supplements show as badges below the selector
-- Keep a smaller textarea underneath for additional free-text notes
-- On submit, store selected supplement names as a JSON array in a new form field (`selected_supplements`), and keep `supplement_notes` for free text
+Re-save to clear the recurring duplicate attribute build error.
 
-**File**: `ClientIntakeForm.tsx`
-- Add state for `selectedSupplements: string[]`
-- Query `pt_supplements` for the categorized list
-- Replace line 522's simple textarea with a `MultiSelectDialog` for supplements + a smaller notes textarea below it
-- On submit, include `selected_supplements` in the payload
+## Expected Result
 
-## Files to Edit
-
-| File | Change |
-|------|--------|
-| `src/components/personal-trainer/ClientIntakeForm.tsx` | Add body fat auto-estimation logic + supplement multi-select picker |
-
-No database changes needed — body fat estimate is a client-side calculation, and supplement selection uses existing `pt_supplements` table data.
+- Chrissy logs in → redirected to `/personal-trainer` (her only module)
+- Sidebar shows only: All Modules link + Personal Trainer module sections
+- No Developer section visible (she's not a platform developer)
+- No Dashboard/Customers/Inventory sections visible (hidden when in a module route)
 
