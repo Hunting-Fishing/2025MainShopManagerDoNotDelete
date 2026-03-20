@@ -1,8 +1,9 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Pill, Star, ExternalLink } from 'lucide-react';
+import { Pill, Star, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AmazonBuyButton } from './AmazonBuyButton';
 
 interface SupplementCardProps {
   name: string;
@@ -15,6 +16,9 @@ interface SupplementCardProps {
   price?: number;
   affiliateLink?: string;
   brandName?: string;
+  amazonAsin?: string;
+  affiliateTag?: string;
+  bestTimeToTake?: string;
   onClick?: () => void;
 }
 
@@ -46,7 +50,7 @@ const categoryLabels: Record<string, string> = {
 
 export function SupplementCard({
   name, category, description, recommendedDose, benefits, isSponsored,
-  imageUrl, price, affiliateLink, brandName, onClick
+  imageUrl, price, affiliateLink, brandName, amazonAsin, affiliateTag, bestTimeToTake, onClick
 }: SupplementCardProps) {
   return (
     <Card
@@ -74,9 +78,16 @@ export function SupplementCard({
           )}
         </div>
 
-        <Badge variant="outline" className={cn('text-[10px]', categoryColors[category] || categoryColors.other)}>
-          {categoryLabels[category] || category}
-        </Badge>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge variant="outline" className={cn('text-[10px]', categoryColors[category] || categoryColors.other)}>
+            {categoryLabels[category] || category}
+          </Badge>
+          {bestTimeToTake && (
+            <Badge variant="outline" className="text-[10px] gap-0.5">
+              <Clock className="h-2.5 w-2.5" /> {bestTimeToTake}
+            </Badge>
+          )}
+        </div>
 
         {description && (
           <p className="text-xs text-muted-foreground line-clamp-2">{description}</p>
@@ -91,29 +102,28 @@ export function SupplementCard({
 
         {benefits && benefits.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {benefits.slice(0, 4).map(b => (
+            {benefits.slice(0, 3).map(b => (
               <Badge key={b} variant="secondary" className="text-[10px] px-1.5 py-0">
                 {b}
               </Badge>
             ))}
-            {benefits.length > 4 && (
+            {benefits.length > 3 && (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                +{benefits.length - 4}
+                +{benefits.length - 3}
               </Badge>
             )}
           </div>
         )}
 
-        {(price || affiliateLink) && (
+        {amazonAsin && (
+          <div className="pt-1 border-t border-border/50">
+            <AmazonBuyButton asin={amazonAsin} affiliateTag={affiliateTag} supplementName={name} />
+          </div>
+        )}
+
+        {!amazonAsin && (price || affiliateLink) && (
           <div className="flex items-center justify-between pt-1 border-t border-border/50">
             {price && <span className="text-sm font-semibold text-foreground">${price.toFixed(2)}</span>}
-            {affiliateLink && (
-              <a href={affiliateLink} target="_blank" rel="noopener noreferrer"
-                className="text-xs text-primary flex items-center gap-1 hover:underline"
-                onClick={e => e.stopPropagation()}>
-                View <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
           </div>
         )}
       </CardContent>

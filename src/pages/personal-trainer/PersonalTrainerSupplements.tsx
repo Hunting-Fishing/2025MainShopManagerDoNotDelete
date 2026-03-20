@@ -8,6 +8,10 @@ import { Loader2, Search, Pill } from 'lucide-react';
 import { SupplementCard } from '@/components/personal-trainer/supplements/SupplementCard';
 import { SupplementSearch } from '@/components/personal-trainer/supplements/SupplementSearch';
 import { ClientSupplementStack } from '@/components/personal-trainer/supplements/ClientSupplementStack';
+import { VitaminGuide } from '@/components/personal-trainer/supplements/VitaminGuide';
+import { SupplementDetailDialog } from '@/components/personal-trainer/supplements/SupplementDetailDialog';
+import { AffiliateSettingsCard } from '@/components/personal-trainer/supplements/AffiliateSettingsCard';
+import { useShopId } from '@/hooks/useShopId';
 
 const categories = [
   { value: 'all', label: 'All Categories' },
@@ -26,6 +30,8 @@ const categories = [
 export default function PersonalTrainerSupplements() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
+  const [selected, setSelected] = useState<any>(null);
+  const { shopId } = useShopId();
 
   const { data: supplements = [], isLoading } = useQuery({
     queryKey: ['pt-supplements'],
@@ -38,6 +44,21 @@ export default function PersonalTrainerSupplements() {
       return (data || []) as any[];
     },
   });
+
+  const { data: affiliateSettings } = useQuery({
+    queryKey: ['affiliate-settings', shopId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('pt_shop_affiliate_settings' as any)
+        .select('*')
+        .eq('shop_id', shopId!)
+        .maybeSingle();
+      return data as any;
+    },
+    enabled: !!shopId,
+  });
+
+  const affiliateTag = affiliateSettings?.amazon_associate_tag;
 
   const filtered = supplements.filter((s: any) => {
     const matchesSearch = !search || s.name.toLowerCase().includes(search.toLowerCase());
@@ -60,8 +81,10 @@ export default function PersonalTrainerSupplements() {
       <Tabs defaultValue="browse" className="space-y-4">
         <TabsList>
           <TabsTrigger value="browse">Browse Catalog</TabsTrigger>
+          <TabsTrigger value="guide">Vitamin Guide</TabsTrigger>
           <TabsTrigger value="search">Search Products</TabsTrigger>
           <TabsTrigger value="stacks">Client Stacks</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="browse" className="space-y-4">
@@ -102,6 +125,10 @@ export default function PersonalTrainerSupplements() {
                   price={s.price}
                   affiliateLink={s.affiliate_link}
                   brandName={s.pt_supplement_brands?.name}
+                  amazonAsin={s.amazon_asin}
+                  affiliateTag={affiliateTag}
+                  bestTimeToTake={s.best_time_to_take}
+                  onClick={() => setSelected(s)}
                 />
               ))}
             </div>
@@ -112,6 +139,10 @@ export default function PersonalTrainerSupplements() {
           )}
         </TabsContent>
 
+        <TabsContent value="guide">
+          <VitaminGuide />
+        </TabsContent>
+
         <TabsContent value="search">
           <SupplementSearch />
         </TabsContent>
@@ -119,7 +150,18 @@ export default function PersonalTrainerSupplements() {
         <TabsContent value="stacks">
           <ClientSupplementStack />
         </TabsContent>
+
+        <TabsContent value="settings" className="max-w-md">
+          <AffiliateSettingsCard />
+        </TabsContent>
       </Tabs>
+
+      <SupplementDetailDialog
+        open={!!selected}
+        onOpenChange={() => setSelected(null)}
+        supplement={selected}
+        affiliateTag={affiliateTag}
+      />
     </div>
   );
 }
