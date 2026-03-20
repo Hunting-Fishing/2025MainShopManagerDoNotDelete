@@ -1,120 +1,93 @@
 
 
-# Expand Supplements: Brands Tab, Essential Oils, Nutrition Breakdown & doTERRA Products
+# Nutritionix API Integration & Barcode Scanning for Supplements
 
 ## Overview
 
-Add a Brands tab for browsing/managing supplement brands (starting with doTERRA USA & Canada), add Essential Oils as a new category, expand supplement detail to show nutrition percentages (daily value %), and seed doTERRA products with real vitamin/mineral content data.
+Add Nutritionix API as a premium data source for supplement nutrition facts, and add barcode scanning so trainers can scan product bottles to auto-lookup and import supplement data. Nutritionix has a verified database of branded supplements with full nutrition breakdowns.
 
-## Database Changes
+## Architecture
 
-### 1. Alter `pt_supplement_brands` — add columns
+```text
+┌─────────────┐     ┌──────────────────┐     ┌───────────────┐
+│  Frontend   │────▶│  Edge Function   │────▶│  Nutritionix  │
+│  Barcode /  │     │  nutritionix-    │     │  API v2       │
+│  Search     │     │  lookup          │     │               │
+└─────────────┘     └──────────────────┘     └───────────────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │ pt_supplements│ (auto-populate nutrition_facts)
+                    └──────────────┘
+```
 
-| Column | Type | Notes |
-|--------|------|-------|
-| country | text | e.g. "USA", "Canada" — supports regional brand variants |
-| category | text | `supplements`, `essential_oils`, `both` |
-| shop_id | uuid FK, nullable | null = global brand, set = shop-specific |
+## Secrets Required
 
-### 2. Alter `pt_supplements` — add columns
+- **NUTRITIONIX_APP_ID** — Nutritionix application ID (free tier: 200 calls/day)
+- **NUTRITIONIX_API_KEY** — Nutritionix API key
 
-| Column | Type | Notes |
-|--------|------|-------|
-| nutrition_facts | jsonb | Structured vitamin/mineral % daily value per serving, e.g. `{"vitamin_a": {"amount": "900mcg", "daily_value_percent": 100}, ...}` |
-| serving_size | text | e.g. "1 capsule", "2 softgels" |
-| product_type | text DEFAULT 'supplement' | `supplement`, `essential_oil`, `blend` |
+User will need to sign up at https://developer.nutritionix.com/ to get these credentials.
 
-### 3. Add `essential_oil` to category options
+## Edge Function: `nutritionix-lookup`
 
-New categories: `essential_oil`, `oil_blend` (in addition to existing ones).
+Single edge function with two modes:
+- **Search by name**: `POST { action: "search", query: "doterra microplex" }` → calls Nutritionix `/v2/search/instant`
+- **Lookup by barcode**: `POST { action: "barcode", upc: "60202813" }` → calls Nutritionix `/v2/search/item?upc=...`
 
-### 4. Seed data
+Returns normalized nutrition data matching our `nutrition_facts` JSONB schema so it can be directly saved to `pt_supplements`.
 
-**Brands** — Insert into `pt_supplement_brands`:
-- doTERRA USA (website: doterra.com, country: USA, category: both)
-- doTERRA Canada (website: doterra.com/CA, country: Canada, category: both)
+## Barcode Scanning
 
-**Products** — Insert doTERRA supplements into `pt_supplements`:
-- **Microplex VMz** (Food Nutrient Complex) — with full nutrition_facts JSON: Vitamin A 100%, Vitamin C 133%, Vitamin D 500%, Vitamin E 100%, B1/B2/B3/B6/B12, Folate, Biotin, Calcium, Iron, Magnesium, Zinc, etc.
-- **Alpha CRS+** (Cellular Vitality Complex) — with botanical/antioxidant breakdown
-- **xEO Mega** (Essential Oil Omega Complex) — with EPA/DHA amounts
-- **TerraZyme** (Digestive Enzyme Complex)
-- **PB Assist+** (Probiotic Defense)
-- **Deep Blue Polyphenol Complex**
-- **Lifelong Vitality Pack** (bundle reference)
+Use the browser's native `BarcodeDetector` API (supported on Chrome/Edge/Android) with a fallback to manual UPC entry. Reuse the existing `useBarcodeScanner` hook pattern but add actual barcode detection via `BarcodeDetector`.
 
-**Essential Oils** — Insert popular doTERRA oils:
-- Lavender, Peppermint, Lemon, Tea Tree (Melaleuca), Frankincense, On Guard Blend, Deep Blue Blend, DigestZen Blend
-- Each with: benefits, best_time_to_take (usage guidance), health_guide (therapeutic properties), warnings
-
-### 5. RLS
-
-Add `shop_id`-scoped policies for `pt_supplement_brands` if not already present. Global records (shop_id = null) readable by all.
+Flow:
+1. Trainer taps "Scan Barcode" button on the Search tab
+2. Camera opens, `BarcodeDetector` reads the UPC
+3. UPC is sent to the `nutritionix-lookup` edge function
+4. Results display with full nutrition facts
+5. Trainer clicks "Import" to save to catalog with nutrition_facts pre-populated
 
 ## UI Changes
 
-### 1. New "Brands" Tab on Supplements Page
+### Search Products Tab — Enhanced
+Add two sub-sections at the top:
+- **Nutritionix Search**: Text search with richer results showing full nutrition data
+- **Barcode Scanner**: Camera button that opens scanner, plus manual UPC entry field
+- Keep existing Open Food Facts search below as a fallback
 
-Add between "Browse Catalog" and "Vitamin Guide":
-
-- Grid of brand cards showing: logo, name, country flag, product count, sponsor badge
-- Click a brand → filters Browse Catalog to that brand's products
-- "Add Brand" button for trainers to add custom brands (name, website, country, category)
-
-### 2. New Categories in Browse Catalog
-
-Add to the category filter dropdown:
-- `essential_oil` → "Essential Oils"
-- `oil_blend` → "Oil Blends"
-
-Add category color styling for essential oils (purple tones).
-
-### 3. Enhanced Supplement Detail Dialog — Nutrition Tab
-
-Replace the current basic "Nutrition" tab content with a proper nutrition facts panel:
-- If `nutrition_facts` JSON exists, render a "Nutrition Facts" style table showing each vitamin/mineral with amount and % Daily Value
-- Progress bars for each nutrient showing % DV visually
-- Serving size displayed at top
-- This lets trainers see exactly what % of daily intake a single doTERRA pill provides
-
-### 4. Product Type Badge
-
-Show "Essential Oil" or "Blend" badge on cards for non-supplement products.
+### Import Flow Enhancement
+When importing from Nutritionix, auto-populate:
+- `name`, `brand_id` (match or create brand), `nutrition_facts` JSONB, `serving_size`, `category`, `image_url`, `barcode`
 
 ## New Components
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `BrandCard.tsx` | supplements/ | Brand display tile with logo, name, country |
-| `BrandsTab.tsx` | supplements/ | Full brands browser with add functionality |
-| `NutritionFactsPanel.tsx` | supplements/ | % Daily Value table with progress bars |
-| `AddBrandDialog.tsx` | supplements/ | Form to add new brand |
+| Component | Purpose |
+|-----------|---------|
+| `NutritionixSearch.tsx` | Search + barcode scan UI calling the edge function |
+| `BarcodeScannerDialog.tsx` | Camera dialog with BarcodeDetector + manual entry fallback |
+
+Both in `src/components/personal-trainer/supplements/`.
 
 ## Files to Create/Edit
 
 | File | Action |
 |------|--------|
-| Migration SQL | Alter tables, add seed data for doTERRA brands + products + oils |
-| `PersonalTrainerSupplements.tsx` | Add Brands tab, essential oil categories |
-| `SupplementCard.tsx` | Add product_type badge for essential oils |
-| `SupplementDetailDialog.tsx` | Add NutritionFactsPanel to nutrition tab |
-| `BrandsTab.tsx` | New |
-| `BrandCard.tsx` | New |
-| `AddBrandDialog.tsx` | New |
-| `NutritionFactsPanel.tsx` | New |
+| `supabase/functions/nutritionix-lookup/index.ts` | New edge function |
+| `src/components/personal-trainer/supplements/NutritionixSearch.tsx` | New — search + results with nutrition preview |
+| `src/components/personal-trainer/supplements/BarcodeScannerDialog.tsx` | New — camera scanner dialog |
+| `src/pages/personal-trainer/PersonalTrainerSupplements.tsx` | Replace Search tab content with NutritionixSearch + fallback to Open Food Facts |
 
-## Nutrition Facts JSON Structure
+## Nutritionix → nutrition_facts Mapping
 
-```json
-{
-  "vitamin_a": { "amount": "900mcg", "dv": 100 },
-  "vitamin_c": { "amount": "200mg", "dv": 222 },
-  "vitamin_d": { "amount": "50mcg", "dv": 250 },
-  "calcium": { "amount": "100mg", "dv": 8 },
-  "iron": { "amount": "5mg", "dv": 28 },
-  "vitamin_b12": { "amount": "100mcg", "dv": 4167 }
-}
-```
+The edge function normalizes Nutritionix response fields to our JSONB schema:
 
-This structure supports any nutrient and renders dynamically in the NutritionFactsPanel.
+| Nutritionix field | Our key | Example |
+|---|---|---|
+| `nf_vitamin_a_dv` | `vitamin_a` | `{ amount: "900mcg", dv: 100 }` |
+| `nf_vitamin_c` | `vitamin_c` | `{ amount: "60mg", dv: 100 }` |
+| `nf_calcium` | `calcium` | `{ amount: "200mg", dv: 15 }` |
+| `nf_iron` | `iron` | `{ amount: "18mg", dv: 100 }` |
+| etc. | | |
+
+This ensures imported products render correctly in the existing `NutritionFactsPanel`.
 
