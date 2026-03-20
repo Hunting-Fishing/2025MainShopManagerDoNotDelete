@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { HelmetProvider } from 'react-helmet-async';
 import { I18nextProvider } from 'react-i18next';
-
 import { LanguageProvider } from '@/context/LanguageContext';
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
 import { NotificationsProvider } from '@/context/notifications';
