@@ -3,8 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Pill, Clock, CheckCircle2, XCircle, Apple, AlertTriangle, BookOpen } from 'lucide-react';
+import { Pill, Clock, CheckCircle2, XCircle, Apple, AlertTriangle, BookOpen, Droplets } from 'lucide-react';
 import { AmazonBuyButton } from './AmazonBuyButton';
+import { NutritionFactsPanel } from './NutritionFactsPanel';
 import { cn } from '@/lib/utils';
 
 interface SupplementDetailDialogProps {
