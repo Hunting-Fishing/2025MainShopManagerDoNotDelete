@@ -139,6 +139,13 @@ export function PersonalTrainerSidebar({ collapsed = false, onToggle }: Personal
   const currentPath = location.pathname;
   const { shopId } = useShopId();
   const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'personal_trainer');
+  const { data: roles = [] } = useAllUserRoles();
+  const isOwnerOrAdmin = roles.some(r => ['owner', 'admin'].includes(r.name));
+
+  const filteredSections = useMemo(
+    () => navSections.filter(s => s.title !== 'Business' || isOwnerOrAdmin),
+    [isOwnerOrAdmin]
+  );
 
   const isActive = (href: string) => {
     if (href === '/personal-trainer') {
