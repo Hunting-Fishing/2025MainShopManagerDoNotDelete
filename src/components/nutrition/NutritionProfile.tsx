@@ -134,27 +134,6 @@ export default function NutritionProfile({ clientId, shopId }: Props) {
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
-  // Fetch medical dietary implications
-  const { data: medicalDietaryImplications = [] } = useQuery({
-    queryKey: ['pt-medical-dietary', clientId, shopId],
-    queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from('pt_client_medical_conditions')
-        .select('condition_name, dietary_implications')
-        .eq('client_id', clientId)
-        .eq('shop_id', shopId)
-        .in('status', ['active', 'chronic']);
-      if (!data) return [];
-      const implications: { condition: string; implication: string }[] = [];
-      for (const cond of data) {
-        for (const imp of (cond.dietary_implications || [])) {
-          implications.push({ condition: cond.condition_name, implication: imp });
-        }
-      }
-      return implications;
-    },
-    enabled: !!clientId && !!shopId,
-  });
 
   return (
     <Card>
