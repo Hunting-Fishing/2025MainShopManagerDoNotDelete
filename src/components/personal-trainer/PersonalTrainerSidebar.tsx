@@ -172,7 +172,7 @@ export function PersonalTrainerSidebar({ collapsed = false, onToggle }: Personal
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent" />
               </div>
               <div>
-                <h2 className="font-semibold text-white tracking-tight truncate max-w-[140px]">
+                <h2 className="font-semibold text-white tracking-tight text-sm leading-tight max-w-[140px] break-words line-clamp-2">
                   {moduleInfo?.displayName || 'Personal Trainer'}
                 </h2>
                 <p className="text-xs text-slate-400">Fitness Module</p>
