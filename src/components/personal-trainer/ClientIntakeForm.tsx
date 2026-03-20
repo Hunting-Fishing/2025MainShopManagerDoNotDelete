@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Droplets, Utensils, AlertTriangle, User, Dumbbell, Heart, Phone, StickyNote, Search, X, HeartPulse, Sparkles } from 'lucide-react';
+import { Droplets, Utensils, AlertTriangle, User, Dumbbell, Heart, Phone, StickyNote, Search, X, HeartPulse, Sparkles, Info, ToggleLeft, ToggleRight, Pill } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HeightPicker, WeightPicker } from '@/components/personal-trainer/HeightWeightPicker';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,6 +94,7 @@ interface FormState {
   dietaryStyles: string[];
   allergies: string[];
   intolerances: string[];
+  selectedSupplements: string[];
 }
 
 const initialForm: FormState = {
@@ -111,6 +113,7 @@ const initialForm: FormState = {
   dietaryStyles: [],
   allergies: [],
   intolerances: [],
+  selectedSupplements: [],
 };
 
 export default function ClientIntakeForm({ trainers, isPending, onSubmit }: ClientIntakeFormProps) {
@@ -118,6 +121,7 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
   const [assignTrainer, setAssignTrainer] = useState('none');
   const [conditionSearch, setConditionSearch] = useState('');
   const [icd10Search, setIcd10Search] = useState('');
+  const [bodyFatOverride, setBodyFatOverride] = useState(false);
 
   const { data: fitnessGoals = [], isLoading: goalsLoading } = useFitnessGoals();
 
@@ -138,6 +142,57 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
   const [dietCategories, setDietCategories] = useState<Record<string, string[]>>({ ...INITIAL_DIETARY_STYLES });
   const [allergyCategories, setAllergyCategories] = useState<Record<string, string[]>>({ ...INITIAL_ALLERGY_OPTIONS });
   const [intoleranceCategories, setIntoleranceCategories] = useState<Record<string, string[]>>({ ...INITIAL_INTOLERANCE_OPTIONS });
+
+  // Query supplements for the multi-select picker
+  const { data: supplementsList = [] } = useQuery({
+    queryKey: ['pt-supplements-list'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('pt_supplements')
+        .select('id, name, category')
+        .order('category, name');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Group supplements by category for the multi-select
+  const supplementCategories = useMemo(() => {
+    const cats: Record<string, string[]> = {};
+    const categoryLabels: Record<string, string> = {
+      vitamin: 'Vitamins', mineral: 'Minerals', amino_acid: 'Amino Acids',
+      protein: 'Proteins', herb: 'Herbs', pre_workout: 'Pre-Workout',
+      post_workout: 'Post-Workout', fat_burner: 'Fat Burners',
+      joint_support: 'Joint Support', other: 'Other',
+    };
+    supplementsList.forEach((s: any) => {
+      const label = categoryLabels[s.category] || 'Other';
+      if (!cats[label]) cats[label] = [];
+      cats[label].push(s.name);
+    });
+    return cats;
+  }, [supplementsList]);
+
+  // Auto-estimate body fat % from height, weight, gender, age
+  const estimatedBodyFat = useMemo(() => {
+    const h = parseFloat(form.height_cm);
+    const w = parseFloat(form.weight_kg);
+    if (!h || !w || h <= 0 || w <= 0) return null;
+    const heightM = h / 100;
+    const bmi = w / (heightM * heightM);
+    let age = 25;
+    if (form.date_of_birth) {
+      const dob = new Date(form.date_of_birth);
+      const now = new Date();
+      age = Math.floor((now.getTime() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      if (age < 18) age = 18;
+    }
+    const sexVal = form.gender === 'male' ? 1 : 0;
+    const bf = (1.20 * bmi) + (0.23 * age) - (10.8 * sexVal) - 5.4;
+    return Math.max(3, Math.min(60, Math.round(bf * 10) / 10));
+  }, [form.height_cm, form.weight_kg, form.gender, form.date_of_birth]);
+
+  const displayBodyFat = bodyFatOverride ? form.body_fat_percent : (estimatedBodyFat?.toString() || '');
 
   const set = (key: keyof FormState, value: any) => setForm(f => ({ ...f, [key]: value }));
 
@@ -227,7 +282,9 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
       date_of_birth: form.date_of_birth || null,
       height_cm: form.height_cm ? parseFloat(form.height_cm) : null,
       weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
-      body_fat_percent: form.body_fat_percent ? parseFloat(form.body_fat_percent) : null,
+      body_fat_percent: bodyFatOverride
+        ? (form.body_fat_percent ? parseFloat(form.body_fat_percent) : null)
+        : (estimatedBodyFat || null),
       injuries: injuriesStr,
       emergency_contact: form.emergency_contact || null,
       emergency_phone: form.emergency_phone || null,
@@ -240,7 +297,10 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
       fat_target_g: form.fat_target_g ? parseInt(form.fat_target_g) : null,
       hydration_target_ml: form.hydration_target_ml ? parseInt(form.hydration_target_ml) : null,
       food_habits: foodHabitsStr,
-      supplement_notes: form.supplement_notes || null,
+      supplement_notes: [
+        ...(form.selectedSupplements.length > 0 ? [`Taking: ${form.selectedSupplements.join(', ')}`] : []),
+        ...(form.supplement_notes ? [form.supplement_notes] : []),
+      ].join('. ') || null,
       meal_guidance: form.meal_guidance || null,
       notes: form.notes || null,
     });
@@ -290,7 +350,43 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
         </div>
         <div className="grid grid-cols-3 gap-3">
           <WeightPicker value={form.weight_kg} onChange={v => set('weight_kg', v)} />
-          <div><Label>Body Fat %</Label><Input type="number" step="0.1" value={form.body_fat_percent} onChange={e => set('body_fat_percent', e.target.value)} placeholder="e.g. 18.5" /></div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs">Body Fat % {!bodyFatOverride && estimatedBodyFat ? '(est.)' : ''}</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[220px] text-xs">
+                    Estimated using BMI formula: (1.20×BMI) + (0.23×age) − (10.8×sex) − 5.4. Toggle to override manually.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <button
+                type="button"
+                className="ml-auto text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors"
+                onClick={() => {
+                  setBodyFatOverride(!bodyFatOverride);
+                  if (!bodyFatOverride && estimatedBodyFat) {
+                    set('body_fat_percent', estimatedBodyFat.toString());
+                  }
+                }}
+              >
+                {bodyFatOverride ? <ToggleRight className="h-3.5 w-3.5 text-primary" /> : <ToggleLeft className="h-3.5 w-3.5" />}
+                {bodyFatOverride ? 'Auto' : 'Override'}
+              </button>
+            </div>
+            <Input
+              type="number"
+              step="0.1"
+              value={displayBodyFat}
+              onChange={e => { if (bodyFatOverride) set('body_fat_percent', e.target.value); }}
+              readOnly={!bodyFatOverride}
+              placeholder={estimatedBodyFat ? `~${estimatedBodyFat}%` : 'Enter height & weight'}
+              className={!bodyFatOverride ? 'bg-muted/50 cursor-default' : ''}
+            />
+          </div>
           <div>
             <Label>Fitness Level</Label>
             <Select value={form.fitness_level} onValueChange={v => set('fitness_level', v)}>
@@ -519,7 +615,22 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
           />
         </div>
 
-        <div><Label>Supplement Notes</Label><Textarea value={form.supplement_notes} onChange={e => set('supplement_notes', e.target.value)} placeholder="Whey protein, creatine, multivitamin..." /></div>
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <Pill className="h-4 w-4 text-primary" />
+            <Label>Supplements & Vitamins</Label>
+          </div>
+          <MultiSelectDialog
+            label="Supplements"
+            options={[]}
+            selected={form.selectedSupplements}
+            onSelectionChange={v => set('selectedSupplements', v)}
+            allowCustom
+            customPlaceholder="Add custom supplement..."
+            categorized={supplementCategories}
+          />
+        </div>
+        <div><Label>Additional Supplement Notes</Label><Textarea value={form.supplement_notes} onChange={e => set('supplement_notes', e.target.value)} placeholder="Any extra notes about supplements, dosages, timing..." className="min-h-[50px]" /></div>
         <div><Label>Meal Guidance</Label><Textarea value={form.meal_guidance} onChange={e => set('meal_guidance', e.target.value)} placeholder="5 meals/day, high protein breakfast..." /></div>
       </TabsContent>
 
