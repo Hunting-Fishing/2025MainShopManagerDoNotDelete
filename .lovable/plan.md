@@ -1,54 +1,41 @@
 
 
-# Upgrade Client Intake Form
+# Upgrade Client Intake Form to Use Structured Selectors
 
-## Current State
-The "Add New Client" dialog has 4 sections: Personal Info, Membership, Preferred Workout Days, and Health & Goals. It only captures ~15 of the 30+ available `pt_clients` columns.
+## Problem
+The intake form uses plain text `<Textarea>` fields for Goals, Injuries, Health Conditions, and Food Habits — but the rest of the application already has rich structured selection systems for all of these (fitness goals from `pt_fitness_goals`, medical condition catalog with ICD-10 search, `MultiSelectDialog` for allergies/dietary styles/intolerances, badge-toggle selectors for exercise restrictions). The form should reuse these existing patterns.
 
-## What Changes
+## Changes
 
-### 1. Restructure into 6 clear sections with better layout
+### 1. Goals — Use `pt_fitness_goals` database selector
+Replace the Goals textarea with a multi-select grid that loads from `pt_fitness_goals` (same data used in `FitnessInterestIntake.tsx` step 3). Render as toggleable buttons/badges. Uses existing `useFitnessGoals()` hook.
 
-**Personal Info** (existing — add profile photo upload)
-- First Name, Last Name, Email, Phone, Date of Birth, Sex, Height, Weight — keep as-is
-- Add Body Fat % field (already in DB)
+### 2. Injuries / Limitations — Use exercise restriction badge toggles
+Replace the Injuries textarea with the same badge-toggle pattern from `ClientMedicalProfile.tsx` using `ALL_EXERCISE_RESTRICTIONS`. Store as a string array. Add a free-text "Other injuries" input below for anything not covered.
 
-**Membership & Training** (expand existing)
-- Membership Type, Assign Trainer — keep
-- Preferred Workout Days — keep
-- Add Join Date field (already in DB as `join_date`)
+### 3. Health Conditions — Use medical condition catalog search
+Replace the Health Conditions textarea with a searchable picker from `pt_medical_condition_catalog` (same catalog used in `ClientMedicalProfile.tsx`). Show selected conditions as dismissible badges. Keep the note about detailed conditions being editable post-creation.
 
-**Health & Medical** (rename from "Health & Goals")
-- Goals — keep
-- Injuries/Limitations — keep  
-- Medical Warnings / Health Conditions — keep
-- Add a note: "Detailed medical conditions can be added from the client profile after creation"
+### 4. Food Habits — Use `MultiSelectDialog` for dietary styles + allergies
+Replace the Food Habits textarea with:
+- **Dietary Style** — `MultiSelectDialog` with `INITIAL_DIETARY_STYLES` categories (from `NutritionProfile.tsx`)
+- **Allergies** — `MultiSelectDialog` with `INITIAL_ALLERGY_OPTIONS` categories
+- **Intolerances** — `MultiSelectDialog` with `INITIAL_INTOLERANCE_OPTIONS` categories
 
-**Nutrition & Diet** (new section — all columns exist in DB)
-- Calorie Target (number)
-- Protein Target (g), Carb Target (g), Fat Target (g) — 3-col row
-- Hydration Target (ml)
-- Food Habits (textarea — e.g., "Vegetarian, no dairy")
-- Supplement Notes (textarea)
-- Meal Guidance (textarea)
+Store each as arrays. Map to `food_habits` as a JSON string or keep separate fields if columns exist.
 
-**Emergency Contact** (existing — keep as-is)
-- Contact Name, Contact Phone
+### 5. Supplement Notes — Keep as textarea (free-form is appropriate here)
 
-**Additional Notes** (new section)
-- Notes textarea (already in DB as `notes`)
-
-### 2. Update form state and mutation payload
-- Add new fields to the `form` state object: `body_fat_percent`, `join_date`, `calorie_target`, `protein_target_g`, `carb_target_g`, `fat_target_g`, `hydration_target_ml`, `food_habits`, `supplement_notes`, `meal_guidance`, `notes`
-- Map all new fields into the insert payload
-
-### 3. Extract form into its own component
-The dialog content is getting large. Extract the form body into `src/components/personal-trainer/ClientIntakeForm.tsx` to keep `PersonalTrainerClients.tsx` manageable.
+### 6. Update form state & submit payload
+- `goals` → `string[]` of goal names
+- `injuries` → `string[]` of restriction tags + optional free text
+- `health_conditions` → `string[]` of condition names from catalog
+- `food_habits` → store dietary styles, allergies, intolerances as structured data
+- Map all to existing DB columns (serialize arrays where needed)
 
 ## Files to Edit
 
 | File | Change |
 |------|--------|
-| `src/components/personal-trainer/ClientIntakeForm.tsx` | New component — extracted form with all 6 sections |
-| `src/pages/personal-trainer/PersonalTrainerClients.tsx` | Replace inline form with `<ClientIntakeForm>`, pass trainers + onSubmit props |
+| `src/components/personal-trainer/ClientIntakeForm.tsx` | Replace 4 textareas with structured selectors: fitness goals grid, restriction badge toggles, medical catalog search, and MultiSelectDialogs for dietary/allergy/intolerance |
 
