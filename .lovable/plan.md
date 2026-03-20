@@ -1,29 +1,28 @@
 
 
-# Upgrade Edit Client Profile to Tabbed Layout with Structured Selectors
+# Fix NutritionProfile Crash + Convert Add Client Form to Tabs
 
-## Problem
-The "Edit Client Profile" dialog is a single flat form with plain textareas for Goals, Health Conditions, and Injuries. It doesn't match the tabbed client detail view or the structured selectors used elsewhere in the app (intake form, medical profile, nutrition profile, fitness interests).
+## Bug Fix: NutritionProfile Hooks Order
 
-## What Changes
+The `NutritionProfile` component has a `useQuery` call (line 116) placed **after** an early `return` (line 113). React requires all hooks to be called in the same order every render. This crashes both the main Nutrition tab and the Edit dialog's Nutrition tab.
 
-### 1. Replace the flat dialog with a tabbed dialog
-Expand the dialog to `max-w-3xl` and add tabs mirroring the client detail view:
+**Fix**: Move the `useQuery` for `medicalDietaryImplications` above the early return on line 113, alongside the other hooks at the top of the component.
 
-- **Profile** — Personal info fields (name, email, phone, DOB, sex, height, fitness level, status, emergency contact, preferred workout days, membership type). Keep these as inputs/selects — they are correct as-is.
-- **Medical** — Embed `ClientMedicalProfile` component directly (same as the Medical tab in the detail view). This gives the full "+ Add Condition" searchable catalog with ICD-10 search, severity, restrictions, and dietary implications.
-- **Interests** — Embed `FitnessInterestIntake` component with `embedded` prop (same as the Interests tab). This gives the full 7-step fitness interest intake.
-- **Nutrition** — Embed `NutritionProfile` component (same as the Nutrition page). This gives the full dietary styles, allergies, intolerances MultiSelectDialogs, budget/cooking levels, meals/snacks, hydration, and digestive notes.
+## Add Client Form: Convert to Tabs
 
-### 2. Remove duplicated fields from the Profile tab
-Remove Goals, Health Conditions, and Injuries textareas from the Profile tab since they are now handled by the dedicated Medical and Interests tabs with their proper structured selectors.
+The `ClientIntakeForm` is currently one long scrollable form with 6 sections. Convert it to a tabbed layout matching the Edit Client dialog:
 
-### 3. Keep the save flow for Profile tab only
-The Medical, Interests, and Nutrition tabs already have their own save mechanisms built into their respective components. Only the Profile tab needs the `updateClient.mutate()` save button.
+- **Profile** — Personal Info + Membership & Training (name, email, phone, DOB, sex, height, weight, body fat, fitness level, membership type, join date, trainer, workout days)
+- **Medical** — Goals badge grid, Injuries/Restrictions badge toggles, Health Conditions searchable catalog
+- **Nutrition** — Calorie/macro/hydration targets, Dietary Styles MultiSelectDialog, Allergies MultiSelectDialog, Intolerances MultiSelectDialog, Supplement Notes, Meal Guidance
+- **Details** — Emergency Contact + Additional Notes + Submit button
+
+Each tab contains the existing form fields, just reorganized. No logic changes — only layout restructuring with `Tabs`/`TabsList`/`TabsTrigger`/`TabsContent`.
 
 ## Files to Edit
 
 | File | Change |
 |------|--------|
-| `src/pages/personal-trainer/PersonalTrainerClientDetail.tsx` | Replace the flat edit dialog with a tabbed dialog containing 4 tabs: Profile (existing input fields minus Goals/Conditions/Injuries), Medical (ClientMedicalProfile), Interests (FitnessInterestIntake), Nutrition (NutritionProfile). Replace inline `NutritionCard` with the full `NutritionProfile` component on the main Nutrition tab too. |
+| `src/components/nutrition/NutritionProfile.tsx` | Move `useQuery` for medical dietary implications above the early return to fix hooks ordering crash |
+| `src/components/personal-trainer/ClientIntakeForm.tsx` | Wrap existing 6 sections into 4 tabs (Profile, Medical, Nutrition, Details) using `Tabs` component |
 
