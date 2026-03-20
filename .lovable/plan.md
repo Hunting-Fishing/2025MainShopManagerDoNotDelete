@@ -1,41 +1,29 @@
 
 
-# Upgrade Client Intake Form to Use Structured Selectors
+# Upgrade Edit Client Profile to Tabbed Layout with Structured Selectors
 
 ## Problem
-The intake form uses plain text `<Textarea>` fields for Goals, Injuries, Health Conditions, and Food Habits — but the rest of the application already has rich structured selection systems for all of these (fitness goals from `pt_fitness_goals`, medical condition catalog with ICD-10 search, `MultiSelectDialog` for allergies/dietary styles/intolerances, badge-toggle selectors for exercise restrictions). The form should reuse these existing patterns.
+The "Edit Client Profile" dialog is a single flat form with plain textareas for Goals, Health Conditions, and Injuries. It doesn't match the tabbed client detail view or the structured selectors used elsewhere in the app (intake form, medical profile, nutrition profile, fitness interests).
 
-## Changes
+## What Changes
 
-### 1. Goals — Use `pt_fitness_goals` database selector
-Replace the Goals textarea with a multi-select grid that loads from `pt_fitness_goals` (same data used in `FitnessInterestIntake.tsx` step 3). Render as toggleable buttons/badges. Uses existing `useFitnessGoals()` hook.
+### 1. Replace the flat dialog with a tabbed dialog
+Expand the dialog to `max-w-3xl` and add tabs mirroring the client detail view:
 
-### 2. Injuries / Limitations — Use exercise restriction badge toggles
-Replace the Injuries textarea with the same badge-toggle pattern from `ClientMedicalProfile.tsx` using `ALL_EXERCISE_RESTRICTIONS`. Store as a string array. Add a free-text "Other injuries" input below for anything not covered.
+- **Profile** — Personal info fields (name, email, phone, DOB, sex, height, fitness level, status, emergency contact, preferred workout days, membership type). Keep these as inputs/selects — they are correct as-is.
+- **Medical** — Embed `ClientMedicalProfile` component directly (same as the Medical tab in the detail view). This gives the full "+ Add Condition" searchable catalog with ICD-10 search, severity, restrictions, and dietary implications.
+- **Interests** — Embed `FitnessInterestIntake` component with `embedded` prop (same as the Interests tab). This gives the full 7-step fitness interest intake.
+- **Nutrition** — Embed `NutritionProfile` component (same as the Nutrition page). This gives the full dietary styles, allergies, intolerances MultiSelectDialogs, budget/cooking levels, meals/snacks, hydration, and digestive notes.
 
-### 3. Health Conditions — Use medical condition catalog search
-Replace the Health Conditions textarea with a searchable picker from `pt_medical_condition_catalog` (same catalog used in `ClientMedicalProfile.tsx`). Show selected conditions as dismissible badges. Keep the note about detailed conditions being editable post-creation.
+### 2. Remove duplicated fields from the Profile tab
+Remove Goals, Health Conditions, and Injuries textareas from the Profile tab since they are now handled by the dedicated Medical and Interests tabs with their proper structured selectors.
 
-### 4. Food Habits — Use `MultiSelectDialog` for dietary styles + allergies
-Replace the Food Habits textarea with:
-- **Dietary Style** — `MultiSelectDialog` with `INITIAL_DIETARY_STYLES` categories (from `NutritionProfile.tsx`)
-- **Allergies** — `MultiSelectDialog` with `INITIAL_ALLERGY_OPTIONS` categories
-- **Intolerances** — `MultiSelectDialog` with `INITIAL_INTOLERANCE_OPTIONS` categories
-
-Store each as arrays. Map to `food_habits` as a JSON string or keep separate fields if columns exist.
-
-### 5. Supplement Notes — Keep as textarea (free-form is appropriate here)
-
-### 6. Update form state & submit payload
-- `goals` → `string[]` of goal names
-- `injuries` → `string[]` of restriction tags + optional free text
-- `health_conditions` → `string[]` of condition names from catalog
-- `food_habits` → store dietary styles, allergies, intolerances as structured data
-- Map all to existing DB columns (serialize arrays where needed)
+### 3. Keep the save flow for Profile tab only
+The Medical, Interests, and Nutrition tabs already have their own save mechanisms built into their respective components. Only the Profile tab needs the `updateClient.mutate()` save button.
 
 ## Files to Edit
 
 | File | Change |
 |------|--------|
-| `src/components/personal-trainer/ClientIntakeForm.tsx` | Replace 4 textareas with structured selectors: fitness goals grid, restriction badge toggles, medical catalog search, and MultiSelectDialogs for dietary/allergy/intolerance |
+| `src/pages/personal-trainer/PersonalTrainerClientDetail.tsx` | Replace the flat edit dialog with a tabbed dialog containing 4 tabs: Profile (existing input fields minus Goals/Conditions/Injuries), Medical (ClientMedicalProfile), Interests (FitnessInterestIntake), Nutrition (NutritionProfile). Replace inline `NutritionCard` with the full `NutritionProfile` component on the main Nutrition tab too. |
 
