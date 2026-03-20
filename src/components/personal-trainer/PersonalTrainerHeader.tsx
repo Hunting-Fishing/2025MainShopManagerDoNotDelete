@@ -12,6 +12,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuthUser } from '@/hooks/useAuthUser';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface PersonalTrainerHeaderProps {
   onMenuToggle?: () => void;
@@ -20,6 +24,29 @@ interface PersonalTrainerHeaderProps {
 export function PersonalTrainerHeader({ onMenuToggle }: PersonalTrainerHeaderProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { userId, userName } = useAuthUser();
+
+  const { data: profile } = useQuery({
+    queryKey: ['header-profile', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', userId)
+        .single();
+      return data;
+    },
+    enabled: !!userId,
+  });
+
+  const displayName = profile
+    ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+    : userName?.split('@')[0] || 'User';
+
+  const initials = profile
+    ? `${(profile.first_name?.[0] || '')}${(profile.last_name?.[0] || '')}`.toUpperCase()
+    : (displayName?.[0] || 'U').toUpperCase();
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -41,17 +68,32 @@ export function PersonalTrainerHeader({ onMenuToggle }: PersonalTrainerHeaderPro
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                  <User className="h-4 w-4 text-white" />
-                </div>
+              <Button variant="ghost" className="rounded-full gap-2 px-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-gradient-to-br from-orange-500 to-red-600 text-white text-xs font-semibold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                {!isMobile && (
+                  <span className="text-sm font-medium text-foreground max-w-[120px] truncate">
+                    {displayName}
+                  </span>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">{displayName}</p>
+                  <p className="text-xs text-muted-foreground">{userName || ''}</p>
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/personal-trainer/settings')}>
                 Module Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate(`/personal-trainer`)}>
+                {displayName}'s Dashboard
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/dashboard')}>
