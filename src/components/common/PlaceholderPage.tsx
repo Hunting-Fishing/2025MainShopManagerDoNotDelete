@@ -35,8 +35,8 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
           <div className="text-center py-8 text-muted-foreground">
             <p>{description || `${title} functionality will be implemented here.`}</p>
             <div className="mt-4">
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>
-                Return to Dashboard
+              <Button variant="outline" onClick={() => navigate('/module-hub')}>
+                All Modules
               </Button>
             </div>
           </div>

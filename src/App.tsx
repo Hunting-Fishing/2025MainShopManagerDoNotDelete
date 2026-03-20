@@ -618,7 +618,8 @@ function App() {
                 <Routes>
                   <Route path="/module-hub" element={<ModuleHub />} />
                   <Route path="/upcoming-modules" element={<UpcomingModules />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Navigate to="/module-hub" replace />} />
+                  <Route path="/repair-shop-dashboard" element={<Dashboard />} />
                   {/* Automotive Module */}
                   <Route path="/automotive" element={<AutomotiveDashboard />} />
                   <Route path="/automotive/vehicle-history" element={<AutomotiveVehicleHistory />} />

@@ -96,8 +96,8 @@ export function PersonalTrainerHeader({ onMenuToggle }: PersonalTrainerHeaderPro
                 {displayName}'s Dashboard
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/dashboard')}>
-                Back to Main App
+              <DropdownMenuItem onClick={() => navigate('/module-hub')}>
+                All Modules
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

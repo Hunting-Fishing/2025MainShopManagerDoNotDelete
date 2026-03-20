@@ -169,7 +169,7 @@ export function FuelDeliverySidebar({ collapsed = false, onToggle }: FuelDeliver
             'text-slate-300 hover:text-white hover:bg-slate-800/50',
             collapsed ? 'justify-center' : 'justify-start gap-2'
           )}
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/module-hub')}
         >
           <div className="p-1.5 rounded-lg bg-slate-700/50 group-hover:bg-slate-600/50 transition-colors">
             <Home className="h-4 w-4" />
