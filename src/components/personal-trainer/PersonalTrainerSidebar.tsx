@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAllUserRoles } from '@/hooks/useAllUserRoles';
 import { cn } from '@/lib/utils';
 import {
   CalendarDays,
@@ -138,6 +139,13 @@ export function PersonalTrainerSidebar({ collapsed = false, onToggle }: Personal
   const currentPath = location.pathname;
   const { shopId } = useShopId();
   const { data: moduleInfo } = useModuleDisplayInfo(shopId, 'personal_trainer');
+  const { data: roles = [] } = useAllUserRoles();
+  const isOwnerOrAdmin = roles.some(r => ['owner', 'admin'].includes(r.name));
+
+  const filteredSections = useMemo(
+    () => navSections.filter(s => s.title !== 'Business' || isOwnerOrAdmin),
+    [isOwnerOrAdmin]
+  );
 
   const isActive = (href: string) => {
     if (href === '/personal-trainer') {
@@ -202,7 +210,7 @@ export function PersonalTrainerSidebar({ collapsed = false, onToggle }: Personal
       {/* Navigation */}
       <ScrollArea className="flex-1 px-2">
         <div className="py-4 space-y-6">
-          {navSections.map((section) => (
+          {filteredSections.map((section) => (
             <div key={section.title}>
               {!collapsed && (
                 <h3 className="px-3 mb-2 text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
