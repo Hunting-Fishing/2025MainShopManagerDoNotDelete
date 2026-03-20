@@ -32,6 +32,8 @@ const categoryColors: Record<string, string> = {
   post_workout: 'bg-teal-500/15 text-teal-700 border-teal-200',
   fat_burner: 'bg-red-500/15 text-red-700 border-red-200',
   joint_support: 'bg-cyan-500/15 text-cyan-700 border-cyan-200',
+  essential_oil: 'bg-purple-500/15 text-purple-700 border-purple-200',
+  oil_blend: 'bg-violet-500/15 text-violet-700 border-violet-200',
   other: 'bg-slate-500/15 text-slate-700 border-slate-200',
 };
 
