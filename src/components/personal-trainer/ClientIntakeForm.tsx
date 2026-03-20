@@ -289,7 +289,7 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
           <HeightPicker value={form.height_cm} onChange={v => set('height_cm', v)} />
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <div><Label>Weight (kg)</Label><Input type="number" value={form.weight_kg} onChange={e => set('weight_kg', e.target.value)} /></div>
+          <WeightPicker value={form.weight_kg} onChange={v => set('weight_kg', v)} />
           <div><Label>Body Fat %</Label><Input type="number" step="0.1" value={form.body_fat_percent} onChange={e => set('body_fat_percent', e.target.value)} placeholder="e.g. 18.5" /></div>
           <div>
             <Label>Fitness Level</Label>
