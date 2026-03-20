@@ -35,12 +35,8 @@ export default function PersonalTrainerClients() {
   const [trainerFilter, setTrainerFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
 
-  const [form, setForm] = useState({
-    first_name: '', last_name: '', email: '', phone: '', gender: '',
-    fitness_level: 'beginner', goals: '', health_conditions: '', membership_type: 'standard',
-    date_of_birth: '', height_cm: '', weight_kg: '', injuries: '',
-    emergency_contact: '', emergency_phone: '', preferred_workout_days: [] as string[],
-  });
+
+
 
   const { data: trainers = [] } = useQuery({
     queryKey: ['pt-trainers-list', shopId],
