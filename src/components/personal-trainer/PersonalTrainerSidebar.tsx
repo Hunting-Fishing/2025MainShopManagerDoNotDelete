@@ -33,31 +33,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-  ClipboardCheck,
-  BarChart3 as BarChartIcon,
-  UserCog,
-  Users,
-  Calendar,
-  ClipboardList,
-  CreditCard,
-  Activity,
-  Settings,
-  Home,
-  ChevronLeft,
-  ChevronRight,
-  UserPlus,
-  Package,
-  BarChart3,
-  Target,
-  Trophy,
-  Gift,
-  Palette,
-  Utensils,
-  Zap,
-  Bot,
-  Clapperboard,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useShopId } from '@/hooks/useShopId';
 import { useModuleDisplayInfo } from '@/hooks/useModuleDisplayInfo';
