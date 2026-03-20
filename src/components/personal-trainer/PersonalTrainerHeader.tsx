@@ -16,6 +16,8 @@ import { useAuthUser } from '@/hooks/useAuthUser';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { AuthService } from '@/lib/services/AuthService';
+import { toast } from '@/hooks/use-toast';
 
 interface PersonalTrainerHeaderProps {
   onMenuToggle?: () => void;
