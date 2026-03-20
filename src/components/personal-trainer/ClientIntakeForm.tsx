@@ -143,6 +143,57 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
   const [allergyCategories, setAllergyCategories] = useState<Record<string, string[]>>({ ...INITIAL_ALLERGY_OPTIONS });
   const [intoleranceCategories, setIntoleranceCategories] = useState<Record<string, string[]>>({ ...INITIAL_INTOLERANCE_OPTIONS });
 
+  // Query supplements for the multi-select picker
+  const { data: supplementsList = [] } = useQuery({
+    queryKey: ['pt-supplements-list'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('pt_supplements')
+        .select('id, name, category')
+        .order('category, name');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Group supplements by category for the multi-select
+  const supplementCategories = useMemo(() => {
+    const cats: Record<string, string[]> = {};
+    const categoryLabels: Record<string, string> = {
+      vitamin: 'Vitamins', mineral: 'Minerals', amino_acid: 'Amino Acids',
+      protein: 'Proteins', herb: 'Herbs', pre_workout: 'Pre-Workout',
+      post_workout: 'Post-Workout', fat_burner: 'Fat Burners',
+      joint_support: 'Joint Support', other: 'Other',
+    };
+    supplementsList.forEach((s: any) => {
+      const label = categoryLabels[s.category] || 'Other';
+      if (!cats[label]) cats[label] = [];
+      cats[label].push(s.name);
+    });
+    return cats;
+  }, [supplementsList]);
+
+  // Auto-estimate body fat % from height, weight, gender, age
+  const estimatedBodyFat = useMemo(() => {
+    const h = parseFloat(form.height_cm);
+    const w = parseFloat(form.weight_kg);
+    if (!h || !w || h <= 0 || w <= 0) return null;
+    const heightM = h / 100;
+    const bmi = w / (heightM * heightM);
+    let age = 25;
+    if (form.date_of_birth) {
+      const dob = new Date(form.date_of_birth);
+      const now = new Date();
+      age = Math.floor((now.getTime() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      if (age < 18) age = 18;
+    }
+    const sexVal = form.gender === 'male' ? 1 : 0;
+    const bf = (1.20 * bmi) + (0.23 * age) - (10.8 * sexVal) - 5.4;
+    return Math.max(3, Math.min(60, Math.round(bf * 10) / 10));
+  }, [form.height_cm, form.weight_kg, form.gender, form.date_of_birth]);
+
+  const displayBodyFat = bodyFatOverride ? form.body_fat_percent : (estimatedBodyFat?.toString() || '');
+
   const set = (key: keyof FormState, value: any) => setForm(f => ({ ...f, [key]: value }));
 
   const toggleDay = (day: string) => {
