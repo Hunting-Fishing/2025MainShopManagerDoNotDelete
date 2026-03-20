@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useAllUserRoles } from '@/hooks/useAllUserRoles';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { hasRoutePermission } from '@/utils/routeGuards';
 import { getSectionColorScheme } from '@/utils/sectionColors';
