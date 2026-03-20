@@ -1,18 +1,33 @@
 
 
-# Remove Amazon Button from Supplement Card Front
+# Restrict Developer Section to Developer Role Only
 
-## Change
+## Problem
 
-Remove the Amazon buy button and price display from the `SupplementCard.tsx` front face. The "Buy on Amazon" link will only appear inside the `SupplementDetailDialog` when a card is opened.
+The Developer section in the left sidebar (line 118 of `SidebarContent.tsx`) currently checks for `admin` or `owner` roles. This means Chrissy (who has the `owner` role) sees the Developer links, but she should not — only the platform developer (`jordilwbailey@gmail.com`) should see them.
 
-## File: `src/components/personal-trainer/supplements/SupplementCard.tsx`
+## Fix
 
-- Remove the `AmazonBuyButton` import
-- Delete lines 118–128 (the Amazon button block and the price/affiliate block)
-- Remove unused props from the interface if desired (`amazonAsin`, `affiliateTag`, `price`, `affiliateLink`) — though keeping them is harmless since they're passed through to the detail dialog elsewhere
+In `src/components/layout/sidebar/SidebarContent.tsx`:
 
-## File: `src/main.tsx`
+1. **Import `useAllUserRoles`** instead of (or in addition to) the existing `useUserRoles` hook — since the developer status is determined via the `is_platform_developer` RPC, which is only checked in `useAllUserRoles`.
 
-- Re-save with clean content to fix the recurring duplicate attribute build error
+2. **Change the guard on line 118** from:
+   ```
+   (userRoles.includes('admin') || userRoles.includes('owner'))
+   ```
+   to:
+   ```
+   isDeveloper
+   ```
+   where `isDeveloper` comes from checking `useAllUserRoles` roles for `source === 'developer'`.
+
+3. **Also fix `src/main.tsx`** — re-save to clear the recurring duplicate attribute build error.
+
+## Files to Edit
+
+| File | Change |
+|------|--------|
+| `src/components/layout/sidebar/SidebarContent.tsx` | Import `useAllUserRoles`, replace admin/owner check with developer role check |
+| `src/main.tsx` | Re-save to fix build error |
 
