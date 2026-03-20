@@ -1,28 +1,44 @@
 
 
-# Fix NutritionProfile Crash + Convert Add Client Form to Tabs
+# Fix Preferred Workout Days in Edit Client Dialog
 
-## Bug Fix: NutritionProfile Hooks Order
+## Problem
+The Edit Client Profile dialog uses a plain text `<Input>` for "Preferred Workout Days" (type it in as "Mon, Wed, Fri"), while the Add Client form and the Clients filter page already use toggleable day buttons. The edit form also stores it as a comma-joined string instead of an array.
 
-The `NutritionProfile` component has a `useQuery` call (line 116) placed **after** an early `return` (line 113). React requires all hooks to be called in the same order every render. This crashes both the main Nutrition tab and the Edit dialog's Nutrition tab.
+## Changes
 
-**Fix**: Move the `useQuery` for `medicalDietaryImplications` above the early return on line 113, alongside the other hooks at the top of the component.
+### File: `src/pages/personal-trainer/PersonalTrainerClientDetail.tsx`
 
-## Add Client Form: Convert to Tabs
+1. **Add `WORKOUT_DAYS` constant** at the top of the file (same as in `ClientIntakeForm.tsx` and `PersonalTrainerClients.tsx`):
+   ```
+   const WORKOUT_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+   ```
 
-The `ClientIntakeForm` is currently one long scrollable form with 6 sections. Convert it to a tabbed layout matching the Edit Client dialog:
+2. **Fix initialization** (line 131): Store `preferred_workout_days` as the raw array instead of joining to a string:
+   ```
+   preferred_workout_days: client.preferred_workout_days || [],
+   ```
 
-- **Profile** — Personal Info + Membership & Training (name, email, phone, DOB, sex, height, weight, body fat, fitness level, membership type, join date, trainer, workout days)
-- **Medical** — Goals badge grid, Injuries/Restrictions badge toggles, Health Conditions searchable catalog
-- **Nutrition** — Calorie/macro/hydration targets, Dietary Styles MultiSelectDialog, Allergies MultiSelectDialog, Intolerances MultiSelectDialog, Supplement Notes, Meal Guidance
-- **Details** — Emergency Contact + Additional Notes + Submit button
+3. **Replace the Input on line 333** with toggleable day buttons matching the Add Client form pattern:
+   ```tsx
+   <div>
+     <Label>Preferred Workout Days</Label>
+     <div className="flex flex-wrap gap-2 mt-1">
+       {WORKOUT_DAYS.map(day => (
+         <Button key={day} type="button" size="sm"
+           variant={editForm.preferred_workout_days?.includes(day) ? 'default' : 'outline'}
+           className="text-xs h-7"
+           onClick={() => setEditForm(f => ({
+             ...f,
+             preferred_workout_days: f.preferred_workout_days?.includes(day)
+               ? f.preferred_workout_days.filter(d => d !== day)
+               : [...(f.preferred_workout_days || []), day]
+           }))}
+         >{day.slice(0, 3)}</Button>
+       ))}
+     </div>
+   </div>
+   ```
 
-Each tab contains the existing form fields, just reorganized. No logic changes — only layout restructuring with `Tabs`/`TabsList`/`TabsTrigger`/`TabsContent`.
-
-## Files to Edit
-
-| File | Change |
-|------|--------|
-| `src/components/nutrition/NutritionProfile.tsx` | Move `useQuery` for medical dietary implications above the early return to fix hooks ordering crash |
-| `src/components/personal-trainer/ClientIntakeForm.tsx` | Wrap existing 6 sections into 4 tabs (Profile, Medical, Nutrition, Details) using `Tabs` component |
+This makes the Edit dialog consistent with the Add Client form and the Clients filter page — all three use the same toggleable button pattern for workout days.
 
