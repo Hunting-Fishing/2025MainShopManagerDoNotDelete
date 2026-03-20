@@ -19,13 +19,14 @@ export function SupplementDetailDialog({ open, onOpenChange, supplement, affilia
   if (!supplement) return null;
 
   const s = supplement;
+  const isOil = s.product_type === 'essential_oil' || s.product_type === 'blend';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Pill className="h-5 w-5 text-primary" />
+            {isOil ? <Droplets className="h-5 w-5 text-primary" /> : <Pill className="h-5 w-5 text-primary" />}
             {s.name}
           </DialogTitle>
           {s.pt_supplement_brands?.name && (
