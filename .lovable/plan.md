@@ -1,47 +1,45 @@
 
 
-# Fix Developer Section Visibility & Personal Trainer Navigation for Non-Developer Users
+# Redirect All "Back" Navigation to Module Hub & Rename Dashboard
 
-## Problems Identified
+## Problem
 
-1. **`/personal-trainer` missing from `moduleRoutePatterns`** (line 59 of `SidebarContent.tsx`): The sidebar doesn't recognize `/personal-trainer` as a module route, so when Chrissy is on any PT page, all generic dashboard sections (Dashboard, Customers, Inventory, etc.) still show instead of being hidden.
+`/dashboard` is the Repair Shop (Automotive) dashboard, but it's used as the universal "home" across the entire app. When Chrissy (Personal Trainer only) navigates to `/dashboard`, she sees Repair Shop content with work orders, inventory, etc. — none of which applies to her.
 
-2. **`/export` also missing** from the patterns — minor but should be added for consistency.
-
-3. **Post-login destination**: The `getPostLoginDestination` logic looks correct (single module → redirect to that module's route). If Chrissy has only `personal-trainer` enabled, she should land on `/personal-trainer`. She may be navigating to `/dashboard` manually or via a cached route. The fix to `moduleRoutePatterns` will ensure that even if she visits `/dashboard`, the sidebar shows the correct module-scoped navigation.
-
-4. **Developer section**: The `isPlatformDeveloper` guard (line 121) is already correctly checking `allRoles.some(r => r.source === 'developer')`. If Chrissy is seeing Developer links, it means either:
-   - The `is_platform_developer` RPC is returning true for her (needs DB check), OR
-   - She was seeing a cached/stale page before the fix was deployed
+Every module sidebar has a "Back to Main App" link pointing to `/dashboard`, and `getPostLoginDestination` correctly sends single-module users to their module. But if users manually navigate or click "Back", they land on the wrong page.
 
 ## Fix
 
-### File: `src/components/layout/sidebar/SidebarContent.tsx`
+Replace **all** references to `navigate('/dashboard')` and `to="/dashboard"` with `/module-hub` across the app. The Module Hub is the correct universal landing — it shows only the user's enabled modules and lets them pick one.
 
-**Line 59** — Add `/personal-trainer` and `/export` to `moduleRoutePatterns`:
+### Files to update (10 files, ~20 occurrences)
 
-```typescript
-const moduleRoutePatterns = [
-  '/gunsmith', '/automotive', '/powersports', '/marine-services', 
-  '/power-washing', '/water-delivery', '/fuel-delivery', '/septic',
-  '/personal-trainer', '/export'
-];
-```
+| File | Change |
+|------|--------|
+| `src/components/personal-trainer/PersonalTrainerSidebar.tsx` | `navigate('/dashboard')` → `navigate('/module-hub')` |
+| `src/components/personal-trainer/PersonalTrainerHeader.tsx` | Same |
+| `src/components/fuel-delivery/FuelDeliverySidebar.tsx` | Same |
+| `src/components/water-delivery/WaterDeliverySidebar.tsx` | Same |
+| `src/components/water-delivery/WaterDeliveryHeader.tsx` | Same |
+| `src/components/export/ExportSidebar.tsx` | Same |
+| `src/components/septic/SepticSidebar.tsx` | Same |
+| `src/components/septic/SepticHeader.tsx` | Same |
+| `src/components/common/PlaceholderPage.tsx` | Same (2 occurrences) |
+| `src/components/auth/RoleGuard.tsx` | `to="/dashboard"` → `to="/module-hub"` (2 occurrences) |
+| `src/components/layout/Navbar.tsx` | `to="/dashboard"` → `to="/module-hub"` (2 occurrences) |
+| `src/components/ux/KeyboardShortcuts.tsx` | `navigate('/dashboard')` → `navigate('/module-hub')` |
 
-This single change ensures that when Chrissy (or any user) is on a Personal Trainer page, the generic dashboard/inventory/customers sections are hidden, and only the PT module navigation shows.
+### Route rename
 
-### Verification: `is_platform_developer` RPC
+In `src/App.tsx`, keep the `/dashboard` route for backward compatibility but also add a redirect:
+- Add: `<Route path="/dashboard" element={<Navigate to="/module-hub" replace />} />` (redirect any direct `/dashboard` visits to module hub)
+- Move the Dashboard component to `/repair-shop` or keep it under `/automotive` (it's already the Automotive module's dashboard)
 
-Run a quick DB query to confirm the `platform_developers` table doesn't accidentally include Chrissy's user ID. If it does, remove her entry.
+### Label updates
 
-### File: `src/main.tsx`
+Change "Back to Main App" and "Return to Dashboard" labels to "All Modules" for consistency with the sidebar terminology.
 
-Re-save to clear the recurring duplicate attribute build error.
+### main.tsx
 
-## Expected Result
-
-- Chrissy logs in → redirected to `/personal-trainer` (her only module)
-- Sidebar shows only: All Modules link + Personal Trainer module sections
-- No Developer section visible (she's not a platform developer)
-- No Dashboard/Customers/Inventory sections visible (hidden when in a module route)
+Re-save to fix recurring duplicate attribute build error.
 
