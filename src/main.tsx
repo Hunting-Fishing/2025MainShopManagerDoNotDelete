@@ -39,10 +39,10 @@ const queryClient = new QueryClient({
   },
 });
 
-const rootElement = document.getElementById('root');
-if (!rootElement) throw new Error('Root element not found');
+const root = document.getElementById('root');
+if (!root) throw new Error('Root element not found');
 
-ReactDOM.createRoot(rootElement).render(
+ReactDOM.createRoot(root).render(
   <React.StrictMode>
     <GlobalErrorBoundary>
       <HelmetProvider>

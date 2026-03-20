@@ -3,7 +3,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Pill, Star, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AmazonBuyButton } from './AmazonBuyButton';
 
 interface SupplementCardProps {
   name: string;
@@ -115,17 +114,6 @@ export function SupplementCard({
           </div>
         )}
 
-        {amazonAsin && (
-          <div className="pt-1 border-t border-border/50">
-            <AmazonBuyButton asin={amazonAsin} affiliateTag={affiliateTag} supplementName={name} />
-          </div>
-        )}
-
-        {!amazonAsin && (price || affiliateLink) && (
-          <div className="flex items-center justify-between pt-1 border-t border-border/50">
-            {price && <span className="text-sm font-semibold text-foreground">${price.toFixed(2)}</span>}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
