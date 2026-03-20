@@ -297,7 +297,10 @@ export default function ClientIntakeForm({ trainers, isPending, onSubmit }: Clie
       fat_target_g: form.fat_target_g ? parseInt(form.fat_target_g) : null,
       hydration_target_ml: form.hydration_target_ml ? parseInt(form.hydration_target_ml) : null,
       food_habits: foodHabitsStr,
-      supplement_notes: form.supplement_notes || null,
+      supplement_notes: [
+        ...(form.selectedSupplements.length > 0 ? [`Taking: ${form.selectedSupplements.join(', ')}`] : []),
+        ...(form.supplement_notes ? [form.supplement_notes] : []),
+      ].join('. ') || null,
       meal_guidance: form.meal_guidance || null,
       notes: form.notes || null,
     });
