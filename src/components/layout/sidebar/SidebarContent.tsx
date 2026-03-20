@@ -56,7 +56,7 @@ export function SidebarContent() {
   };
 
   // Check if we're currently in a module route (e.g., /gunsmith/*, /automotive/*)
-  const moduleRoutePatterns = ['/gunsmith', '/automotive', '/powersports', '/marine-services', '/power-washing', '/water-delivery', '/fuel-delivery', '/septic'];
+  const moduleRoutePatterns = ['/gunsmith', '/automotive', '/powersports', '/marine-services', '/power-washing', '/water-delivery', '/fuel-delivery', '/septic', '/personal-trainer', '/export'];
   const isInModuleRoute = moduleRoutePatterns.some(pattern => 
     location.pathname === pattern || location.pathname.startsWith(pattern + '/')
   );
