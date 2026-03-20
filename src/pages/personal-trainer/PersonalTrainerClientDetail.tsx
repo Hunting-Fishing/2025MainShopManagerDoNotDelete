@@ -128,7 +128,7 @@ export default function PersonalTrainerClientDetail() {
       emergency_phone: client.emergency_phone || '',
       membership_type: client.membership_type || 'standard',
       membership_status: client.membership_status || 'active',
-      preferred_workout_days: (client.preferred_workout_days || []).join(', '),
+      preferred_workout_days: client.preferred_workout_days || [],
     });
     setEditTab('profile');
     setEditOpen(true);
