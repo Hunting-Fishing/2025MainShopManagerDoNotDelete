@@ -200,9 +200,10 @@ export default function PersonalTrainerClientDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="programs">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-10">
           <TabsTrigger value="programs" className="text-xs"><ClipboardList className="h-3 w-3 mr-1" />Programs</TabsTrigger>
           <TabsTrigger value="sessions" className="text-xs"><Calendar className="h-3 w-3 mr-1" />Sessions</TabsTrigger>
+          <TabsTrigger value="photos" className="text-xs"><Camera className="h-3 w-3 mr-1" />Photos</TabsTrigger>
           <TabsTrigger value="medical" className="text-xs"><HeartPulse className="h-3 w-3 mr-1" />Medical</TabsTrigger>
           <TabsTrigger value="metrics" className="text-xs"><Activity className="h-3 w-3 mr-1" />Metrics</TabsTrigger>
           <TabsTrigger value="checkins" className="text-xs"><ClipboardCheck className="h-3 w-3 mr-1" />Check-ins</TabsTrigger>
