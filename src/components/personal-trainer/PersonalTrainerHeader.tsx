@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Bell, Search, User } from 'lucide-react';
+import { Menu, Bell, Search, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
