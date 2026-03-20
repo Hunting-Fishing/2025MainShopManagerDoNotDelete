@@ -76,6 +76,28 @@ export default function NutritionProfile({ clientId, shopId }: Props) {
   const [allergyCategories, setAllergyCategories] = useState<Record<string, string[]>>({ ...INITIAL_ALLERGY_OPTIONS });
   const [intoleranceCategories, setIntoleranceCategories] = useState<Record<string, string[]>>({ ...INITIAL_INTOLERANCE_OPTIONS });
 
+  // Fetch medical dietary implications (must be before any early return)
+  const { data: medicalDietaryImplications = [] } = useQuery({
+    queryKey: ['pt-medical-dietary', clientId, shopId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from('pt_client_medical_conditions')
+        .select('condition_name, dietary_implications')
+        .eq('client_id', clientId)
+        .eq('shop_id', shopId)
+        .in('status', ['active', 'chronic']);
+      if (!data) return [];
+      const implications: { condition: string; implication: string }[] = [];
+      for (const cond of data) {
+        for (const imp of (cond.dietary_implications || [])) {
+          implications.push({ condition: cond.condition_name, implication: imp });
+        }
+      }
+      return implications;
+    },
+    enabled: !!clientId && !!shopId,
+  });
+
   React.useEffect(() => {
     if (existing && !form) {
       setForm(existing);
