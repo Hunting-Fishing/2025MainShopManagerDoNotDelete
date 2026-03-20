@@ -18,6 +18,7 @@ interface SupplementCardProps {
   amazonAsin?: string;
   affiliateTag?: string;
   bestTimeToTake?: string;
+  productType?: string;
   onClick?: () => void;
 }
 
