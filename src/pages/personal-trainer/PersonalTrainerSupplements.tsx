@@ -171,8 +171,12 @@ export default function PersonalTrainerSupplements() {
           <VitaminGuide />
         </TabsContent>
 
-        <TabsContent value="search">
-          <SupplementSearch />
+        <TabsContent value="search" className="space-y-6">
+          <NutritionixSearch />
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">Open Food Facts (Free Database)</h3>
+            <SupplementSearch />
+          </div>
         </TabsContent>
 
         <TabsContent value="stacks">

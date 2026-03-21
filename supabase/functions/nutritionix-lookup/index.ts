@@ -108,8 +108,8 @@ serve(async (req) => {
       );
 
     } else if (action === 'item') {
-      const { nix_item_id } = await req.json().catch(() => ({}));
-      const itemId = (await req.clone().json()).nix_item_id;
+      const body = await req.clone().json();
+      const itemId = body.nix_item_id;
 
       if (!itemId || typeof itemId !== 'string') {
         return new Response(
