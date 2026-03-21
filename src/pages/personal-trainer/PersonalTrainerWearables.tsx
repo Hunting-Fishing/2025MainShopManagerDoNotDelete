@@ -219,6 +219,49 @@ export default function PersonalTrainerWearables() {
         </Tabs>
       )}
 
+      {/* Upcoming Integrations */}
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Zap className="h-5 w-5 text-primary" />
+          Upcoming Integrations
+        </h2>
+        <p className="text-sm text-muted-foreground">We're actively building native integrations with major health platforms. Mobile app support coming soon!</p>
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {[
+            { name: 'Apple Health', status: 'In Development', icon: '🍎', description: 'Steps, heart rate, workouts, sleep & body metrics via HealthKit', color: 'border-foreground/20' },
+            { name: 'Google Fit', status: 'In Development', icon: '🏃', description: 'Activity tracking, heart rate, sleep analysis via Google Health Connect', color: 'border-primary/30' },
+            { name: 'Fitbit', status: 'In Development', icon: '⌚', description: 'Steps, heart rate zones, sleep stages, SpO2 & stress management', color: 'border-primary/30' },
+            { name: 'Garmin Connect', status: 'Planned', icon: '🧭', description: 'Training load, VO2 max, body battery, advanced running dynamics', color: 'border-muted-foreground/20' },
+            { name: 'WHOOP', status: 'Planned', icon: '💪', description: 'Strain score, recovery metrics, HRV tracking & sleep performance', color: 'border-muted-foreground/20' },
+            { name: 'Samsung Health', status: 'Planned', icon: '📱', description: 'Steps, heart rate, blood oxygen, body composition & sleep', color: 'border-muted-foreground/20' },
+            { name: 'Oura Ring', status: 'Planned', icon: '💍', description: 'Sleep quality scores, readiness, HRV, temperature trends', color: 'border-muted-foreground/20' },
+            { name: 'MyFitnessPal', status: 'Planned', icon: '🥗', description: 'Nutrition logging sync, calorie tracking & macro breakdowns', color: 'border-muted-foreground/20' },
+          ].map((integration) => (
+            <Card key={integration.name} className={`border-2 ${integration.color} opacity-90 hover:opacity-100 transition-opacity`}>
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-start justify-between">
+                  <span className="text-2xl">{integration.icon}</span>
+                  <Badge variant={integration.status === 'In Development' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0.5">
+                    <Clock className="h-2.5 w-2.5 mr-0.5" />
+                    {integration.status}
+                  </Badge>
+                </div>
+                <h3 className="font-semibold text-sm">{integration.name}</h3>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">{integration.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card className="border-dashed border-primary/20">
+          <CardContent className="py-4 text-center">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Smartphone className="h-4 w-4" />
+              <span>Native mobile app launching soon — unlock full Apple Health & Google Fit sync</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Dialog open={connectDialog} onOpenChange={setConnectDialog}>
         <DialogContent>
           <DialogHeader><DialogTitle>Connect Cloud Wearable</DialogTitle></DialogHeader>
