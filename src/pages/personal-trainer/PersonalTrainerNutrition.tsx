@@ -241,38 +241,48 @@ export default function PersonalTrainerNutrition() {
           </TabsContent>
 
           <TabsContent value="search" className="mt-4">
-            {selectedProduct ? (
-              <ProductDetail
-                product={selectedProduct}
-                clientId={selectedClient}
-                shopId={shopId!}
-                onBack={() => setSelectedProduct(null)}
-                onLogFood={handleLogFromProduct}
-              />
-            ) : (
-              <FoodSearch
-                clientId={selectedClient}
-                shopId={shopId!}
-                onSelectProduct={setSelectedProduct}
-                onLogFood={handleLogFromProduct}
-              />
-            )}
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              {selectedProduct ? (
+                <ProductDetail
+                  product={selectedProduct}
+                  clientId={selectedClient}
+                  shopId={shopId!}
+                  onBack={() => setSelectedProduct(null)}
+                  onLogFood={handleLogFromProduct}
+                />
+              ) : (
+                <FoodSearch
+                  clientId={selectedClient}
+                  shopId={shopId!}
+                  onSelectProduct={setSelectedProduct}
+                  onLogFood={handleLogFromProduct}
+                />
+              )}
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="meals" className="mt-4">
-            <MealPlanView clientId={selectedClient} shopId={shopId!} />
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <MealPlanView clientId={selectedClient} shopId={shopId!} />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="goals" className="mt-4">
-            <GoalSetup clientId={selectedClient} shopId={shopId!} />
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <GoalSetup clientId={selectedClient} shopId={shopId!} />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="profile" className="mt-4">
-            <NutritionProfile clientId={selectedClient} shopId={shopId!} />
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <NutritionProfile clientId={selectedClient} shopId={shopId!} />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="reports" className="mt-4">
-            <WeeklyReport clientId={selectedClient} shopId={shopId!} />
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <WeeklyReport clientId={selectedClient} shopId={shopId!} />
+            </Suspense>
           </TabsContent>
         </Tabs>
       )}
