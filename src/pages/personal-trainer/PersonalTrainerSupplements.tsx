@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Search, Pill } from 'lucide-react';
 import { SupplementCard } from '@/components/personal-trainer/supplements/SupplementCard';
 import { SupplementSearch } from '@/components/personal-trainer/supplements/SupplementSearch';
+import { NutritionixSearch } from '@/components/personal-trainer/supplements/NutritionixSearch';
 import { ClientSupplementStack } from '@/components/personal-trainer/supplements/ClientSupplementStack';
 import { VitaminGuide } from '@/components/personal-trainer/supplements/VitaminGuide';
 import { SupplementDetailDialog } from '@/components/personal-trainer/supplements/SupplementDetailDialog';
