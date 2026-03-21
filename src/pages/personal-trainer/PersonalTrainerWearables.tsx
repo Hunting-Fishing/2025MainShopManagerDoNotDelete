@@ -121,9 +121,9 @@ export default function PersonalTrainerWearables() {
           </TabsList>
 
           <TabsContent value="bluetooth">
+            <Suspense fallback={<div className="text-muted-foreground text-sm py-4">Loading...</div>}>
             <div className="max-w-md">
               <BluetoothDevicePanel onReadingReceived={(reading) => {
-                // Auto-save BLE readings
                 const payload: any = {
                   client_id: selectedClient,
                   recorded_date: new Date().toISOString().split('T')[0],
@@ -140,9 +140,11 @@ export default function PersonalTrainerWearables() {
                 }
               }} />
             </div>
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="quick-log">
+            <Suspense fallback={<div className="text-muted-foreground text-sm py-4">Loading...</div>}>
             <div className="max-w-md">
               <QuickLogPanel
                 clientId={selectedClient}
@@ -150,6 +152,7 @@ export default function PersonalTrainerWearables() {
                 latestMetrics={latestMetrics}
               />
             </div>
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="cloud">
