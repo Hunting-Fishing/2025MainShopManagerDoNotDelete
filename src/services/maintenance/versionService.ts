@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { recordMaintenanceActivity } from './maintenanceActivityService';
 
 /**
  * Save a version before updating a schedule
@@ -114,7 +115,7 @@ export const restoreScheduleVersion = async (
     if (updateError) throw updateError;
 
     // Record activity
-    const { recordMaintenanceActivity } = await import('./maintenanceActivityService');
+    // Record activity
     await recordMaintenanceActivity(
       `Restored schedule to version ${version.version_number}`,
       shopId,

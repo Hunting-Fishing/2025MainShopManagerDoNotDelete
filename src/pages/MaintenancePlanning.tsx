@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateMaintenanceForecast } from '@/services/maintenance/predictiveMaintenanceService';
 import { format } from 'date-fns';
 import { useShopId } from '@/hooks/useShopId';
+import { getMaintenanceActivities } from '@/services/maintenance/maintenanceActivityService';
 import { CreateScheduleDialog } from '@/components/maintenance/CreateScheduleDialog';
 import { EditScheduleDialog } from '@/components/maintenance/EditScheduleDialog';
 import { BudgetDashboard } from '@/components/maintenance/BudgetDashboard';
@@ -45,7 +46,6 @@ export default function MaintenancePlanning() {
     queryKey: ['maintenance-activities', shopId],
     queryFn: async () => {
       if (!shopId) return [];
-      const { getMaintenanceActivities } = await import('@/services/maintenance/maintenanceActivityService');
       return getMaintenanceActivities(shopId);
     },
     enabled: !!shopId,

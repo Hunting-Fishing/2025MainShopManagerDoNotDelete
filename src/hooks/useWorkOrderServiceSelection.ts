@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { SelectedService } from '@/types/selectedService';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { createJobLinesFromServices, removeServiceJobLines } from '@/utils/serviceToJobLineConverter';
+import { createJobLinesFromServices, removeServiceJobLines, convertServicesToJobLines } from '@/utils/serviceToJobLineConverter';
 import { toast } from '@/hooks/use-toast';
 
 export function useWorkOrderServiceSelection(
@@ -50,8 +50,7 @@ export function useWorkOrderServiceSelection(
       if (isTemporaryWorkOrder) {
         // For new work orders, convert services to job line format but don't save to DB yet
         // They'll be created when the work order is saved
-        const { convertServicesToJobLines: convertFormat } = await import('@/utils/serviceToJobLineConverter');
-        const newJobLines = convertFormat(selectedServices, workOrderId).map(jl => ({
+        const newJobLines = convertServicesToJobLines(selectedServices, workOrderId).map(jl => ({
           ...jl,
           id: `temp-jl-${Date.now()}-${Math.random()}`,
           created_at: new Date().toISOString(),

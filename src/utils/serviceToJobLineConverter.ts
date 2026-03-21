@@ -1,5 +1,6 @@
 import { SelectedService } from '@/types/selectedService';
 import { WorkOrderJobLine } from '@/types/jobLine';
+import { createJobLine, getWorkOrderJobLines, deleteWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
 
 /**
  * Converts selected services to work order job lines
@@ -32,7 +33,7 @@ export async function createJobLinesFromServices(
   services: SelectedService[],
   workOrderId: string
 ): Promise<WorkOrderJobLine[]> {
-  const { createJobLine } = await import('@/services/workOrder/jobLinesService');
+  
   
   const jobLinesToCreate = convertServicesToJobLines(services, workOrderId);
   
@@ -56,7 +57,7 @@ export async function createJobLinesFromServices(
  * Removes job lines that were created from service selection
  */
 export async function removeServiceJobLines(workOrderId: string): Promise<void> {
-  const { getWorkOrderJobLines, deleteWorkOrderJobLine } = await import('@/services/workOrder/jobLinesService');
+  
   
   const allJobLines = await getWorkOrderJobLines(workOrderId);
   const serviceJobLines = allJobLines.filter(jl => jl.is_from_service_selection);
