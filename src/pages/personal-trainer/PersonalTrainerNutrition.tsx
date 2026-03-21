@@ -311,7 +311,9 @@ export default function PersonalTrainerNutrition() {
             {/* Meal Photo */}
             <div>
               <Label className="mb-1 block">Meal Photo (optional)</Label>
-              <MealPhotoUpload clientId={selectedClient} onPhotoUploaded={setPhotoUrl} existingUrl={photoUrl} />
+              <Suspense fallback={<div className="h-8" />}>
+                <MealPhotoUpload clientId={selectedClient} onPhotoUploaded={setPhotoUrl} existingUrl={photoUrl} />
+              </Suspense>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
