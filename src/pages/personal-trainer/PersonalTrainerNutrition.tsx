@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,16 +17,17 @@ import { format } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import ReactMarkdown from 'react-markdown';
 import DailyTargets from '@/components/nutrition/DailyTargets';
-import FoodSearch from '@/components/nutrition/FoodSearch';
-import ProductDetail from '@/components/nutrition/ProductDetail';
-import NutritionProfile from '@/components/nutrition/NutritionProfile';
-import GoalSetup from '@/components/nutrition/GoalSetup';
-import MealPlanView from '@/components/nutrition/MealPlanView';
-import HydrationTracker from '@/components/nutrition/HydrationTracker';
-import WeeklyReport from '@/components/nutrition/WeeklyReport';
-import ClientComparison from '@/components/nutrition/ClientComparison';
-import MealPhotoUpload from '@/components/nutrition/MealPhotoUpload';
 import { useFoodLogs, useLogFood } from '@/hooks/useNutrition';
+
+const FoodSearch = lazy(() => import('@/components/nutrition/FoodSearch'));
+const ProductDetail = lazy(() => import('@/components/nutrition/ProductDetail'));
+const NutritionProfile = lazy(() => import('@/components/nutrition/NutritionProfile'));
+const GoalSetup = lazy(() => import('@/components/nutrition/GoalSetup'));
+const MealPlanView = lazy(() => import('@/components/nutrition/MealPlanView'));
+const HydrationTracker = lazy(() => import('@/components/nutrition/HydrationTracker'));
+const WeeklyReport = lazy(() => import('@/components/nutrition/WeeklyReport'));
+const ClientComparison = lazy(() => import('@/components/nutrition/ClientComparison'));
+const MealPhotoUpload = lazy(() => import('@/components/nutrition/MealPhotoUpload'));
 
 export default function PersonalTrainerNutrition() {
   const { shopId } = useShopId();
