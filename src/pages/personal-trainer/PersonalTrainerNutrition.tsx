@@ -161,7 +161,9 @@ export default function PersonalTrainerNutrition() {
 
       {/* Show Client Comparison when no client selected */}
       {!selectedClient && shopId && (
-        <ClientComparison shopId={shopId} onSelectClient={setSelectedClient} />
+        <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+          <ClientComparison shopId={shopId} onSelectClient={setSelectedClient} />
+        </Suspense>
       )}
 
       {selectedClient && (
