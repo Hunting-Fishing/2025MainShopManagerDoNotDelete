@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { recordMaintenanceActivity } from './maintenanceActivityService';
 
 /**
  * Save a version before updating a schedule
