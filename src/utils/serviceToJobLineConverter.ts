@@ -57,7 +57,7 @@ export async function createJobLinesFromServices(
  * Removes job lines that were created from service selection
  */
 export async function removeServiceJobLines(workOrderId: string): Promise<void> {
-  const { getWorkOrderJobLines, deleteWorkOrderJobLine } = await import('@/services/workOrder/jobLinesService');
+  
   
   const allJobLines = await getWorkOrderJobLines(workOrderId);
   const serviceJobLines = allJobLines.filter(jl => jl.is_from_service_selection);
