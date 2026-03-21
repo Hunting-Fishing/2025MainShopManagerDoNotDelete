@@ -65,7 +65,7 @@ export function useBLEDevice(): UseBLEDeviceReturn {
     setError(null);
 
     try {
-      const device = await navigator.bluetooth.requestDevice({
+      const device = await (navigator as any).bluetooth.requestDevice({
         filters: [{ services: [HEART_RATE_SERVICE] }],
         optionalServices: ['battery_service'],
       });
