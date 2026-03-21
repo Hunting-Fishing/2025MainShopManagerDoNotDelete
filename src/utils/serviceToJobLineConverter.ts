@@ -33,7 +33,7 @@ export async function createJobLinesFromServices(
   services: SelectedService[],
   workOrderId: string
 ): Promise<WorkOrderJobLine[]> {
-  const { createJobLine } = await import('@/services/workOrder/jobLinesService');
+  
   
   const jobLinesToCreate = convertServicesToJobLines(services, workOrderId);
   
