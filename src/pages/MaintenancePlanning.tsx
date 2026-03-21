@@ -46,7 +46,7 @@ export default function MaintenancePlanning() {
     queryKey: ['maintenance-activities', shopId],
     queryFn: async () => {
       if (!shopId) return [];
-      const { getMaintenanceActivities } = await import('@/services/maintenance/maintenanceActivityService');
+      const activities = await getMaintenanceActivities(shopId);
       return getMaintenanceActivities(shopId);
     },
     enabled: !!shopId,
