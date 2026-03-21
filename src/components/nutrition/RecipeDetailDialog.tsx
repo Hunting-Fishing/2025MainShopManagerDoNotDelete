@@ -90,11 +90,11 @@ export default function RecipeDetailDialog({ recipe, isLoading, open, onOpenChan
 
             {/* Macro bar */}
             <div className="px-4 py-2 flex gap-3 text-xs font-semibold border-b border-border">
-              <span className="text-orange-500">{recipe.calories} kcal</span>
-              <span className="text-blue-500">P: {recipe.protein_g}g</span>
-              <span className="text-amber-500">C: {recipe.carbs_g}g</span>
-              <span className="text-rose-500">F: {recipe.fat_g}g</span>
-              <span className="text-green-500">Fiber: {recipe.fiber_g}g</span>
+              <span className="text-primary">{recipe.calories} kcal</span>
+              <span className="text-foreground">P: {recipe.protein_g}g</span>
+              <span className="text-muted-foreground">C: {recipe.carbs_g}g</span>
+              <span className="text-destructive">F: {recipe.fat_g}g</span>
+              <span className="text-accent-foreground">Fiber: {recipe.fiber_g}g</span>
             </div>
 
             <ScrollArea className="flex-1 max-h-[45vh]">
