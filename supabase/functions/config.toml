@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.pt-ai-chat]
 verify_jwt = false
+
+[functions.nutritionix-lookup]
+verify_jwt = false
