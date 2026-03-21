@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,10 @@ import { BodyMetricsInfoPopover } from '@/components/personal-trainer/metrics/Bo
 import { BMIScaleCard } from '@/components/personal-trainer/metrics/BMIScaleCard';
 import { HealthDeviceCard } from '@/components/personal-trainer/metrics/HealthDeviceCard';
 import { EnhancedMetricCard } from '@/components/personal-trainer/metrics/EnhancedMetricCard';
+import { BluetoothDevicePanel } from '@/components/personal-trainer/metrics/BluetoothDevicePanel';
+import { QuickLogPanel } from '@/components/personal-trainer/metrics/QuickLogPanel';
 import { calculateBMI } from '@/components/personal-trainer/metrics/BMIBadge';
+import type { BLEReading } from '@/hooks/useBLEDevice';
 
 export default function PersonalTrainerMetrics() {
   const { shopId } = useShopId();
@@ -225,14 +228,40 @@ export default function PersonalTrainerMetrics() {
         </Select>
       </div>
 
-      {/* Health Device Integration & BMI Scale */}
+      {/* Bluetooth + Quick Log + Health Devices + BMI */}
       {selectedClient && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <HealthDeviceCard integrations={healthIntegrations} clientId={selectedClient} />
-          </div>
+          <BluetoothDevicePanel onReadingReceived={(reading: BLEReading) => {
+            // Auto-save BLE readings as metrics
+            const payload: any = {
+              client_id: selectedClient,
+              recorded_date: new Date().toISOString().split('T')[0],
+              source: 'bluetooth',
+            };
+            if (reading.heartRate) payload.resting_heart_rate = reading.heartRate;
+            if (reading.weightKg) {
+              payload.weight_kg = reading.weightKg;
+              if (selectedClientData?.height_cm) {
+                payload.bmi = Math.round(calculateBMI(reading.weightKg, selectedClientData.height_cm) * 10) / 10;
+              }
+            }
+            if (reading.bodyFatPercent) payload.body_fat_percent = reading.bodyFatPercent;
+            if (Object.keys(payload).length > 3) {
+              (supabase as any).from('pt_body_metrics').insert(payload).then(() => {
+                queryClient.invalidateQueries({ queryKey: ['pt-metrics'] });
+              });
+            }
+          }} />
+          <QuickLogPanel
+            clientId={selectedClient}
+            clientHeightCm={selectedClientData?.height_cm}
+            latestMetrics={metrics[0]}
+          />
           <BMIScaleCard currentBMI={latestBMI} />
         </div>
+      )}
+      {selectedClient && (
+        <HealthDeviceCard integrations={healthIntegrations} clientId={selectedClient} />
       )}
 
       {/* Metrics list */}
