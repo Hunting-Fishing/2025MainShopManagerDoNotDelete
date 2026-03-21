@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Utensils, Plus, Loader2, Brain, TrendingUp, Search, ChefHat, Target, User, Sparkles } from 'lucide-react';
+import { Utensils, Plus, Loader2, Brain, TrendingUp, Search, ChefHat, Target, User, BarChart3 } from 'lucide-react';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +22,10 @@ import ProductDetail from '@/components/nutrition/ProductDetail';
 import NutritionProfile from '@/components/nutrition/NutritionProfile';
 import GoalSetup from '@/components/nutrition/GoalSetup';
 import MealPlanView from '@/components/nutrition/MealPlanView';
+import HydrationTracker from '@/components/nutrition/HydrationTracker';
+import WeeklyReport from '@/components/nutrition/WeeklyReport';
+import ClientComparison from '@/components/nutrition/ClientComparison';
+import MealPhotoUpload from '@/components/nutrition/MealPhotoUpload';
 import { useFoodLogs, useLogFood } from '@/hooks/useNutrition';
 
 export default function PersonalTrainerNutrition() {
@@ -34,6 +38,7 @@ export default function PersonalTrainerNutrition() {
   const [aiLoading, setAiLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [photoUrl, setPhotoUrl] = useState('');
   const [form, setForm] = useState({ meal_type: 'lunch', food_name: '', servings: 1, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0, notes: '' });
 
   const { data: clients = [] } = useQuery({
@@ -55,10 +60,12 @@ export default function PersonalTrainerNutrition() {
       client_id: selectedClient,
       log_date: new Date().toISOString().split('T')[0],
       ...form,
+      photo_url: photoUrl || null,
     }, {
       onSuccess: () => {
         setDialogOpen(false);
         setForm({ meal_type: 'lunch', food_name: '', servings: 1, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0, notes: '' });
+        setPhotoUrl('');
       },
     });
   };
@@ -151,19 +158,28 @@ export default function PersonalTrainerNutrition() {
         </Select>
       </div>
 
+      {/* Show Client Comparison when no client selected */}
+      {!selectedClient && shopId && (
+        <ClientComparison shopId={shopId} onSelectClient={setSelectedClient} />
+      )}
+
       {selectedClient && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-5">
+          <TabsList className="w-full grid grid-cols-6">
             <TabsTrigger value="dashboard" className="text-xs"><TrendingUp className="h-3.5 w-3.5 mr-1" />Dashboard</TabsTrigger>
             <TabsTrigger value="search" className="text-xs"><Search className="h-3.5 w-3.5 mr-1" />Food Search</TabsTrigger>
             <TabsTrigger value="meals" className="text-xs"><ChefHat className="h-3.5 w-3.5 mr-1" />Meal Plans</TabsTrigger>
             <TabsTrigger value="goals" className="text-xs"><Target className="h-3.5 w-3.5 mr-1" />Goals</TabsTrigger>
             <TabsTrigger value="profile" className="text-xs"><User className="h-3.5 w-3.5 mr-1" />Profile</TabsTrigger>
+            <TabsTrigger value="reports" className="text-xs"><BarChart3 className="h-3.5 w-3.5 mr-1" />Reports</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-4 mt-4">
             {/* Daily Targets with Progress Rings */}
             <DailyTargets clientId={selectedClient} shopId={shopId!} todayIntake={todayIntake} />
+
+            {/* Hydration Tracker */}
+            <HydrationTracker clientId={selectedClient} shopId={shopId!} />
 
             {/* AI Advice */}
             {aiAdvice && (
@@ -191,21 +207,24 @@ export default function PersonalTrainerNutrition() {
               </Card>
             )}
 
-            {/* Recent Logs */}
+            {/* Recent Logs with photo thumbnails */}
             {isLoading ? <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-green-500" /></div> : (
               <div className="space-y-2">
                 <h3 className="font-semibold text-sm text-muted-foreground">Recent Entries</h3>
                 {logs.slice(0, 20).map((l: any) => (
                   <Card key={l.id}>
-                    <CardContent className="p-3 flex items-center justify-between">
-                      <div>
+                    <CardContent className="p-3 flex items-center gap-3">
+                      {l.photo_url && (
+                        <img src={l.photo_url} alt="" className="w-10 h-10 rounded-md object-cover border border-border flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-xs capitalize">{l.meal_type}</Badge>
-                          <span className="font-medium text-sm">{l.food_name}</span>
+                          <span className="font-medium text-sm truncate">{l.food_name}</span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">{format(new Date(l.log_date), 'MMM d, yyyy')}{l.notes ? ` · ${l.notes}` : ''}</p>
                       </div>
-                      <div className="text-right text-xs space-y-0.5">
+                      <div className="text-right text-xs space-y-0.5 flex-shrink-0">
                         <p><strong>{Math.round(l.calories || 0)}</strong> cal</p>
                         <p>P:{Math.round(l.protein_g || 0)}g C:{Math.round(l.carbs_g || 0)}g F:{Math.round(l.fat_g || 0)}g</p>
                       </div>
@@ -246,10 +265,14 @@ export default function PersonalTrainerNutrition() {
           <TabsContent value="profile" className="mt-4">
             <NutritionProfile clientId={selectedClient} shopId={shopId!} />
           </TabsContent>
+
+          <TabsContent value="reports" className="mt-4">
+            <WeeklyReport clientId={selectedClient} shopId={shopId!} />
+          </TabsContent>
         </Tabs>
       )}
 
-      {/* Manual Log Dialog */}
+      {/* Manual Log Dialog with Photo Upload */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Log Meal</DialogTitle></DialogHeader>
@@ -269,6 +292,13 @@ export default function PersonalTrainerNutrition() {
               </Select>
             </div>
             <div><Label>Food Item</Label><Input value={form.food_name} onChange={e => setForm(f => ({ ...f, food_name: e.target.value }))} placeholder="Grilled chicken breast with rice" /></div>
+
+            {/* Meal Photo */}
+            <div>
+              <Label className="mb-1 block">Meal Photo (optional)</Label>
+              <MealPhotoUpload clientId={selectedClient} onPhotoUploaded={setPhotoUrl} existingUrl={photoUrl} />
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Calories</Label><Input type="number" value={form.calories} onChange={e => setForm(f => ({ ...f, calories: parseInt(e.target.value) || 0 }))} /></div>
               <div><Label>Protein (g)</Label><Input type="number" value={form.protein_g} onChange={e => setForm(f => ({ ...f, protein_g: parseFloat(e.target.value) || 0 }))} /></div>

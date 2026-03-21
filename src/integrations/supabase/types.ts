@@ -30932,6 +30932,7 @@ export type Database = {
           log_date: string
           meal_type: string
           notes: string | null
+          photo_url: string | null
           product_id: string | null
           protein_g: number | null
           quality_score: number | null
@@ -30950,6 +30951,7 @@ export type Database = {
           log_date?: string
           meal_type?: string
           notes?: string | null
+          photo_url?: string | null
           product_id?: string | null
           protein_g?: number | null
           quality_score?: number | null
@@ -30968,6 +30970,7 @@ export type Database = {
           log_date?: string
           meal_type?: string
           notes?: string | null
+          photo_url?: string | null
           product_id?: string | null
           protein_g?: number | null
           quality_score?: number | null
@@ -31261,6 +31264,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nt_hydration_logs: {
+        Row: {
+          amount_ml: number
+          client_id: string
+          created_at: string
+          id: string
+          log_date: string
+          logged_at: string
+          shop_id: string
+          source: string
+        }
+        Insert: {
+          amount_ml?: number
+          client_id: string
+          created_at?: string
+          id?: string
+          log_date?: string
+          logged_at?: string
+          shop_id: string
+          source?: string
+        }
+        Update: {
+          amount_ml?: number
+          client_id?: string
+          created_at?: string
+          id?: string
+          log_date?: string
+          logged_at?: string
+          shop_id?: string
+          source?: string
+        }
+        Relationships: []
       }
       nt_meal_plans: {
         Row: {
