@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,8 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useSaveBiometricSnapshot } from '@/hooks/usePTAIInsights';
-import { BluetoothDevicePanel } from '@/components/personal-trainer/metrics/BluetoothDevicePanel';
-import { QuickLogPanel } from '@/components/personal-trainer/metrics/QuickLogPanel';
+const BluetoothDevicePanel = React.lazy(() => import('@/components/personal-trainer/metrics/BluetoothDevicePanel').then(m => ({ default: m.BluetoothDevicePanel })));
+const QuickLogPanel = React.lazy(() => import('@/components/personal-trainer/metrics/QuickLogPanel').then(m => ({ default: m.QuickLogPanel })));
 
 const PROVIDERS = [
   { id: 'fitbit', name: 'Fitbit', color: 'bg-teal-100 text-teal-800' },
@@ -121,9 +121,9 @@ export default function PersonalTrainerWearables() {
           </TabsList>
 
           <TabsContent value="bluetooth">
+            <Suspense fallback={<div className="text-muted-foreground text-sm py-4">Loading...</div>}>
             <div className="max-w-md">
               <BluetoothDevicePanel onReadingReceived={(reading) => {
-                // Auto-save BLE readings
                 const payload: any = {
                   client_id: selectedClient,
                   recorded_date: new Date().toISOString().split('T')[0],
@@ -140,9 +140,11 @@ export default function PersonalTrainerWearables() {
                 }
               }} />
             </div>
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="quick-log">
+            <Suspense fallback={<div className="text-muted-foreground text-sm py-4">Loading...</div>}>
             <div className="max-w-md">
               <QuickLogPanel
                 clientId={selectedClient}
@@ -150,6 +152,7 @@ export default function PersonalTrainerWearables() {
                 latestMetrics={latestMetrics}
               />
             </div>
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="cloud">

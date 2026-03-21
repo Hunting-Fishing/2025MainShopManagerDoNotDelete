@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, Suspense } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,8 +16,8 @@ import { BodyMetricsInfoPopover } from '@/components/personal-trainer/metrics/Bo
 import { BMIScaleCard } from '@/components/personal-trainer/metrics/BMIScaleCard';
 import { HealthDeviceCard } from '@/components/personal-trainer/metrics/HealthDeviceCard';
 import { EnhancedMetricCard } from '@/components/personal-trainer/metrics/EnhancedMetricCard';
-import { BluetoothDevicePanel } from '@/components/personal-trainer/metrics/BluetoothDevicePanel';
-import { QuickLogPanel } from '@/components/personal-trainer/metrics/QuickLogPanel';
+const BluetoothDevicePanel = React.lazy(() => import('@/components/personal-trainer/metrics/BluetoothDevicePanel').then(m => ({ default: m.BluetoothDevicePanel })));
+const QuickLogPanel = React.lazy(() => import('@/components/personal-trainer/metrics/QuickLogPanel').then(m => ({ default: m.QuickLogPanel })));
 import { calculateBMI } from '@/components/personal-trainer/metrics/BMIBadge';
 import type { BLEReading } from '@/hooks/useBLEDevice';
 
@@ -230,6 +230,7 @@ export default function PersonalTrainerMetrics() {
 
       {/* Bluetooth + Quick Log + Health Devices + BMI */}
       {selectedClient && (
+        <Suspense fallback={<div className="text-muted-foreground text-sm">Loading...</div>}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <BluetoothDevicePanel onReadingReceived={(reading: BLEReading) => {
             // Auto-save BLE readings as metrics
@@ -259,6 +260,7 @@ export default function PersonalTrainerMetrics() {
           />
           <BMIScaleCard currentBMI={latestBMI} />
         </div>
+        </Suspense>
       )}
       {selectedClient && (
         <HealthDeviceCard integrations={healthIntegrations} clientId={selectedClient} />
