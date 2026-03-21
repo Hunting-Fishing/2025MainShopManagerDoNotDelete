@@ -9,6 +9,7 @@ import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
 import { ConfirmDeleteDialog } from '../shared/ConfirmDeleteDialog';
 import { WorkOrderServiceSelector } from '../services/WorkOrderServiceSelector';
 import { useWorkOrderServiceSelection } from '@/hooks/useWorkOrderServiceSelection';
+import { deleteWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
 import { toast } from '@/hooks/use-toast';
 interface JobLinesSectionProps {
   workOrderId: string;
