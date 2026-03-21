@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,10 @@ import { BodyMetricsInfoPopover } from '@/components/personal-trainer/metrics/Bo
 import { BMIScaleCard } from '@/components/personal-trainer/metrics/BMIScaleCard';
 import { HealthDeviceCard } from '@/components/personal-trainer/metrics/HealthDeviceCard';
 import { EnhancedMetricCard } from '@/components/personal-trainer/metrics/EnhancedMetricCard';
+import { BluetoothDevicePanel } from '@/components/personal-trainer/metrics/BluetoothDevicePanel';
+import { QuickLogPanel } from '@/components/personal-trainer/metrics/QuickLogPanel';
 import { calculateBMI } from '@/components/personal-trainer/metrics/BMIBadge';
+import type { BLEReading } from '@/hooks/useBLEDevice';
 
 export default function PersonalTrainerMetrics() {
   const { shopId } = useShopId();
