@@ -273,3 +273,34 @@ export function useSaveBiometricSnapshot(shopId: string | undefined) {
     onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
 }
+
+export function useHydrationLogs(clientId: string | undefined, shopId: string | undefined) {
+  return useQuery({
+    queryKey: ['nt-hydration-logs', clientId, shopId],
+    queryFn: async () => {
+      if (!clientId || !shopId) return [];
+      const { data } = await (supabase as any).from('nt_hydration_logs')
+        .select('*').eq('client_id', clientId).eq('shop_id', shopId)
+        .order('logged_at', { ascending: false }).limit(200);
+      return data || [];
+    },
+    enabled: !!clientId && !!shopId,
+  });
+}
+
+export function useLogHydration(shopId: string | undefined) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (log: { client_id: string; amount_ml: number; source: string; log_date: string }) => {
+      const { error } = await (supabase as any).from('nt_hydration_logs')
+        .insert({ ...log, shop_id: shopId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['nt-hydration-logs'] });
+      toast({ title: 'Hydration logged 💧' });
+    },
+    onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  });
+}
