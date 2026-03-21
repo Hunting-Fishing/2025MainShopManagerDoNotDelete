@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Search, Pill } from 'lucide-react';
 import { SupplementCard } from '@/components/personal-trainer/supplements/SupplementCard';
 import { SupplementSearch } from '@/components/personal-trainer/supplements/SupplementSearch';
+import { NutritionixSearch } from '@/components/personal-trainer/supplements/NutritionixSearch';
 import { ClientSupplementStack } from '@/components/personal-trainer/supplements/ClientSupplementStack';
 import { VitaminGuide } from '@/components/personal-trainer/supplements/VitaminGuide';
 import { SupplementDetailDialog } from '@/components/personal-trainer/supplements/SupplementDetailDialog';
@@ -170,8 +171,12 @@ export default function PersonalTrainerSupplements() {
           <VitaminGuide />
         </TabsContent>
 
-        <TabsContent value="search">
-          <SupplementSearch />
+        <TabsContent value="search" className="space-y-6">
+          <NutritionixSearch />
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">Open Food Facts (Free Database)</h3>
+            <SupplementSearch />
+          </div>
         </TabsContent>
 
         <TabsContent value="stacks">
