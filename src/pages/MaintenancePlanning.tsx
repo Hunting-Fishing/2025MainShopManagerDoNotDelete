@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateMaintenanceForecast } from '@/services/maintenance/predictiveMaintenanceService';
 import { format } from 'date-fns';
 import { useShopId } from '@/hooks/useShopId';
+import { getMaintenanceActivities } from '@/services/maintenance/maintenanceActivityService';
 import { CreateScheduleDialog } from '@/components/maintenance/CreateScheduleDialog';
 import { EditScheduleDialog } from '@/components/maintenance/EditScheduleDialog';
 import { BudgetDashboard } from '@/components/maintenance/BudgetDashboard';
