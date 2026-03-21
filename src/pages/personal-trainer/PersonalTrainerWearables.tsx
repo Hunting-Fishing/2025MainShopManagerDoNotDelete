@@ -12,8 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useSaveBiometricSnapshot } from '@/hooks/usePTAIInsights';
-import { BluetoothDevicePanel } from '@/components/personal-trainer/metrics/BluetoothDevicePanel';
-import { QuickLogPanel } from '@/components/personal-trainer/metrics/QuickLogPanel';
+const BluetoothDevicePanel = React.lazy(() => import('@/components/personal-trainer/metrics/BluetoothDevicePanel').then(m => ({ default: m.BluetoothDevicePanel })));
+const QuickLogPanel = React.lazy(() => import('@/components/personal-trainer/metrics/QuickLogPanel').then(m => ({ default: m.QuickLogPanel })));
 
 const PROVIDERS = [
   { id: 'fitbit', name: 'Fitbit', color: 'bg-teal-100 text-teal-800' },

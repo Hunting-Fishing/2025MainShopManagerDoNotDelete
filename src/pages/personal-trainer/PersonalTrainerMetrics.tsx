@@ -16,8 +16,8 @@ import { BodyMetricsInfoPopover } from '@/components/personal-trainer/metrics/Bo
 import { BMIScaleCard } from '@/components/personal-trainer/metrics/BMIScaleCard';
 import { HealthDeviceCard } from '@/components/personal-trainer/metrics/HealthDeviceCard';
 import { EnhancedMetricCard } from '@/components/personal-trainer/metrics/EnhancedMetricCard';
-import { BluetoothDevicePanel } from '@/components/personal-trainer/metrics/BluetoothDevicePanel';
-import { QuickLogPanel } from '@/components/personal-trainer/metrics/QuickLogPanel';
+const BluetoothDevicePanel = React.lazy(() => import('@/components/personal-trainer/metrics/BluetoothDevicePanel').then(m => ({ default: m.BluetoothDevicePanel })));
+const QuickLogPanel = React.lazy(() => import('@/components/personal-trainer/metrics/QuickLogPanel').then(m => ({ default: m.QuickLogPanel })));
 import { calculateBMI } from '@/components/personal-trainer/metrics/BMIBadge';
 import type { BLEReading } from '@/hooks/useBLEDevice';
 
