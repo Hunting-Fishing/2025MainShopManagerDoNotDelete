@@ -8,6 +8,7 @@ import { Wrench, Plus, RefreshCw, AlertCircle } from 'lucide-react';
 import { EnhancedJobLineItem } from './EnhancedJobLineItem';
 import { AddJobLineDialog } from './AddJobLineDialog';
 import { toast } from '@/hooks/use-toast';
+import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
 
 interface WorkOrderJobLinesSectionProps {
   workOrderId: string;
@@ -62,8 +63,6 @@ export function WorkOrderJobLinesSection({
     setIsRefreshing(true);
     
     try {
-      // Import the service function dynamically to avoid circular dependencies
-      const { getWorkOrderJobLines } = await import('@/services/workOrder/jobLinesService');
       const refreshedJobLines = await getWorkOrderJobLines(workOrderId);
       
       console.log('✅ WorkOrderJobLinesSection - Refreshed job lines:', refreshedJobLines.length);

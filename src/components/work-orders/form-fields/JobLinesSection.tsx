@@ -9,6 +9,7 @@ import { CompactJobLinesTable } from '../job-lines/CompactJobLinesTable';
 import { ConfirmDeleteDialog } from '../shared/ConfirmDeleteDialog';
 import { WorkOrderServiceSelector } from '../services/WorkOrderServiceSelector';
 import { useWorkOrderServiceSelection } from '@/hooks/useWorkOrderServiceSelection';
+import { deleteWorkOrderJobLine } from '@/services/workOrder/jobLinesService';
 import { toast } from '@/hooks/use-toast';
 interface JobLinesSectionProps {
   workOrderId: string;
@@ -74,10 +75,7 @@ export function JobLinesSection({
     if (!deletingJobLine) return;
     setIsDeleting(true);
     try {
-      // Import the delete function
-      const {
-        deleteWorkOrderJobLine
-      } = await import('@/services/workOrder/jobLinesService');
+      // Delete job line
       console.log('Deleting job line:', deletingJobLine.id);
       await deleteWorkOrderJobLine(deletingJobLine.id);
       console.log('Job line deleted successfully, refreshing list');
