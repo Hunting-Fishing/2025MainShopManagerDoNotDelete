@@ -182,7 +182,9 @@ export default function PersonalTrainerNutrition() {
             <DailyTargets clientId={selectedClient} shopId={shopId!} todayIntake={todayIntake} />
 
             {/* Hydration Tracker */}
-            <HydrationTracker clientId={selectedClient} shopId={shopId!} />
+            <Suspense fallback={<div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}>
+              <HydrationTracker clientId={selectedClient} shopId={shopId!} />
+            </Suspense>
 
             {/* AI Advice */}
             {aiAdvice && (
