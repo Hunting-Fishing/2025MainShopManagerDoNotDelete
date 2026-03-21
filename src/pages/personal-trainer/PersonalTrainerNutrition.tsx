@@ -2,22 +2,18 @@ import React, { useState, lazy, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Utensils, Plus, Loader2, Brain, TrendingUp, Search, ChefHat, Target, User, BarChart3 } from 'lucide-react';
+import { Utensils, Plus, Loader2, Brain, TrendingUp, Search, ChefHat, Target, User, BarChart3, ShoppingCart, Apple } from 'lucide-react';
 import { useShopId } from '@/hooks/useShopId';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import ReactMarkdown from 'react-markdown';
 import DailyTargets from '@/components/nutrition/DailyTargets';
-import { useFoodLogs, useLogFood } from '@/hooks/useNutrition';
+import { useFoodLogs } from '@/hooks/useNutrition';
 
 const FoodSearch = lazy(() => import('@/components/nutrition/FoodSearch'));
 const ProductDetail = lazy(() => import('@/components/nutrition/ProductDetail'));
@@ -27,20 +23,21 @@ const MealPlanView = lazy(() => import('@/components/nutrition/MealPlanView'));
 const HydrationTracker = lazy(() => import('@/components/nutrition/HydrationTracker'));
 const WeeklyReport = lazy(() => import('@/components/nutrition/WeeklyReport'));
 const ClientComparison = lazy(() => import('@/components/nutrition/ClientComparison'));
-const MealPhotoUpload = lazy(() => import('@/components/nutrition/MealPhotoUpload'));
+const ClientOverviewCard = lazy(() => import('@/components/nutrition/ClientOverviewCard'));
+const EnhancedFoodLogger = lazy(() => import('@/components/nutrition/EnhancedFoodLogger'));
+const GroceryList = lazy(() => import('@/components/nutrition/GroceryList'));
+
+const LazyFallback = () => <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
 export default function PersonalTrainerNutrition() {
   const { shopId } = useShopId();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [selectedClient, setSelectedClient] = useState<string>('');
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [logDialogOpen, setLogDialogOpen] = useState(false);
   const [aiAdvice, setAiAdvice] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [photoUrl, setPhotoUrl] = useState('');
-  const [form, setForm] = useState({ meal_type: 'lunch', food_name: '', servings: 1, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0, notes: '' });
 
   const { data: clients = [] } = useQuery({
     queryKey: ['pt-nutrition-clients', shopId],
@@ -53,47 +50,7 @@ export default function PersonalTrainerNutrition() {
   });
 
   const { data: logs = [], isLoading } = useFoodLogs(selectedClient || undefined, shopId || undefined);
-  const logFoodMutation = useLogFood(shopId || undefined);
-
-  const handleLogManual = () => {
-    if (!selectedClient || !form.food_name) return;
-    logFoodMutation.mutate({
-      client_id: selectedClient,
-      log_date: new Date().toISOString().split('T')[0],
-      ...form,
-      photo_url: photoUrl || null,
-    }, {
-      onSuccess: () => {
-        setDialogOpen(false);
-        setForm({ meal_type: 'lunch', food_name: '', servings: 1, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0, notes: '' });
-        setPhotoUrl('');
-      },
-    });
-  };
-
-  const handleLogFromProduct = (product: any) => {
-    if (!selectedClient) { toast({ title: 'Select a client first', variant: 'destructive' }); return; }
-    const nutrients = product.nt_food_product_nutrients || product.nutrients || {};
-    const cal = nutrients.calories?.amount || product.calories_per_serving || 0;
-    const prot = nutrients.protein?.amount || 0;
-    const carbs = nutrients.carbohydrates?.amount || 0;
-    const fat = nutrients.fat?.amount || 0;
-    const fiber = nutrients.fiber?.amount || 0;
-
-    logFoodMutation.mutate({
-      client_id: selectedClient,
-      product_id: product.id || null,
-      log_date: new Date().toISOString().split('T')[0],
-      meal_type: 'lunch',
-      food_name: product.name,
-      servings: 1,
-      calories: Math.round(cal),
-      protein_g: Math.round(prot * 10) / 10,
-      carbs_g: Math.round(carbs * 10) / 10,
-      fat_g: Math.round(fat * 10) / 10,
-      fiber_g: Math.round(fiber * 10) / 10,
-    });
-  };
+  const selectedClientData = clients.find((c: any) => c.id === selectedClient);
 
   const getAiAdvice = async () => {
     if (!selectedClient) return;
@@ -131,107 +88,181 @@ export default function PersonalTrainerNutrition() {
     fat_g: todayLogs.reduce((s: number, l: any) => s + (l.fat_g || 0), 0),
   };
 
+  // Group today's logs by meal type for timeline
+  const mealTimeline = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'];
+  const mealEmojis: Record<string, string> = {
+    breakfast: '🌅', pre_workout: '💪', lunch: '☀️', post_workout: '🔋', dinner: '🌙', snack: '🍎',
+  };
+
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Utensils className="h-6 w-6 text-green-500" />Nutrition Intelligence
+            <Utensils className="h-6 w-6 text-primary" />Nutrition Intelligence
           </h1>
           <p className="text-muted-foreground text-sm">AI-powered nutrition tracking, scoring & meal planning</p>
         </div>
         <div className="flex items-center gap-2">
           {selectedClient && (
-            <Button variant="outline" onClick={getAiAdvice} disabled={aiLoading}>
-              {aiLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Brain className="h-4 w-4 mr-2" />}AI Advice
+            <Button variant="outline" size="sm" onClick={getAiAdvice} disabled={aiLoading}>
+              {aiLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Brain className="h-4 w-4 mr-1" />}AI Advice
             </Button>
           )}
-          <Button onClick={() => setDialogOpen(true)} disabled={!selectedClient} className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-            <Plus className="h-4 w-4 mr-2" />Log Meal
+          <Button onClick={() => setLogDialogOpen(true)} disabled={!selectedClient} size="sm">
+            <Plus className="h-4 w-4 mr-1" />Log Meal
           </Button>
         </div>
       </div>
 
+      {/* Client Selector */}
       <div className="max-w-xs">
-        <Select value={selectedClient} onValueChange={v => { setSelectedClient(v); setSelectedProduct(null); }}>
+        <Select value={selectedClient} onValueChange={v => { setSelectedClient(v); setSelectedProduct(null); setActiveTab('dashboard'); }}>
           <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
           <SelectContent>{clients.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.first_name} {c.last_name}</SelectItem>)}</SelectContent>
         </Select>
       </div>
 
-      {/* Show Client Comparison when no client selected */}
+      {/* Client Comparison when no client selected */}
       {!selectedClient && shopId && (
-        <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+        <Suspense fallback={<LazyFallback />}>
           <ClientComparison shopId={shopId} onSelectClient={setSelectedClient} />
+        </Suspense>
+      )}
+
+      {/* Client Overview Card */}
+      {selectedClient && selectedClientData && (
+        <Suspense fallback={<LazyFallback />}>
+          <ClientOverviewCard client={selectedClientData} shopId={shopId!} />
         </Suspense>
       )}
 
       {selectedClient && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-6">
-            <TabsTrigger value="dashboard" className="text-xs"><TrendingUp className="h-3.5 w-3.5 mr-1" />Dashboard</TabsTrigger>
-            <TabsTrigger value="search" className="text-xs"><Search className="h-3.5 w-3.5 mr-1" />Food Search</TabsTrigger>
-            <TabsTrigger value="meals" className="text-xs"><ChefHat className="h-3.5 w-3.5 mr-1" />Meal Plans</TabsTrigger>
-            <TabsTrigger value="goals" className="text-xs"><Target className="h-3.5 w-3.5 mr-1" />Goals</TabsTrigger>
-            <TabsTrigger value="profile" className="text-xs"><User className="h-3.5 w-3.5 mr-1" />Profile</TabsTrigger>
-            <TabsTrigger value="reports" className="text-xs"><BarChart3 className="h-3.5 w-3.5 mr-1" />Reports</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-7 h-auto">
+            <TabsTrigger value="dashboard" className="text-[11px] px-1"><TrendingUp className="h-3.5 w-3.5 mr-0.5" />Dashboard</TabsTrigger>
+            <TabsTrigger value="search" className="text-[11px] px-1"><Search className="h-3.5 w-3.5 mr-0.5" />Food</TabsTrigger>
+            <TabsTrigger value="meals" className="text-[11px] px-1"><ChefHat className="h-3.5 w-3.5 mr-0.5" />Meals</TabsTrigger>
+            <TabsTrigger value="grocery" className="text-[11px] px-1"><ShoppingCart className="h-3.5 w-3.5 mr-0.5" />Grocery</TabsTrigger>
+            <TabsTrigger value="goals" className="text-[11px] px-1"><Target className="h-3.5 w-3.5 mr-0.5" />Goals</TabsTrigger>
+            <TabsTrigger value="profile" className="text-[11px] px-1"><User className="h-3.5 w-3.5 mr-0.5" />Profile</TabsTrigger>
+            <TabsTrigger value="reports" className="text-[11px] px-1"><BarChart3 className="h-3.5 w-3.5 mr-0.5" />Reports</TabsTrigger>
           </TabsList>
 
+          {/* DASHBOARD */}
           <TabsContent value="dashboard" className="space-y-4 mt-4">
-            {/* Daily Targets with Progress Rings */}
             <DailyTargets clientId={selectedClient} shopId={shopId!} todayIntake={todayIntake} />
 
-            {/* Hydration Tracker */}
-            <Suspense fallback={<div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}>
+            <Suspense fallback={<LazyFallback />}>
               <HydrationTracker clientId={selectedClient} shopId={shopId!} />
             </Suspense>
 
             {/* AI Advice */}
             {aiAdvice && (
-              <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
-                <CardHeader><CardTitle className="text-base flex items-center gap-2"><Brain className="h-5 w-5 text-green-600" />AI Nutrition Advice</CardTitle></CardHeader>
+              <Card className="border-primary/20 bg-primary/5">
+                <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Brain className="h-5 w-5 text-primary" />AI Nutrition Advice</CardTitle></CardHeader>
                 <CardContent><div className="prose prose-sm dark:prose-invert max-w-none"><ReactMarkdown>{aiAdvice}</ReactMarkdown></div></CardContent>
+              </Card>
+            )}
+
+            {/* Meal Timeline for Today */}
+            {todayLogs.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Apple className="h-4 w-4 text-primary" />
+                    Today's Meals
+                    <Badge variant="outline" className="ml-auto text-xs">{todayLogs.length} entries</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {mealTimeline.map(mealType => {
+                      const mealLogs = todayLogs.filter((l: any) => l.meal_type === mealType);
+                      if (mealLogs.length === 0) return null;
+                      const totalCal = mealLogs.reduce((s: number, l: any) => s + (l.calories || 0), 0);
+                      return (
+                        <div key={mealType} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
+                          <span className="text-lg mt-0.5">{mealEmojis[mealType]}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold capitalize text-muted-foreground">{mealType.replace('_', ' ')}</p>
+                            {mealLogs.map((l: any) => (
+                              <div key={l.id} className="flex items-center gap-2 mt-0.5">
+                                {l.photo_url && <img src={l.photo_url} alt="" className="w-8 h-8 rounded object-cover border border-border" />}
+                                <span className="text-sm truncate">{l.food_name}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold">{totalCal}</p>
+                            <p className="text-[10px] text-muted-foreground">cal</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Empty state for no logs */}
+            {!isLoading && todayLogs.length === 0 && (
+              <Card className="border-dashed">
+                <CardContent className="py-8 text-center">
+                  <Utensils className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No meals logged today</p>
+                  <p className="text-xs text-muted-foreground mt-1 mb-3">Start tracking to see progress towards daily targets</p>
+                  <Button size="sm" onClick={() => setLogDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-1" />Log First Meal
+                  </Button>
+                </CardContent>
               </Card>
             )}
 
             {/* Charts */}
             {dailyTotals.length > 0 && (
               <Card>
-                <CardHeader><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-5 w-5" />Daily Intake Trend</CardTitle></CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="h-4 w-4" />14-Day Intake Trend</CardTitle></CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={220}>
+                  <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={dailyTotals}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" tickFormatter={(v: string) => format(new Date(v), 'MMM d')} fontSize={11} />
-                      <YAxis fontSize={11} />
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <XAxis dataKey="date" tickFormatter={(v: string) => format(new Date(v), 'MMM d')} fontSize={10} />
+                      <YAxis fontSize={10} />
                       <Tooltip />
                       <Bar dataKey="calories" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} name="Calories" />
+                      <Bar dataKey="protein" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} name="Protein (g)" />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
             )}
 
-            {/* Recent Logs with photo thumbnails */}
-            {isLoading ? <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-green-500" /></div> : (
+            {/* Recent Logs */}
+            {isLoading ? <LazyFallback /> : logs.length > 0 && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-sm text-muted-foreground">Recent Entries</h3>
-                {logs.slice(0, 20).map((l: any) => (
-                  <Card key={l.id}>
+                <h3 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Recent Entries</h3>
+                {logs.slice(0, 15).map((l: any) => (
+                  <Card key={l.id} className="hover:shadow-sm transition-shadow">
                     <CardContent className="p-3 flex items-center gap-3">
-                      {l.photo_url && (
+                      {l.photo_url ? (
                         <img src={l.photo_url} alt="" className="w-10 h-10 rounded-md object-cover border border-border flex-shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center flex-shrink-0 text-lg">
+                          {mealEmojis[l.meal_type] || '🍽️'}
+                        </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs capitalize">{l.meal_type}</Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-[10px] capitalize py-0">{l.meal_type?.replace('_', ' ')}</Badge>
                           <span className="font-medium text-sm truncate">{l.food_name}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">{format(new Date(l.log_date), 'MMM d, yyyy')}{l.notes ? ` · ${l.notes}` : ''}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{format(new Date(l.log_date), 'EEE, MMM d')}{l.notes ? ` · ${l.notes}` : ''}</p>
                       </div>
                       <div className="text-right text-xs space-y-0.5 flex-shrink-0">
-                        <p><strong>{Math.round(l.calories || 0)}</strong> cal</p>
-                        <p>P:{Math.round(l.protein_g || 0)}g C:{Math.round(l.carbs_g || 0)}g F:{Math.round(l.fat_g || 0)}g</p>
+                        <p className="font-bold">{Math.round(l.calories || 0)} cal</p>
+                        <p className="text-muted-foreground">P:{Math.round(l.protein_g || 0)} C:{Math.round(l.carbs_g || 0)} F:{Math.round(l.fat_g || 0)}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -240,95 +271,55 @@ export default function PersonalTrainerNutrition() {
             )}
           </TabsContent>
 
+          {/* FOOD SEARCH */}
           <TabsContent value="search" className="mt-4">
-            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+            <Suspense fallback={<LazyFallback />}>
               {selectedProduct ? (
-                <ProductDetail
-                  product={selectedProduct}
-                  clientId={selectedClient}
-                  shopId={shopId!}
-                  onBack={() => setSelectedProduct(null)}
-                  onLogFood={handleLogFromProduct}
-                />
+                <ProductDetail product={selectedProduct} clientId={selectedClient} shopId={shopId!} onBack={() => setSelectedProduct(null)} onLogFood={(p: any) => {
+                  if (!selectedClient) { toast({ title: 'Select a client first', variant: 'destructive' }); return; }
+                  const nutrients = p.nt_food_product_nutrients || p.nutrients || {};
+                  const { mutate } = require('@/hooks/useNutrition').useLogFood(shopId);
+                  // handled via product detail's own log
+                }} />
               ) : (
-                <FoodSearch
-                  clientId={selectedClient}
-                  shopId={shopId!}
-                  onSelectProduct={setSelectedProduct}
-                  onLogFood={handleLogFromProduct}
-                />
+                <FoodSearch clientId={selectedClient} shopId={shopId!} onSelectProduct={setSelectedProduct} onLogFood={() => {}} />
               )}
             </Suspense>
           </TabsContent>
 
+          {/* MEAL PLANS */}
           <TabsContent value="meals" className="mt-4">
-            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
-              <MealPlanView clientId={selectedClient} shopId={shopId!} />
-            </Suspense>
+            <Suspense fallback={<LazyFallback />}><MealPlanView clientId={selectedClient} shopId={shopId!} /></Suspense>
           </TabsContent>
 
+          {/* GROCERY LIST */}
+          <TabsContent value="grocery" className="mt-4">
+            <Suspense fallback={<LazyFallback />}><GroceryList clientId={selectedClient} shopId={shopId!} /></Suspense>
+          </TabsContent>
+
+          {/* GOALS */}
           <TabsContent value="goals" className="mt-4">
-            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
-              <GoalSetup clientId={selectedClient} shopId={shopId!} />
-            </Suspense>
+            <Suspense fallback={<LazyFallback />}><GoalSetup clientId={selectedClient} shopId={shopId!} /></Suspense>
           </TabsContent>
 
+          {/* PROFILE */}
           <TabsContent value="profile" className="mt-4">
-            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
-              <NutritionProfile clientId={selectedClient} shopId={shopId!} />
-            </Suspense>
+            <Suspense fallback={<LazyFallback />}><NutritionProfile clientId={selectedClient} shopId={shopId!} /></Suspense>
           </TabsContent>
 
+          {/* REPORTS */}
           <TabsContent value="reports" className="mt-4">
-            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
-              <WeeklyReport clientId={selectedClient} shopId={shopId!} />
-            </Suspense>
+            <Suspense fallback={<LazyFallback />}><WeeklyReport clientId={selectedClient} shopId={shopId!} /></Suspense>
           </TabsContent>
         </Tabs>
       )}
 
-      {/* Manual Log Dialog with Photo Upload */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Log Meal</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Meal Type</Label>
-              <Select value={form.meal_type} onValueChange={v => setForm(f => ({ ...f, meal_type: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="breakfast">Breakfast</SelectItem>
-                  <SelectItem value="pre_workout">Pre-Workout</SelectItem>
-                  <SelectItem value="lunch">Lunch</SelectItem>
-                  <SelectItem value="post_workout">Post-Workout</SelectItem>
-                  <SelectItem value="dinner">Dinner</SelectItem>
-                  <SelectItem value="snack">Snack</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Food Item</Label><Input value={form.food_name} onChange={e => setForm(f => ({ ...f, food_name: e.target.value }))} placeholder="Grilled chicken breast with rice" /></div>
-
-            {/* Meal Photo */}
-            <div>
-              <Label className="mb-1 block">Meal Photo (optional)</Label>
-              <Suspense fallback={<div className="h-8" />}>
-                <MealPhotoUpload clientId={selectedClient} onPhotoUploaded={setPhotoUrl} existingUrl={photoUrl} />
-              </Suspense>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Calories</Label><Input type="number" value={form.calories} onChange={e => setForm(f => ({ ...f, calories: parseInt(e.target.value) || 0 }))} /></div>
-              <div><Label>Protein (g)</Label><Input type="number" value={form.protein_g} onChange={e => setForm(f => ({ ...f, protein_g: parseFloat(e.target.value) || 0 }))} /></div>
-              <div><Label>Carbs (g)</Label><Input type="number" value={form.carbs_g} onChange={e => setForm(f => ({ ...f, carbs_g: parseFloat(e.target.value) || 0 }))} /></div>
-              <div><Label>Fat (g)</Label><Input type="number" value={form.fat_g} onChange={e => setForm(f => ({ ...f, fat_g: parseFloat(e.target.value) || 0 }))} /></div>
-            </div>
-            <div><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
-            <Button onClick={handleLogManual} disabled={!form.food_name || logFoodMutation.isPending} className="w-full">
-              {logFoodMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}Log Meal
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Enhanced Food Logger Dialog */}
+      {selectedClient && (
+        <Suspense fallback={null}>
+          <EnhancedFoodLogger clientId={selectedClient} shopId={shopId!} open={logDialogOpen} onOpenChange={setLogDialogOpen} />
+        </Suspense>
+      )}
     </div>
   );
 }
