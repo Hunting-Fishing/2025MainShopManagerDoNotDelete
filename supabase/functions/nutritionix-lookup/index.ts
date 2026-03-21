@@ -109,10 +109,7 @@ serve(async (req) => {
       );
 
     } else if (action === 'item') {
-      const body = await req.clone().json();
-      const itemId = body.nix_item_id;
-
-      if (!itemId || typeof itemId !== 'string') {
+      if (!nix_item_id || typeof nix_item_id !== 'string') {
         return new Response(
           JSON.stringify({ error: 'Missing nix_item_id' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
