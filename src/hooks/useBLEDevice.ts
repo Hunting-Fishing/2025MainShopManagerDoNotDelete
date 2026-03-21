@@ -122,7 +122,7 @@ export function useBLEDevice(): UseBLEDeviceReturn {
     setError(null);
 
     try {
-      const device = await navigator.bluetooth.requestDevice({
+      const device = await (navigator as any).bluetooth.requestDevice({
         filters: [
           { services: [WEIGHT_SCALE_SERVICE] },
           { services: [BODY_COMPOSITION_SERVICE] },
