@@ -4,16 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Utensils, Plus, Loader2, Brain, TrendingUp, Search, ChefHat, Target, User, BarChart3, ShoppingCart, Apple } from 'lucide-react';
+import { Utensils, Plus, Loader2, Search, ChefHat, Target, User, BarChart3, ShoppingCart, Apple, Brain, TrendingUp } from 'lucide-react';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import ReactMarkdown from 'react-markdown';
-import DailyTargets from '@/components/nutrition/DailyTargets';
 import { useFoodLogs } from '@/hooks/useNutrition';
+
+const DailyTargets = lazy(() => import('@/components/nutrition/DailyTargets'));
 
 const FoodSearch = lazy(() => import('@/components/nutrition/FoodSearch'));
 const ProductDetail = lazy(() => import('@/components/nutrition/ProductDetail'));
@@ -26,6 +25,8 @@ const ClientComparison = lazy(() => import('@/components/nutrition/ClientCompari
 const ClientOverviewCard = lazy(() => import('@/components/nutrition/ClientOverviewCard'));
 const EnhancedFoodLogger = lazy(() => import('@/components/nutrition/EnhancedFoodLogger'));
 const GroceryList = lazy(() => import('@/components/nutrition/GroceryList'));
+const IntakeTrendChart = lazy(() => import('@/components/nutrition/IntakeTrendChart'));
+const AiAdviceCard = lazy(() => import('@/components/nutrition/AiAdviceCard'));
 
 const LazyFallback = () => <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
@@ -160,10 +161,9 @@ export default function PersonalTrainerNutrition() {
 
             {/* AI Advice */}
             {aiAdvice && (
-              <Card className="border-primary/20 bg-primary/5">
-                <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Brain className="h-5 w-5 text-primary" />AI Nutrition Advice</CardTitle></CardHeader>
-                <CardContent><div className="prose prose-sm dark:prose-invert max-w-none"><ReactMarkdown>{aiAdvice}</ReactMarkdown></div></CardContent>
-              </Card>
+              <Suspense fallback={<LazyFallback />}>
+                <AiAdviceCard advice={aiAdvice} />
+              </Suspense>
             )}
 
             {/* Meal Timeline for Today */}
@@ -222,21 +222,9 @@ export default function PersonalTrainerNutrition() {
 
             {/* Charts */}
             {dailyTotals.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="h-4 w-4" />14-Day Intake Trend</CardTitle></CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={dailyTotals}>
-                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                      <XAxis dataKey="date" tickFormatter={(v: string) => format(new Date(v), 'MMM d')} fontSize={10} />
-                      <YAxis fontSize={10} />
-                      <Tooltip />
-                      <Bar dataKey="calories" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} name="Calories" />
-                      <Bar dataKey="protein" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} name="Protein (g)" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+              <Suspense fallback={<LazyFallback />}>
+                <IntakeTrendChart dailyTotals={dailyTotals} />
+              </Suspense>
             )}
 
             {/* Recent Logs */}
