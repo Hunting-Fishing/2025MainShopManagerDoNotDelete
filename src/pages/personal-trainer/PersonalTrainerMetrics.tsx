@@ -260,6 +260,7 @@ export default function PersonalTrainerMetrics() {
           />
           <BMIScaleCard currentBMI={latestBMI} />
         </div>
+        </Suspense>
       )}
       {selectedClient && (
         <HealthDeviceCard integrations={healthIntegrations} clientId={selectedClient} />
