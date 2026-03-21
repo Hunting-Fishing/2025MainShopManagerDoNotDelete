@@ -10,10 +10,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import ReactMarkdown from 'react-markdown';
-import DailyTargets from '@/components/nutrition/DailyTargets';
 import { useFoodLogs } from '@/hooks/useNutrition';
+
+const DailyTargets = lazy(() => import('@/components/nutrition/DailyTargets'));
 
 const FoodSearch = lazy(() => import('@/components/nutrition/FoodSearch'));
 const ProductDetail = lazy(() => import('@/components/nutrition/ProductDetail'));
