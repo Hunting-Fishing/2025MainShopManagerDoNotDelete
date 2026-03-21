@@ -161,10 +161,9 @@ export default function PersonalTrainerNutrition() {
 
             {/* AI Advice */}
             {aiAdvice && (
-              <Card className="border-primary/20 bg-primary/5">
-                <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Brain className="h-5 w-5 text-primary" />AI Nutrition Advice</CardTitle></CardHeader>
-                <CardContent><div className="prose prose-sm dark:prose-invert max-w-none"><ReactMarkdown>{aiAdvice}</ReactMarkdown></div></CardContent>
-              </Card>
+              <Suspense fallback={<LazyFallback />}>
+                <AiAdviceCard advice={aiAdvice} />
+              </Suspense>
             )}
 
             {/* Meal Timeline for Today */}
