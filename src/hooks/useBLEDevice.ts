@@ -44,8 +44,8 @@ export function useBLEDevice(): UseBLEDeviceReturn {
   const [lastReading, setLastReading] = useState<BLEReading | null>(null);
   const [readings, setReadings] = useState<BLEReading[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const deviceRef = useRef<BluetoothDevice | null>(null);
-  const serverRef = useRef<BluetoothRemoteGATTServer | null>(null);
+  const deviceRef = useRef<any>(null);
+  const serverRef = useRef<any>(null);
 
   const isSupported = typeof navigator !== 'undefined' && 'bluetooth' in navigator;
 
