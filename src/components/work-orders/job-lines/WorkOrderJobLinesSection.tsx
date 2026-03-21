@@ -8,6 +8,7 @@ import { Wrench, Plus, RefreshCw, AlertCircle } from 'lucide-react';
 import { EnhancedJobLineItem } from './EnhancedJobLineItem';
 import { AddJobLineDialog } from './AddJobLineDialog';
 import { toast } from '@/hooks/use-toast';
+import { getWorkOrderJobLines } from '@/services/workOrder/jobLinesService';
 
 interface WorkOrderJobLinesSectionProps {
   workOrderId: string;
