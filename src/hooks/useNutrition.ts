@@ -215,6 +215,48 @@ export function useBiometricSnapshots(clientId: string | undefined, shopId: stri
   });
 }
 
+export function useRecipeSearch() {
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (params: { query: string; diet?: string; maxCalories?: number; number?: number }) => {
+      const { data, error } = await supabase.functions.invoke('spoonacular-recipes', {
+        body: { action: 'search', ...params },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onError: (e: any) => toast({ title: 'Recipe Search Error', description: e.message, variant: 'destructive' }),
+  });
+}
+
+export function useRecipeDetails() {
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (recipeId: number) => {
+      const { data, error } = await supabase.functions.invoke('spoonacular-recipes', {
+        body: { action: 'details', recipeId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  });
+}
+
+export function useSpoonacularMealPlan() {
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (params: { targetCalories: number; diet?: string }) => {
+      const { data, error } = await supabase.functions.invoke('spoonacular-recipes', {
+        body: { action: 'meal_plan', ...params },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onError: (e: any) => toast({ title: 'Meal Plan Error', description: e.message, variant: 'destructive' }),
+  });
+}
+
 export function useSaveBiometricSnapshot(shopId: string | undefined) {
   const qc = useQueryClient();
   const { toast } = useToast();
