@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,16 +17,17 @@ import { format } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import ReactMarkdown from 'react-markdown';
 import DailyTargets from '@/components/nutrition/DailyTargets';
-import FoodSearch from '@/components/nutrition/FoodSearch';
-import ProductDetail from '@/components/nutrition/ProductDetail';
-import NutritionProfile from '@/components/nutrition/NutritionProfile';
-import GoalSetup from '@/components/nutrition/GoalSetup';
-import MealPlanView from '@/components/nutrition/MealPlanView';
-import HydrationTracker from '@/components/nutrition/HydrationTracker';
-import WeeklyReport from '@/components/nutrition/WeeklyReport';
-import ClientComparison from '@/components/nutrition/ClientComparison';
-import MealPhotoUpload from '@/components/nutrition/MealPhotoUpload';
 import { useFoodLogs, useLogFood } from '@/hooks/useNutrition';
+
+const FoodSearch = lazy(() => import('@/components/nutrition/FoodSearch'));
+const ProductDetail = lazy(() => import('@/components/nutrition/ProductDetail'));
+const NutritionProfile = lazy(() => import('@/components/nutrition/NutritionProfile'));
+const GoalSetup = lazy(() => import('@/components/nutrition/GoalSetup'));
+const MealPlanView = lazy(() => import('@/components/nutrition/MealPlanView'));
+const HydrationTracker = lazy(() => import('@/components/nutrition/HydrationTracker'));
+const WeeklyReport = lazy(() => import('@/components/nutrition/WeeklyReport'));
+const ClientComparison = lazy(() => import('@/components/nutrition/ClientComparison'));
+const MealPhotoUpload = lazy(() => import('@/components/nutrition/MealPhotoUpload'));
 
 export default function PersonalTrainerNutrition() {
   const { shopId } = useShopId();
@@ -160,7 +161,9 @@ export default function PersonalTrainerNutrition() {
 
       {/* Show Client Comparison when no client selected */}
       {!selectedClient && shopId && (
-        <ClientComparison shopId={shopId} onSelectClient={setSelectedClient} />
+        <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+          <ClientComparison shopId={shopId} onSelectClient={setSelectedClient} />
+        </Suspense>
       )}
 
       {selectedClient && (
@@ -179,7 +182,9 @@ export default function PersonalTrainerNutrition() {
             <DailyTargets clientId={selectedClient} shopId={shopId!} todayIntake={todayIntake} />
 
             {/* Hydration Tracker */}
-            <HydrationTracker clientId={selectedClient} shopId={shopId!} />
+            <Suspense fallback={<div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}>
+              <HydrationTracker clientId={selectedClient} shopId={shopId!} />
+            </Suspense>
 
             {/* AI Advice */}
             {aiAdvice && (
@@ -236,38 +241,48 @@ export default function PersonalTrainerNutrition() {
           </TabsContent>
 
           <TabsContent value="search" className="mt-4">
-            {selectedProduct ? (
-              <ProductDetail
-                product={selectedProduct}
-                clientId={selectedClient}
-                shopId={shopId!}
-                onBack={() => setSelectedProduct(null)}
-                onLogFood={handleLogFromProduct}
-              />
-            ) : (
-              <FoodSearch
-                clientId={selectedClient}
-                shopId={shopId!}
-                onSelectProduct={setSelectedProduct}
-                onLogFood={handleLogFromProduct}
-              />
-            )}
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              {selectedProduct ? (
+                <ProductDetail
+                  product={selectedProduct}
+                  clientId={selectedClient}
+                  shopId={shopId!}
+                  onBack={() => setSelectedProduct(null)}
+                  onLogFood={handleLogFromProduct}
+                />
+              ) : (
+                <FoodSearch
+                  clientId={selectedClient}
+                  shopId={shopId!}
+                  onSelectProduct={setSelectedProduct}
+                  onLogFood={handleLogFromProduct}
+                />
+              )}
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="meals" className="mt-4">
-            <MealPlanView clientId={selectedClient} shopId={shopId!} />
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <MealPlanView clientId={selectedClient} shopId={shopId!} />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="goals" className="mt-4">
-            <GoalSetup clientId={selectedClient} shopId={shopId!} />
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <GoalSetup clientId={selectedClient} shopId={shopId!} />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="profile" className="mt-4">
-            <NutritionProfile clientId={selectedClient} shopId={shopId!} />
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <NutritionProfile clientId={selectedClient} shopId={shopId!} />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="reports" className="mt-4">
-            <WeeklyReport clientId={selectedClient} shopId={shopId!} />
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <WeeklyReport clientId={selectedClient} shopId={shopId!} />
+            </Suspense>
           </TabsContent>
         </Tabs>
       )}
@@ -296,7 +311,9 @@ export default function PersonalTrainerNutrition() {
             {/* Meal Photo */}
             <div>
               <Label className="mb-1 block">Meal Photo (optional)</Label>
-              <MealPhotoUpload clientId={selectedClient} onPhotoUploaded={setPhotoUrl} existingUrl={photoUrl} />
+              <Suspense fallback={<div className="h-8" />}>
+                <MealPhotoUpload clientId={selectedClient} onPhotoUploaded={setPhotoUrl} existingUrl={photoUrl} />
+              </Suspense>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
