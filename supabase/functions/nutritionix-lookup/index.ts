@@ -33,7 +33,8 @@ serve(async (req) => {
       'Content-Type': 'application/json',
     };
 
-    const { action, query, upc } = await req.json();
+    const body = await req.json();
+    const { action, query, upc, nix_item_id } = body;
 
     if (action === 'search') {
       if (!query || typeof query !== 'string') {
