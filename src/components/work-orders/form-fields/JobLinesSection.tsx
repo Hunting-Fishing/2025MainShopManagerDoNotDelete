@@ -75,10 +75,7 @@ export function JobLinesSection({
     if (!deletingJobLine) return;
     setIsDeleting(true);
     try {
-      // Import the delete function
-      const {
-        deleteWorkOrderJobLine
-      } = await import('@/services/workOrder/jobLinesService');
+      // Delete job line
       console.log('Deleting job line:', deletingJobLine.id);
       await deleteWorkOrderJobLine(deletingJobLine.id);
       console.log('Job line deleted successfully, refreshing list');
