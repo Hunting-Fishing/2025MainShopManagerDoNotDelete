@@ -116,7 +116,7 @@ serve(async (req) => {
         );
       }
 
-      const res = await fetch(`${NUTRITIONIX_BASE}/search/item?nix_item_id=${encodeURIComponent(itemId)}`, {
+      const res = await fetch(`${NUTRITIONIX_BASE}/search/item?nix_item_id=${encodeURIComponent(nix_item_id)}`, {
         headers,
       });
 
