@@ -25,6 +25,8 @@ const ClientComparison = lazy(() => import('@/components/nutrition/ClientCompari
 const ClientOverviewCard = lazy(() => import('@/components/nutrition/ClientOverviewCard'));
 const EnhancedFoodLogger = lazy(() => import('@/components/nutrition/EnhancedFoodLogger'));
 const GroceryList = lazy(() => import('@/components/nutrition/GroceryList'));
+const IntakeTrendChart = lazy(() => import('@/components/nutrition/IntakeTrendChart'));
+const AiAdviceCard = lazy(() => import('@/components/nutrition/AiAdviceCard'));
 
 const LazyFallback = () => <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
