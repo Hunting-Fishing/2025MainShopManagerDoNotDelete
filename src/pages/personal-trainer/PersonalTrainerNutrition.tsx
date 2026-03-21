@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Utensils, Plus, Loader2, Brain, TrendingUp, Search, ChefHat, Target, User, BarChart3, ShoppingCart, Apple } from 'lucide-react';
+import { Utensils, Plus, Loader2, Search, ChefHat, Target, User, BarChart3, ShoppingCart, Apple } from 'lucide-react';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
