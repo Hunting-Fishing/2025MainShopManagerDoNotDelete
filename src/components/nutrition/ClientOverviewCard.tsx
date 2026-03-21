@@ -113,7 +113,7 @@ export default function ClientOverviewCard({ client, shopId }: Props) {
             <TrendingUp className="h-4 w-4 mx-auto text-blue-500 mb-0.5" />
             <p className="text-sm font-bold">{Math.round(todayProtein)}g</p>
             <p className="text-[10px] text-muted-foreground">Protein</p>
-          </div>-
+          </div>
           <div className="bg-background/60 rounded-lg p-2 text-center">
             <Droplets className="h-4 w-4 mx-auto text-cyan-500 mb-0.5" />
             <p className="text-sm font-bold">{todayHydration >= 1000 ? `${(todayHydration / 1000).toFixed(1)}L` : `${todayHydration}ml`}</p>

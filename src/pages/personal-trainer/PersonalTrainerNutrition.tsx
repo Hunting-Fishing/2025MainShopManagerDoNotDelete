@@ -275,12 +275,7 @@ export default function PersonalTrainerNutrition() {
           <TabsContent value="search" className="mt-4">
             <Suspense fallback={<LazyFallback />}>
               {selectedProduct ? (
-                <ProductDetail product={selectedProduct} clientId={selectedClient} shopId={shopId!} onBack={() => setSelectedProduct(null)} onLogFood={(p: any) => {
-                  if (!selectedClient) { toast({ title: 'Select a client first', variant: 'destructive' }); return; }
-                  const nutrients = p.nt_food_product_nutrients || p.nutrients || {};
-                  const { mutate } = require('@/hooks/useNutrition').useLogFood(shopId);
-                  // handled via product detail's own log
-                }} />
+                <ProductDetail product={selectedProduct} clientId={selectedClient} shopId={shopId!} onBack={() => setSelectedProduct(null)} onLogFood={() => {}} />
               ) : (
                 <FoodSearch clientId={selectedClient} shopId={shopId!} onSelectProduct={setSelectedProduct} onLogFood={() => {}} />
               )}
