@@ -230,6 +230,7 @@ export default function PersonalTrainerMetrics() {
 
       {/* Bluetooth + Quick Log + Health Devices + BMI */}
       {selectedClient && (
+        <Suspense fallback={<div className="text-muted-foreground text-sm">Loading...</div>}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <BluetoothDevicePanel onReadingReceived={(reading: BLEReading) => {
             // Auto-save BLE readings as metrics
