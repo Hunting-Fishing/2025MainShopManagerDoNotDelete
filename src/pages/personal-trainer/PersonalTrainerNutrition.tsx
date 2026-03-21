@@ -222,21 +222,9 @@ export default function PersonalTrainerNutrition() {
 
             {/* Charts */}
             {dailyTotals.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="h-4 w-4" />14-Day Intake Trend</CardTitle></CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={dailyTotals}>
-                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                      <XAxis dataKey="date" tickFormatter={(v: string) => format(new Date(v), 'MMM d')} fontSize={10} />
-                      <YAxis fontSize={10} />
-                      <Tooltip />
-                      <Bar dataKey="calories" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} name="Calories" />
-                      <Bar dataKey="protein" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} name="Protein (g)" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+              <Suspense fallback={<LazyFallback />}>
+                <IntakeTrendChart dailyTotals={dailyTotals} />
+              </Suspense>
             )}
 
             {/* Recent Logs */}
