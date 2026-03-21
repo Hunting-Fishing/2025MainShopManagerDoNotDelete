@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { SelectedService } from '@/types/selectedService';
 import { WorkOrderJobLine } from '@/types/jobLine';
-import { createJobLinesFromServices, removeServiceJobLines, convertServicesToJobLines } from '@/utils/serviceToJobLineConverter';
+import { createJobLinesFromServices, removeServiceJobLines } from '@/utils/serviceToJobLineConverter';
+import { convertServicesToJobLines as convertFormat } from '@/utils/serviceToJobLineConverter';
 import { toast } from '@/hooks/use-toast';
 
 export function useWorkOrderServiceSelection(
