@@ -61,8 +61,8 @@ export default function SepticPortalLogin() {
       if (error) throw error;
 
       // Check if this user has a customer record
-      const { data: customer } = await supabase
-        .from('customers')
+      const { data: customer } = await (supabase as any)
+        .from('septic_customers')
         .select('id, first_name, last_name')
         .eq('user_id', data.user.id)
         .single();
