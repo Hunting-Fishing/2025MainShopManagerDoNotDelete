@@ -44956,7 +44956,7 @@ export type Database = {
             foreignKeyName: "septic_communications_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
           {
@@ -45081,7 +45081,7 @@ export type Database = {
             foreignKeyName: "septic_completions_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
           {
@@ -45183,6 +45183,65 @@ export type Database = {
           },
         ]
       }
+      septic_customers: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string | null
+          email: string | null
+          first_name: string
+          id: string
+          is_active: boolean | null
+          last_name: string
+          notes: string | null
+          phone: string | null
+          shop_id: string
+          state: string | null
+          updated_at: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          is_active?: boolean | null
+          last_name: string
+          notes?: string | null
+          phone?: string | null
+          shop_id: string
+          state?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          is_active?: boolean | null
+          last_name?: string
+          notes?: string | null
+          phone?: string | null
+          shop_id?: string
+          state?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_customers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       septic_disposal_records: {
         Row: {
           compliance_notes: string | null
@@ -45269,7 +45328,7 @@ export type Database = {
             foreignKeyName: "septic_disposal_records_source_customer_id_fkey"
             columns: ["source_customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
           {
@@ -45543,7 +45602,7 @@ export type Database = {
             foreignKeyName: "septic_inspection_records_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
           {
@@ -45974,7 +46033,7 @@ export type Database = {
             foreignKeyName: "septic_invoices_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
           {
@@ -46108,7 +46167,7 @@ export type Database = {
             foreignKeyName: "septic_payments_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
           {
@@ -46237,7 +46296,7 @@ export type Database = {
             foreignKeyName: "septic_property_systems_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
           {
@@ -46567,7 +46626,7 @@ export type Database = {
             foreignKeyName: "septic_quotes_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
           {
@@ -46643,7 +46702,7 @@ export type Database = {
             foreignKeyName: "septic_recurring_schedules_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
           {
@@ -46731,7 +46790,7 @@ export type Database = {
             foreignKeyName: "septic_route_stops_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
           {
@@ -46941,7 +47000,7 @@ export type Database = {
             foreignKeyName: "septic_service_orders_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
           {
@@ -47222,7 +47281,7 @@ export type Database = {
             foreignKeyName: "septic_tanks_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "septic_customers"
             referencedColumns: ["id"]
           },
         ]
