@@ -45637,14 +45637,171 @@ export type Database = {
             foreignKeyName: "septic_inspection_records_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
-            referencedRelation: "inspection_form_templates"
+            referencedRelation: "septic_inspection_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_inspection_template_items: {
+        Row: {
+          component_category: string | null
+          created_at: string
+          default_value: string | null
+          description: string | null
+          display_order: number
+          id: string
+          is_required: boolean | null
+          item_key: string
+          item_name: string
+          item_type: string
+          linked_component_type: string | null
+          section_id: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          component_category?: string | null
+          created_at?: string
+          default_value?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_required?: boolean | null
+          item_key: string
+          item_name: string
+          item_type?: string
+          linked_component_type?: string | null
+          section_id: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          component_category?: string | null
+          created_at?: string
+          default_value?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_required?: boolean | null
+          item_key?: string
+          item_name?: string
+          item_type?: string
+          linked_component_type?: string | null
+          section_id?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_inspection_template_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "septic_inspection_template_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_inspection_template_sections: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          template_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          template_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          template_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_inspection_template_sections_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "septic_inspection_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_inspection_templates: {
+        Row: {
+          asset_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_base_template: boolean | null
+          is_published: boolean | null
+          name: string
+          parent_template_id: string | null
+          shop_id: string | null
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          asset_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_base_template?: boolean | null
+          is_published?: boolean | null
+          name: string
+          parent_template_id?: string | null
+          shop_id?: string | null
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_base_template?: boolean | null
+          is_published?: boolean | null
+          name?: string
+          parent_template_id?: string | null
+          shop_id?: string | null
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_inspection_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "septic_inspection_records_work_order_id_fkey"
-            columns: ["work_order_id"]
+            foreignKeyName: "septic_inspection_templates_parent_template_id_fkey"
+            columns: ["parent_template_id"]
             isOneToOne: false
-            referencedRelation: "work_orders"
+            referencedRelation: "septic_inspection_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_inspection_templates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -47197,7 +47354,7 @@ export type Database = {
             foreignKeyName: "septic_system_types_inspection_template_id_fkey"
             columns: ["inspection_template_id"]
             isOneToOne: false
-            referencedRelation: "inspection_form_templates"
+            referencedRelation: "septic_inspection_templates"
             referencedColumns: ["id"]
           },
           {
