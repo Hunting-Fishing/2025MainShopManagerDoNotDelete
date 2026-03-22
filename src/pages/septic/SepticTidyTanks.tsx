@@ -16,7 +16,7 @@ export default function SepticTidyTanks() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_components')
-        .select('*, septic_tanks(tank_type, tank_size_gallons, customers(first_name, last_name))')
+        .select('*, septic_tanks(tank_type, tank_size_gallons, septic_customers(first_name, last_name))')
         .eq('shop_id', shopId)
         .order('component_type');
       if (error) throw error;

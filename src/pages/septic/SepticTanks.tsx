@@ -90,7 +90,7 @@ export default function SepticTanks() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((t: any) => {
-            const cust = t.customers as any;
+            const cust = t.septic_customers as any;
             return (
               <Card key={t.id}>
                 <CardContent className="p-4 space-y-2">

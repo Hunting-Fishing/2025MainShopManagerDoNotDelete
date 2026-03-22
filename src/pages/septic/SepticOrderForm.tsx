@@ -35,7 +35,7 @@ export default function SepticOrderForm() {
     queryFn: async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
-        .from('customers')
+        .from('septic_customers')
         .select('id, first_name, last_name, address, phone')
         .eq('shop_id', shopId)
         .order('last_name');

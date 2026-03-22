@@ -27,7 +27,7 @@ export default function SepticOrders() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_service_orders')
-        .select('id, order_number, service_type, status, priority, scheduled_date, scheduled_time, location_address, total, payment_status, customer_id, customers(first_name, last_name)')
+        .select('id, order_number, service_type, status, priority, scheduled_date, scheduled_time, location_address, total, payment_status, customer_id, septic_customers(first_name, last_name)')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
       if (error) throw error;

@@ -23,7 +23,7 @@ export default function SepticPortalLogin() {
       if (session?.user) {
         // Check if user has a customer record linked to septic tanks
         const { data: customer } = await supabase
-          .from('customers')
+          .from('septic_customers')
           .select('id')
           .eq('user_id', session.user.id)
           .single();

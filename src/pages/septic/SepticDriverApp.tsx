@@ -18,7 +18,7 @@ export default function SepticDriverApp() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_service_orders')
-        .select('id, order_number, service_type, status, scheduled_date, scheduled_time, location_address, customer_id, customers(first_name, last_name)')
+        .select('id, order_number, service_type, status, scheduled_date, scheduled_time, location_address, customer_id, septic_customers(first_name, last_name)')
         .eq('shop_id', shopId)
         .eq('scheduled_date', today)
         .in('status', ['scheduled', 'in_progress'])

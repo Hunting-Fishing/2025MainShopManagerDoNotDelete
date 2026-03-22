@@ -18,7 +18,7 @@ export default function SepticCustomerDetails() {
     queryKey: ['septic-customer', id],
     queryFn: async () => {
       if (!id) return null;
-      const { data, error } = await supabase.from('customers').select('*').eq('id', id).single();
+      const { data, error } = await supabase.from('septic_customers').select('*').eq('id', id).single();
       if (error) throw error;
       return data;
     },

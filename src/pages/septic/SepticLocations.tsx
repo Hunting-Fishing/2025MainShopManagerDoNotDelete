@@ -15,7 +15,7 @@ export default function SepticLocations() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_property_systems')
-        .select('*, customers(first_name, last_name), septic_system_types(name)')
+        .select('*, septic_customers(first_name, last_name), septic_system_types(name)')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
       if (error) throw error;

@@ -16,7 +16,7 @@ export default function SepticTankFills() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_pump_outs')
-        .select('*, customers(first_name, last_name), septic_tanks(tank_type, tank_size_gallons), septic_trucks(truck_number)')
+        .select('*, septic_customers(first_name, last_name), septic_tanks(tank_type, tank_size_gallons), septic_trucks(truck_number)')
         .eq('shop_id', shopId)
         .order('pump_date', { ascending: false });
       if (error) throw error;

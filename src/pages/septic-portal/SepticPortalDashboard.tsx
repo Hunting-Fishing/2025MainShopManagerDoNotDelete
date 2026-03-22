@@ -89,8 +89,8 @@ export default function SepticPortalDashboard() {
 
       // Get customer data
       const { data: customerData, error: customerError } = await supabase
-        .from('customers')
-        .select('id, first_name, last_name, email, phone, address, company')
+        .from('septic_customers')
+        .select('id, first_name, last_name, email, phone, address')
         .eq('user_id', session.user.id)
         .single();
 

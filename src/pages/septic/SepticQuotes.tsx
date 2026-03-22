@@ -16,7 +16,7 @@ export default function SepticQuotes() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_quotes')
-        .select('*, customers(first_name, last_name)')
+        .select('*, septic_customers(first_name, last_name)')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
       if (error) throw error;
