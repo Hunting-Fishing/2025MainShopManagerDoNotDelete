@@ -38,7 +38,7 @@ export default function SepticTanks() {
     queryKey: ['septic-tank-customers', shopId],
     queryFn: async () => {
       if (!shopId) return [];
-      const { data } = await supabase.from('customers').select('id, first_name, last_name').eq('shop_id', shopId).order('last_name');
+      const { data } = await supabase.from('septic_customers').select('id, first_name, last_name').eq('shop_id', shopId).order('last_name');
       return data || [];
     },
     enabled: !!shopId,
