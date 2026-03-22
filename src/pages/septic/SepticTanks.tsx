@@ -68,7 +68,7 @@ export default function SepticTanks() {
   const filtered = tanks.filter((t: any) => {
     if (!search) return true;
     const s = search.toLowerCase();
-    const cust = t.customers as any;
+    const cust = t.septic_customers as any;
     const custName = cust ? `${cust.first_name} ${cust.last_name}`.toLowerCase() : '';
     return t.tank_type?.toLowerCase().includes(s) || t.location_address?.toLowerCase().includes(s) || custName.includes(s);
   });
