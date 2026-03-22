@@ -46,7 +46,7 @@ export default function SepticInvoices() {
       ) : (
         <div className="space-y-3">
           {invoices.map((inv: any) => {
-            const cust = inv.customers as any;
+            const cust = inv.septic_customers as any;
             return (
               <Card key={inv.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4">

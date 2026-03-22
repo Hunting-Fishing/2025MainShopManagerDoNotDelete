@@ -48,7 +48,7 @@ export default function SepticDriverApp() {
       ) : (
         <div className="space-y-4">
           {todayOrders.map((order: any, idx: number) => {
-            const cust = order.customers as any;
+            const cust = order.septic_customers as any;
             return (
               <Card key={order.id}>
                 <CardContent className="p-4 space-y-3">

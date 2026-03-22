@@ -42,7 +42,7 @@ export default function SepticQuotes() {
       ) : (
         <div className="space-y-3">
           {quotes.map((q: any) => {
-            const cust = q.customers as any;
+            const cust = q.septic_customers as any;
             return (
               <Card key={q.id}>
                 <CardContent className="p-4">

@@ -35,7 +35,7 @@ export default function SepticCompletions() {
       ) : (
         <div className="space-y-3">
           {completions.map((c: any) => {
-            const cust = c.customers as any;
+            const cust = c.septic_customers as any;
             const driver = c.septic_drivers as any;
             return (
               <Card key={c.id}>

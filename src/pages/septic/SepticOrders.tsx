@@ -60,7 +60,7 @@ export default function SepticOrders() {
       ) : (
         <div className="space-y-3">
           {orders.map((order) => {
-            const customer = order.customers as any;
+            const customer = order.septic_customers as any;
             return (
               <Card key={order.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/septic/orders/${order.id}`)}>
                 <CardContent className="p-4">

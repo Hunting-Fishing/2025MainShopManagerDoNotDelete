@@ -35,7 +35,7 @@ export default function SepticTankFills() {
       ) : (
         <div className="space-y-3">
           {pumpOuts.map((p: any) => {
-            const cust = p.customers as any;
+            const cust = p.septic_customers as any;
             const tank = p.septic_tanks as any;
             const truck = p.septic_trucks as any;
             return (
