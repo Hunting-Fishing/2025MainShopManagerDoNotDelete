@@ -26,7 +26,7 @@ export default function SepticCustomers() {
     queryFn: async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
-        .from('customers')
+        .from('septic_customers')
         .select('id, first_name, last_name, email, phone, address, created_at')
         .eq('shop_id', shopId)
         .order('last_name');
@@ -56,7 +56,7 @@ export default function SepticCustomers() {
   const addCustomer = useMutation({
     mutationFn: async () => {
       if (!shopId) throw new Error('No shop');
-      const { error } = await supabase.from('customers').insert({ ...form, shop_id: shopId });
+      const { error } = await supabase.from('septic_customers').insert({ ...form, shop_id: shopId });
       if (error) throw error;
     },
     onSuccess: () => {

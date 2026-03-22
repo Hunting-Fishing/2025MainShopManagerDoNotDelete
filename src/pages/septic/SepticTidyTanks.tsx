@@ -16,7 +16,7 @@ export default function SepticTidyTanks() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_components')
-        .select('*, septic_tanks(tank_type, tank_size_gallons, customers(first_name, last_name))')
+        .select('*, septic_tanks(tank_type, tank_size_gallons, septic_customers(first_name, last_name))')
         .eq('shop_id', shopId)
         .order('component_type');
       if (error) throw error;
@@ -42,7 +42,7 @@ export default function SepticTidyTanks() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {components.map((c: any) => {
             const tank = c.septic_tanks as any;
-            const cust = tank?.customers as any;
+            const cust = tank?.septic_customers as any;
             return (
               <Card key={c.id}>
                 <CardContent className="p-4 space-y-2">

@@ -25,7 +25,7 @@ export default function SepticTanks() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_tanks')
-        .select('*, customers(first_name, last_name)')
+        .select('*, septic_customers(first_name, last_name)')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -38,7 +38,7 @@ export default function SepticTanks() {
     queryKey: ['septic-tank-customers', shopId],
     queryFn: async () => {
       if (!shopId) return [];
-      const { data } = await supabase.from('customers').select('id, first_name, last_name').eq('shop_id', shopId).order('last_name');
+      const { data } = await supabase.from('septic_customers').select('id, first_name, last_name').eq('shop_id', shopId).order('last_name');
       return data || [];
     },
     enabled: !!shopId,
@@ -68,7 +68,7 @@ export default function SepticTanks() {
   const filtered = tanks.filter((t: any) => {
     if (!search) return true;
     const s = search.toLowerCase();
-    const cust = t.customers as any;
+    const cust = t.septic_customers as any;
     const custName = cust ? `${cust.first_name} ${cust.last_name}`.toLowerCase() : '';
     return t.tank_type?.toLowerCase().includes(s) || t.location_address?.toLowerCase().includes(s) || custName.includes(s);
   });
@@ -90,7 +90,7 @@ export default function SepticTanks() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((t: any) => {
-            const cust = t.customers as any;
+            const cust = t.septic_customers as any;
             return (
               <Card key={t.id}>
                 <CardContent className="p-4 space-y-2">

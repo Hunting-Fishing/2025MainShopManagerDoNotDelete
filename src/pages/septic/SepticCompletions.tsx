@@ -16,7 +16,7 @@ export default function SepticCompletions() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_completions')
-        .select('*, customers(first_name, last_name), septic_drivers(first_name, last_name)')
+        .select('*, septic_customers(first_name, last_name), septic_drivers(first_name, last_name)')
         .eq('shop_id', shopId)
         .order('completion_date', { ascending: false });
       if (error) throw error;
@@ -35,7 +35,7 @@ export default function SepticCompletions() {
       ) : (
         <div className="space-y-3">
           {completions.map((c: any) => {
-            const cust = c.customers as any;
+            const cust = c.septic_customers as any;
             const driver = c.septic_drivers as any;
             return (
               <Card key={c.id}>

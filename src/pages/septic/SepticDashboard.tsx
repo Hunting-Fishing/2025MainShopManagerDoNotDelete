@@ -41,7 +41,7 @@ export default function SepticDashboard() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_service_orders')
-        .select('id, order_number, service_type, status, scheduled_date, location_address, customer_id, customers(first_name, last_name)')
+        .select('id, order_number, service_type, status, scheduled_date, location_address, customer_id, septic_customers(first_name, last_name)')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false })
         .limit(5);
@@ -139,7 +139,7 @@ export default function SepticDashboard() {
                       <span className="font-medium text-sm">{order.order_number || 'Draft'}</span>
                       <Badge variant="secondary" className={statusColors[order.status] || ''}>{order.status?.replace('_', ' ')}</Badge>
                     </div>
-                    {order.customers && <p className="text-xs text-muted-foreground">{(order.customers as any).first_name} {(order.customers as any).last_name}</p>}
+                    {order.septic_customers && <p className="text-xs text-muted-foreground">{(order.septic_customers as any).first_name} {(order.septic_customers as any).last_name}</p>}
                   </div>
                   <div className="text-right text-xs text-muted-foreground space-y-1">
                     {order.scheduled_date && <p className="flex items-center gap-1 justify-end"><Calendar className="h-3 w-3" />{format(new Date(order.scheduled_date), 'MMM d')}</p>}

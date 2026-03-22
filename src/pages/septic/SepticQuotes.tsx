@@ -16,7 +16,7 @@ export default function SepticQuotes() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_quotes')
-        .select('*, customers(first_name, last_name)')
+        .select('*, septic_customers(first_name, last_name)')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -42,7 +42,7 @@ export default function SepticQuotes() {
       ) : (
         <div className="space-y-3">
           {quotes.map((q: any) => {
-            const cust = q.customers as any;
+            const cust = q.septic_customers as any;
             return (
               <Card key={q.id}>
                 <CardContent className="p-4">

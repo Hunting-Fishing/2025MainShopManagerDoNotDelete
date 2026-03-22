@@ -15,7 +15,7 @@ export default function SepticLocations() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_property_systems')
-        .select('*, customers(first_name, last_name), septic_system_types(name)')
+        .select('*, septic_customers(first_name, last_name), septic_system_types(name)')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -34,7 +34,7 @@ export default function SepticLocations() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {systems.map((s: any) => {
-            const cust = s.customers as any;
+            const cust = s.septic_customers as any;
             const stype = s.septic_system_types as any;
             return (
               <Card key={s.id}>

@@ -17,7 +17,7 @@ export default function SepticInvoices() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_invoices')
-        .select('*, customers(first_name, last_name)')
+        .select('*, septic_customers(first_name, last_name)')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -46,7 +46,7 @@ export default function SepticInvoices() {
       ) : (
         <div className="space-y-3">
           {invoices.map((inv: any) => {
-            const cust = inv.customers as any;
+            const cust = inv.septic_customers as any;
             return (
               <Card key={inv.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
