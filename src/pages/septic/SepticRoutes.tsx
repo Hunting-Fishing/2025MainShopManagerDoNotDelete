@@ -316,13 +316,49 @@ export default function SepticRoutes() {
       if (!selectedRoute) return [];
       const { data, error } = await supabase
         .from('septic_route_stops')
-        .select('*')
+        .select('*, septic_service_orders(id, order_number, status, customer_id, septic_customers(id, first_name, last_name))')
         .eq('route_id', selectedRoute.id)
         .order('stop_order');
       if (error) throw error;
       return (data || []) as SepticRouteStop[];
     },
     enabled: !!selectedRoute,
+  });
+
+  // Update stop status
+  const updateStopStatus = useMutation({
+    mutationFn: async ({ stopId, status }: { stopId: string; status: string }) => {
+      const updates: Record<string, any> = { status };
+      if (status === 'arrived') updates.actual_arrival = new Date().toISOString();
+      const { error } = await supabase.from('septic_route_stops').update(updates).eq('id', stopId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['septic-route-stops'] });
+      toast.success('Stop status updated');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Skip stop — remove from route and set order back to pending
+  const skipStop = useMutation({
+    mutationFn: async ({ stopId, serviceOrderId, routeId }: { stopId: string; serviceOrderId: string | null; routeId: string }) => {
+      const { error: delErr } = await supabase.from('septic_route_stops').delete().eq('id', stopId);
+      if (delErr) throw delErr;
+      if (serviceOrderId) {
+        await supabase.from('septic_service_orders').update({ status: 'pending' }).eq('id', serviceOrderId);
+      }
+      // Decrement total_jobs
+      const { data: remaining } = await supabase.from('septic_route_stops').select('id').eq('route_id', routeId);
+      await supabase.from('septic_routes').update({ total_jobs: remaining?.length || 0 }).eq('id', routeId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['septic-route-stops'] });
+      queryClient.invalidateQueries({ queryKey: ['septic-routes'] });
+      queryClient.invalidateQueries({ queryKey: ['septic-unassigned-orders'] });
+      toast.success('Stop skipped — order moved to unassigned');
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   // Unassigned service orders
