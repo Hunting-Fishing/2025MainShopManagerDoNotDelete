@@ -241,6 +241,26 @@ export default function SepticOrderForm() {
               <Label>Service Location</Label>
               <Input value={formData.location_address} onChange={(e) => updateField('location_address', e.target.value)} placeholder="Address for the service" />
             </div>
+
+            <div className="space-y-2">
+              <Label>Assign Employee</Label>
+              <Select value={formData.assigned_employee_id} onValueChange={(v) => updateField('assigned_employee_id', v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((emp: any) => {
+                    const empRoles = (emp.septic_employee_roles || []) as any[];
+                    const roleLabels = empRoles.map((r: any) => r.role).join(', ');
+                    return (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.first_name} {emp.last_name}{roleLabels ? ` (${roleLabels})` : ''}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
 
