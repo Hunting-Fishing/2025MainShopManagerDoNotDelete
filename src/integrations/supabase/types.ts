@@ -46641,6 +46641,7 @@ export type Database = {
       septic_invoices: {
         Row: {
           amount_paid: number | null
+          assigned_employee_id: string | null
           balance_due: number | null
           created_at: string
           created_by: string | null
@@ -46665,6 +46666,7 @@ export type Database = {
         }
         Insert: {
           amount_paid?: number | null
+          assigned_employee_id?: string | null
           balance_due?: number | null
           created_at?: string
           created_by?: string | null
@@ -46689,6 +46691,7 @@ export type Database = {
         }
         Update: {
           amount_paid?: number | null
+          assigned_employee_id?: string | null
           balance_due?: number | null
           created_at?: string
           created_by?: string | null
@@ -46712,6 +46715,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "septic_invoices_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "septic_employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "septic_invoices_created_by_fkey"
             columns: ["created_by"]
@@ -47668,6 +47678,7 @@ export type Database = {
       septic_service_orders: {
         Row: {
           assigned_driver_id: string | null
+          assigned_employee_id: string | null
           assigned_truck_id: string | null
           completed_date: string | null
           created_at: string
@@ -47701,6 +47712,7 @@ export type Database = {
         }
         Insert: {
           assigned_driver_id?: string | null
+          assigned_employee_id?: string | null
           assigned_truck_id?: string | null
           completed_date?: string | null
           created_at?: string
@@ -47734,6 +47746,7 @@ export type Database = {
         }
         Update: {
           assigned_driver_id?: string | null
+          assigned_employee_id?: string | null
           assigned_truck_id?: string | null
           completed_date?: string | null
           created_at?: string
@@ -47766,6 +47779,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "septic_service_orders_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "septic_employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "septic_service_orders_customer_id_fkey"
             columns: ["customer_id"]
