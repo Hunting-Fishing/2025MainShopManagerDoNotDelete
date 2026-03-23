@@ -62,6 +62,23 @@ export default function SepticOrderForm() {
     enabled: !!shopId && !!formData.customer_id,
   });
 
+  // Fetch employees for assignment
+  const { data: employees = [] } = useQuery({
+    queryKey: ['septic-employees-active', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from('septic_employees')
+        .select('id, first_name, last_name, septic_employee_roles(role)')
+        .eq('shop_id', shopId)
+        .eq('status', 'active')
+        .order('last_name');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId,
+  });
+
   // Create order mutation
   const createOrder = useMutation({
     mutationFn: async () => {
