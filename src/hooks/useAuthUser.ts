@@ -1,8 +1,10 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useSessionRecovery } from './useSessionRecovery';
+
+const AUTH_TIMEOUT_MS = 8000; // 8 second hard timeout
 
 export function useAuthUser() {
   const [user, setUser] = useState<User | null>(null);
@@ -19,6 +21,7 @@ export function useAuthUser() {
   const [error, setError] = useState<string | null>(null);
   
   const { attemptSessionRecovery, isRecoveryInProgress } = useSessionRecovery();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Function to fetch user roles from database with recovery support
   const fetchUserRoles = useCallback(async (authUserId: string, retryWithRecovery = true): Promise<void> => {
@@ -109,6 +112,12 @@ export function useAuthUser() {
   const handleAuthStateChange = useCallback((event: string, currentSession: Session | null) => {
     console.log('useAuthUser: Auth state change:', event, currentSession?.user?.id);
     
+    // Clear timeout since we got a response
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    
     try {
       setError(null);
       setSession(currentSession);
@@ -148,6 +157,15 @@ export function useAuthUser() {
     
     let isMounted = true;
     let authSubscription: { unsubscribe: () => void } | null = null;
+    
+    // Hard timeout: if auth doesn't resolve in 8s, stop loading
+    timeoutRef.current = setTimeout(() => {
+      if (isMounted) {
+        console.warn('⚠️ Auth bootstrap timeout after', AUTH_TIMEOUT_MS, 'ms — forcing loading to complete');
+        setIsLoading(false);
+        setError('Authentication took too long. Please refresh or try logging in again.');
+      }
+    }, AUTH_TIMEOUT_MS);
     
     // Set up auth state listener with cleanup
     try {
@@ -200,6 +218,10 @@ export function useAuthUser() {
       console.log('useAuthUser: Cleaning up auth listener');
       isMounted = false;
       clearTimeout(timer);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       if (authSubscription) {
         authSubscription.unsubscribe();
       }

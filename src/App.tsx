@@ -557,6 +557,8 @@ function App() {
       <Routes>
         {/* Public routes - no auth required */}
         <Route path="/" element={<Index />} />
+        <Route path="/index" element={<Navigate to="/" replace />} />
+        <Route path="/index.html" element={<Navigate to="/" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/reset-password" element={<ResetPassword />} />

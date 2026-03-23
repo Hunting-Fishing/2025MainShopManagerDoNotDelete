@@ -4,9 +4,10 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { RoleGuard } from './RoleGuard';
 import { ShopGuard } from './ShopGuard';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { RefreshCw, LogIn, Home } from 'lucide-react';
 import { performAuthRecovery } from '@/utils/authCleanup';
 
 interface ProtectedRouteProps {
@@ -30,45 +31,41 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Combine legacy requiredRole with new allowedRoles array
   const finalAllowedRoles = requiredRole ? [...allowedRoles, requiredRole] : allowedRoles;
 
-  console.log('ProtectedRoute - Auth state:', {
-    isAuthenticated,
-    isLoading,
-    error,
-    requiredRole,
-    allowedRoles: finalAllowedRoles,
-    requireOwner,
-    requireAdmin,
-    currentPath: location.pathname
-  });
-
   if (isLoading) {
     return (
-      <div className="flex flex-col space-y-4 p-8">
-        <Skeleton className="h-8 w-3/4" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-32 w-full" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 space-y-4">
+        <LoadingSpinner size="lg" label="Authenticating..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <Card className="w-full max-w-md mx-auto mt-8">
-        <CardContent className="py-6">
-          <div className="text-center space-y-4">
-            <h2 className="text-lg font-semibold">Authentication Error</h2>
-            <p className="text-sm text-gray-600">{error}</p>
-            <Button onClick={performAuthRecovery} variant="outline">
-              Reset Authentication
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-sm">
+          <CardContent className="py-6">
+            <div className="text-center space-y-4">
+              <h2 className="text-lg font-semibold text-foreground">Authentication Error</h2>
+              <p className="text-sm text-muted-foreground">{error}</p>
+              <div className="flex gap-2 justify-center">
+                <Button size="sm" variant="outline" onClick={() => window.location.reload()}>
+                  <RefreshCw className="h-4 w-4 mr-1" /> Retry
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => window.location.href = '/'}>
+                  <Home className="h-4 w-4 mr-1" /> Home
+                </Button>
+                <Button size="sm" onClick={performAuthRecovery}>
+                  <LogIn className="h-4 w-4 mr-1" /> Login
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (!isAuthenticated) {
-    console.log('User not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
