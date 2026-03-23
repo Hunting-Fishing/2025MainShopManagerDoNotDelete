@@ -38,7 +38,7 @@ export default function SepticOrderDetail() {
         .select(`
           *,
           septic_customers(id, first_name, last_name, email, phone, address, city, state, zip_code),
-          septic_tanks(id, tank_type, capacity_gallons, location_description)
+          septic_tanks(id, tank_type, tank_size_gallons, location_address)
         `)
         .eq('id', orderId)
         .maybeSingle();
@@ -175,9 +175,9 @@ export default function SepticOrderDetail() {
           <CardContent className="space-y-2">
             {tank && (
               <div className="text-sm space-y-1">
-                <p><span className="text-muted-foreground">Tank:</span> {tank.tank_type} — {tank.capacity_gallons} gal</p>
-                {tank.location_description && (
-                  <p><span className="text-muted-foreground">Location:</span> {tank.location_description}</p>
+                <p><span className="text-muted-foreground">Tank:</span> {tank.tank_type} — {tank.tank_size_gallons} gal</p>
+                {tank.location_address && (
+                  <p><span className="text-muted-foreground">Location:</span> {tank.location_address}</p>
                 )}
               </div>
             )}
