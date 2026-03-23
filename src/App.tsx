@@ -1692,6 +1692,7 @@ function App() {
                   <Route path="/about" element={<PersonalTrainerAbout />} />
                 </Routes>
               </PersonalTrainerLayout>
+              </AuthenticatedProviders>
             </AuthGate>
           }
         />
