@@ -1601,6 +1601,7 @@ function App() {
                   <Route path="/store" element={<FuelDeliveryStore />} />
                 </Routes>
               </FuelDeliveryLayout>
+              </AuthenticatedProviders>
             </AuthGate>
           }
         />
