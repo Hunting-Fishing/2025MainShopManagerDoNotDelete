@@ -44837,6 +44837,47 @@ export type Database = {
           },
         ]
       }
+      septic_certification_types: {
+        Row: {
+          category: string
+          created_at: string
+          default_validity_months: number | null
+          description: string | null
+          id: string
+          name: string
+          requires_renewal: boolean
+          shop_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          default_validity_months?: number | null
+          description?: string | null
+          id?: string
+          name: string
+          requires_renewal?: boolean
+          shop_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          default_validity_months?: number | null
+          description?: string | null
+          id?: string
+          name?: string
+          requires_renewal?: boolean
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_certification_types_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       septic_chemicals: {
         Row: {
           chemical_name: string
@@ -45672,6 +45713,170 @@ export type Database = {
           },
           {
             foreignKeyName: "septic_drivers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_employee_certifications: {
+        Row: {
+          certificate_number: string | null
+          certification_type_id: string
+          created_at: string
+          document_url: string | null
+          employee_id: string
+          expiry_date: string | null
+          id: string
+          issue_date: string | null
+          issuing_authority: string | null
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          certificate_number?: string | null
+          certification_type_id: string
+          created_at?: string
+          document_url?: string | null
+          employee_id: string
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_authority?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          certificate_number?: string | null
+          certification_type_id?: string
+          created_at?: string
+          document_url?: string | null
+          employee_id?: string
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_authority?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_employee_certifications_certification_type_id_fkey"
+            columns: ["certification_type_id"]
+            isOneToOne: false
+            referencedRelation: "septic_certification_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_employee_certifications_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "septic_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_employee_roles: {
+        Row: {
+          assigned_at: string
+          employee_id: string
+          id: string
+          is_primary: boolean
+          role: string
+        }
+        Insert: {
+          assigned_at?: string
+          employee_id: string
+          id?: string
+          is_primary?: boolean
+          role: string
+        }
+        Update: {
+          assigned_at?: string
+          employee_id?: string
+          id?: string
+          is_primary?: boolean
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_employee_roles_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "septic_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_employees: {
+        Row: {
+          created_at: string
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          first_name: string
+          hire_date: string | null
+          home_address: string | null
+          hourly_rate: number | null
+          id: string
+          last_name: string
+          notes: string | null
+          phone: string | null
+          profile_id: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name: string
+          hire_date?: string | null
+          home_address?: string | null
+          hourly_rate?: number | null
+          id?: string
+          last_name: string
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name?: string
+          hire_date?: string | null
+          home_address?: string | null
+          hourly_rate?: number | null
+          id?: string
+          last_name?: string
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_employees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_employees_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"

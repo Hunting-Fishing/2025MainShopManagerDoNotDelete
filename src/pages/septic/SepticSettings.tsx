@@ -10,9 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Settings, Bell, MapPin, Container, DollarSign, Save, Loader2, Building2, Truck, Shield, ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, Settings, Bell, MapPin, Container, DollarSign, Save, Loader2, Building2, Truck, Shield, ClipboardCheck, Users } from 'lucide-react';
 import SystemRegulationsTab from '@/components/septic/settings/SystemRegulationsTab';
 import InspectionFormBuilderTab from '@/components/septic/settings/InspectionFormBuilderTab';
+import EmployeeCertDashboard from '@/components/septic/settings/EmployeeCertDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShopId } from '@/hooks/useShopId';
@@ -180,6 +181,7 @@ export default function SepticSettings() {
             <TabsTrigger value="notifications">Alerts</TabsTrigger>
             <TabsTrigger value="defaults">Defaults</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
+            <TabsTrigger value="employees">Employees</TabsTrigger>
           </TabsList>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -438,6 +440,21 @@ export default function SepticSettings() {
                 <Save className="h-4 w-4 mr-2" />
                 Save Pricing
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        {/* ── Employees Tab ─────────────────────────────── */}
+        <TabsContent value="employees" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-emerald-600" />
+                <CardTitle>Employee Certifications & Compliance</CardTitle>
+              </div>
+              <CardDescription>Track certifications, training, and WorkSafe compliance across your team.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EmployeeCertDashboard />
             </CardContent>
           </Card>
         </TabsContent>

@@ -282,12 +282,13 @@ export default function SepticRoutes() {
     queryKey: ['septic-drivers-list'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('septic_drivers')
-        .select('id, first_name, last_name, status')
+        .from('septic_employees')
+        .select('id, first_name, last_name, status, septic_employee_roles!inner(role)')
         .eq('status', 'active')
+        .eq('septic_employee_roles.role', 'driver')
         .order('first_name');
       if (error) throw error;
-      return (data || []) as SepticDriver[];
+      return (data || []).map((d: any) => ({ id: d.id, first_name: d.first_name, last_name: d.last_name, status: d.status })) as SepticDriver[];
     },
   });
 
