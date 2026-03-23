@@ -45,68 +45,70 @@ const PROVINCES_STATES = [
   ]},
 ];
 
+const BC_REGULATION_PDF = '/documents/bc-sewerage-system-regulation-326-2004.pdf';
+
 const BC_DEFAULTS = [
   {
     classification_code: 'TYPE_1',
     classification_name: 'Type 1 — Septic Tank Treatment',
-    description: 'Septic tank treatment with gravity or pumped dispersal field. The most common residential system in BC.',
+    description: 'Treatment by septic tank only, with gravity or pumped dispersal field. Per SSR s.1: "Type 1 is treatment by septic tank only." The most common residential system in BC. Authorized persons (ROWPs) or professionals may construct/maintain. Must be filed with health authority before construction (SSR s.8).',
     treatment_level: 'Primary',
     dispersal_method: 'Gravity or pumped dispersal field',
     requires_disinfection: false,
     requires_additional_treatment: false,
-    effluent_quality_standard: 'BC Sewerage System Regulation — Type 1',
-    regulatory_body: 'BC Ministry of Health',
-    regulatory_reference: 'Sewerage System Regulation (SSR) B.C. Reg. 326/2004',
+    effluent_quality_standard: 'Septic tank effluent — no numeric limits (treatment by septic tank only)',
+    regulatory_body: 'BC Ministry of Health / Health Authorities',
+    regulatory_reference: 'Public Health Act — Sewerage System Regulation, B.C. Reg. 326/2004, s.1 "treatment method" (a)',
     typical_components: ['Septic Tank', 'Distribution Box', 'Dispersal Field', 'Pump Chamber (if pumped)'],
-    maintenance_requirements: 'Pump septic tank every 3–5 years. Annual visual inspection of dispersal field.',
+    maintenance_requirements: 'Owner must maintain per maintenance plan (SSR s.10). Keep maintenance records. Pump septic tank every 3–5 years. ROWPs or professionals may construct/maintain Type 1 & 2 systems (SSR s.6).',
     inspection_frequency_months: 12,
     display_order: 1,
   },
   {
     classification_code: 'TYPE_2',
-    classification_name: 'Type 2 — Enhanced Treatment',
-    description: 'Effluent meeting BC Type 2 quality limits. Uses secondary treatment to produce clearer effluent than Type 1.',
+    classification_name: 'Type 2 — Secondary Treatment',
+    description: 'Per SSR s.1: "Type 2 is treatment that produces an effluent consistently containing less than 45 mg/L of total suspended solids and having a 5 day biochemical oxygen demand of less than 45 mg/L." Uses additional treatment beyond septic tank. ROWPs or professionals may construct/maintain (SSR s.6).',
     treatment_level: 'Secondary',
-    dispersal_method: 'Reduced-size dispersal field or at-grade',
+    dispersal_method: 'Reduced-size dispersal field, at-grade, or pressure distribution',
     requires_disinfection: false,
     requires_additional_treatment: true,
-    effluent_quality_standard: 'BOD ≤ 45 mg/L, TSS ≤ 45 mg/L',
-    regulatory_body: 'BC Ministry of Health',
-    regulatory_reference: 'Sewerage System Regulation (SSR) B.C. Reg. 326/2004',
-    typical_components: ['Septic Tank', 'Treatment Unit (ATU/Media Filter)', 'Dispersal Field'],
-    maintenance_requirements: 'Quarterly maintenance by Authorized Person. Annual reporting. Pump as needed.',
+    effluent_quality_standard: 'TSS < 45 mg/L, BOD₅ < 45 mg/L (SSR s.1)',
+    regulatory_body: 'BC Ministry of Health / Health Authorities',
+    regulatory_reference: 'Public Health Act — Sewerage System Regulation, B.C. Reg. 326/2004, s.1 "treatment method" (b)',
+    typical_components: ['Septic Tank', 'Secondary Treatment Unit (ATU/Media Filter/Sand Filter)', 'Dispersal Field'],
+    maintenance_requirements: 'Owner must maintain per maintenance plan (SSR s.10). Quarterly maintenance by Authorized Person recommended. Keep records. Letter of certification required within 30 days of construction (SSR s.9).',
     inspection_frequency_months: 3,
     display_order: 2,
   },
   {
     classification_code: 'TYPE_3',
     classification_name: 'Type 3 — Advanced Treatment & Disinfection',
-    description: 'Effluent meeting BC Type 3 quality limits. Highest treatment level with disinfection, suitable for sensitive areas.',
+    description: 'Per SSR s.1: "Type 3 is treatment that produces an effluent consistently containing less than 10 mg/L of total suspended solids and having a 5 day biochemical oxygen demand of less than 10 mg/L, and a median fecal coliform density of less than 400 CFU per 100 mL." Must be constructed/maintained under supervision of a professional (SSR s.6(3)).',
     treatment_level: 'Tertiary',
-    dispersal_method: 'Surface or sub-surface dispersal, spray irrigation',
+    dispersal_method: 'Surface or sub-surface dispersal, spray irrigation, drip dispersal',
     requires_disinfection: true,
     requires_additional_treatment: true,
-    effluent_quality_standard: 'BOD ≤ 10 mg/L, TSS ≤ 10 mg/L, Fecal Coliform ≤ 400 CFU/100mL',
-    regulatory_body: 'BC Ministry of Health',
-    regulatory_reference: 'Sewerage System Regulation (SSR) B.C. Reg. 326/2004',
-    typical_components: ['Septic Tank', 'Advanced Treatment Unit', 'UV or Chlorine Disinfection', 'Dispersal System'],
-    maintenance_requirements: 'Monthly system check. Quarterly maintenance by Authorized Person. Annual compliance report.',
+    effluent_quality_standard: 'TSS < 10 mg/L, BOD₅ < 10 mg/L, Fecal Coliform < 400 CFU/100mL (SSR s.1)',
+    regulatory_body: 'BC Ministry of Health / Health Authorities',
+    regulatory_reference: 'Public Health Act — Sewerage System Regulation, B.C. Reg. 326/2004, s.1 "treatment method" (c)',
+    typical_components: ['Septic Tank', 'Advanced Treatment Unit', 'UV or Chlorine Disinfection', 'Monitoring/Sampling Port', 'Dispersal System'],
+    maintenance_requirements: 'Must be supervised by a professional (SSR s.6(3)). Monthly system checks. Quarterly maintenance and effluent sampling. Annual compliance report. Owner must keep records (SSR s.10).',
     inspection_frequency_months: 1,
     display_order: 3,
   },
   {
     classification_code: 'HOLDING_TANK',
     classification_name: 'Holding Tank',
-    description: 'Sealed holding tank with no dispersal. All sewage is stored and must be pumped and hauled to an approved facility.',
+    description: 'Per SSR s.1: "a watertight container for holding domestic sewage until the domestic sewage is removed for treatment." Requires a permit from health officer (SSR s.4, $400 fee). Must not be constructed less than 15m from a well (SSR s.3.1). Not classified as a sewerage system.',
     treatment_level: 'None (Storage Only)',
-    dispersal_method: 'None — pump and haul',
+    dispersal_method: 'None — pump and haul to approved facility',
     requires_disinfection: false,
     requires_additional_treatment: false,
-    effluent_quality_standard: 'N/A — No discharge permitted',
-    regulatory_body: 'BC Ministry of Health',
-    regulatory_reference: 'Sewerage System Regulation (SSR) B.C. Reg. 326/2004',
-    typical_components: ['Sealed Holding Tank', 'High-Level Alarm', 'Access Risers'],
-    maintenance_requirements: 'Pump when full. Monitor alarm system. Regular level checks.',
+    effluent_quality_standard: 'N/A — No discharge permitted. Watertight containment only.',
+    regulatory_body: 'BC Ministry of Health / Health Authorities',
+    regulatory_reference: 'Public Health Act — Sewerage System Regulation, B.C. Reg. 326/2004, Part 2 (ss. 4-5)',
+    typical_components: ['Sealed Watertight Holding Tank', 'High-Level Alarm', 'Access Risers', 'Locked Lids'],
+    maintenance_requirements: 'Maintain per maintenance plan filed with permit (SSR s.5). Owner must keep maintenance records. Pump when full. Monitor alarm. Permit required before construction (SSR s.4). Well setback: minimum 15m (SSR s.3.1).',
     inspection_frequency_months: 6,
     display_order: 4,
   },
@@ -352,6 +354,42 @@ export default function SystemRegulationsTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* BC Reference Document */}
+      {selectedRegion === 'BC' && (
+        <Card className="border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/30 dark:bg-emerald-950/20">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                <FileText className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm">Public Health Act — Sewerage System Regulation</p>
+                <p className="text-xs text-muted-foreground">B.C. Reg. 326/2004 • Last amended March 30, 2022 • Consolidated to November 10, 2022</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="shrink-0"
+              >
+                <a href={BC_REGULATION_PDF} target="_blank" rel="noopener noreferrer">
+                  <FileText className="h-3.5 w-3.5 mr-1.5" />
+                  View PDF
+                </a>
+              </Button>
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground space-y-1 pl-[52px]">
+              <p>• <strong>Applies to:</strong> Holding tanks, single family/duplex sewerage systems, and systems with combined flow &lt; 22,700 L/day (SSR s.2)</p>
+              <p>• <strong>Well setbacks:</strong> Holding tanks ≥ 15m, Sewerage systems ≥ 30m from wells (SSR s.3.1)</p>
+              <p>• <strong>Type 1 &amp; 2:</strong> May be constructed by ROWPs or professionals (SSR s.6)</p>
+              <p>• <strong>Type 3 &amp; systems &gt; 9,100 L/day:</strong> Must be supervised by a professional (SSR s.6(3))</p>
+              <p>• <strong>Filing required:</strong> Plans/specs must be filed with health authority before construction (SSR s.8)</p>
+              <p>• <strong>Certification:</strong> Letter of certification required within 30 days of completing construction (SSR s.9)</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Classifications List */}
       {isLoading ? (
