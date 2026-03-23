@@ -1563,6 +1563,9 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>
+              </CompanyProvider>
+              </NotificationsProvider>
+              </ImpersonationProvider>
             </AuthGate>
           }
         />
