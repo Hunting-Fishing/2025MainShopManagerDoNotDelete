@@ -47,7 +47,7 @@ export default function SepticCompletions() {
                         {c.gallons_pumped && <Badge variant="outline">{c.gallons_pumped} gal</Badge>}
                       </div>
                       {cust && <p className="text-sm text-muted-foreground">{cust.first_name} {cust.last_name}</p>}
-                      {employee && <p className="text-xs text-muted-foreground">Driver: {employee.first_name} {employee.last_name}</p>}
+                      {driver && <p className="text-xs text-muted-foreground">Driver: {driver.first_name} {driver.last_name}</p>}
                       {c.disposal_site && <p className="text-xs text-muted-foreground">Disposed at: {c.disposal_site}</p>}
                     </div>
                     <div className="text-right text-xs text-muted-foreground space-y-1">
