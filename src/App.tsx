@@ -1611,6 +1611,7 @@ function App() {
           path="/water-delivery/*"
           element={
             <AuthGate>
+              <AuthenticatedProviders>
               <WaterDeliveryLayout>
                 <Routes>
                   <Route path="/" element={<WaterDeliveryDashboard />} />
