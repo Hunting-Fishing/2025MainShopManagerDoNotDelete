@@ -1569,6 +1569,7 @@ function App() {
           path="/fuel-delivery/*"
           element={
             <AuthGate>
+              <AuthenticatedProviders>
               <FuelDeliveryLayout>
                 <Routes>
                   <Route path="/" element={<FuelDeliveryDashboard />} />
