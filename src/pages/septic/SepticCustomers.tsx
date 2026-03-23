@@ -6,12 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Loader2, Users, Phone, Mail, MapPin, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useShopId } from '@/hooks/useShopId';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { SepticAddCustomerDialog } from '@/components/septic/SepticAddCustomerDialog';
 
 export default function SepticCustomers() {
   const navigate = useNavigate();
@@ -19,7 +17,6 @@ export default function SepticCustomers() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone: '', address: '' });
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ['septic-customers', shopId],
@@ -36,7 +33,6 @@ export default function SepticCustomers() {
     enabled: !!shopId,
   });
 
-  // Count tanks per customer
   const { data: tankCounts = {} } = useQuery({
     queryKey: ['septic-customer-tank-counts', shopId],
     queryFn: async () => {
@@ -54,16 +50,35 @@ export default function SepticCustomers() {
   });
 
   const addCustomer = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (form: any) => {
       if (!shopId) throw new Error('No shop');
-      const { error } = await supabase.from('septic_customers').insert({ ...form, shop_id: shopId });
+      const insertData: any = {
+        shop_id: shopId,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        email: form.email || null,
+        phone: form.phone || null,
+        address: form.address || null,
+        city: form.city || null,
+        state: form.state || null,
+        zip_code: form.zip_code || null,
+        notes: form.notes || null,
+        latitude: form.latitude,
+        longitude: form.longitude,
+        property_type: form.property_type || null,
+        bedrooms: form.bedrooms,
+        property_size: form.property_size || null,
+        system_type: form.system_type || null,
+        last_pump_date: form.last_pump_date || null,
+        access_notes: form.access_notes || null,
+      };
+      const { error } = await supabase.from('septic_customers').insert(insertData);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Customer added');
       queryClient.invalidateQueries({ queryKey: ['septic-customers'] });
       setShowAdd(false);
-      setForm({ first_name: '', last_name: '', email: '', phone: '', address: '' });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -121,26 +136,12 @@ export default function SepticCustomers() {
         </div>
       )}
 
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Add Customer</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>First Name</Label><Input value={form.first_name} onChange={(e) => setForm(p => ({ ...p, first_name: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Last Name</Label><Input value={form.last_name} onChange={(e) => setForm(p => ({ ...p, last_name: e.target.value }))} /></div>
-            </div>
-            <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm(p => ({ ...p, email: e.target.value }))} /></div>
-            <div className="space-y-2"><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-            <div className="space-y-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm(p => ({ ...p, address: e.target.value }))} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
-            <Button onClick={() => addCustomer.mutate()} disabled={!form.first_name || !form.last_name || addCustomer.isPending}>
-              {addCustomer.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SepticAddCustomerDialog
+        open={showAdd}
+        onOpenChange={setShowAdd}
+        onSave={(form) => addCustomer.mutate(form)}
+        isPending={addCustomer.isPending}
+      />
     </div>
   );
 }
