@@ -73,6 +73,8 @@ export default function SepticStaff() {
         phone: form.phone || null,
         email: form.email || null,
         hire_date: form.hire_date || null,
+        hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : null,
+        home_address: form.home_address || null,
         status: form.status,
       }).select('id').single();
       if (error) throw error;
