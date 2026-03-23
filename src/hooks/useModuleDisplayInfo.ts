@@ -96,6 +96,9 @@ export function useUpdateModuleDisplayInfo() {
       throw new Error(`Module ${moduleSlug} not found`);
     }
 
+    // Get current user for audit trail
+    const { data: { user } } = await supabase.auth.getUser();
+
     // Check if record exists
     const { data: existing } = await supabase
       .from('shop_enabled_modules')
@@ -116,7 +119,7 @@ export function useUpdateModuleDisplayInfo() {
         .insert({
           shop_id: shopId,
           module_id: module.id,
-          is_enabled: true,
+          enabled_by: user?.id || null,
           ...displayInfo,
         });
       if (error) throw error;

@@ -1836,6 +1836,7 @@ function App() {
       </Routes>
       </Suspense>
       <Toaster />
+      <SonnerToaster />
       {/* Global UX enhancements */}
       <GlobalUX />
     </>
