@@ -30,9 +30,9 @@ export default function SepticOrderDetail() {
   const { shopId } = useShopId();
 
   const { data: order, isLoading, error } = useQuery({
-    queryKey: ['septic-order-detail', orderId, shopId],
+    queryKey: ['septic-order-detail', orderId],
     queryFn: async () => {
-      if (!orderId || !shopId) return null;
+      if (!orderId) return null;
       const { data, error } = await supabase
         .from('septic_service_orders')
         .select(`
@@ -41,12 +41,11 @@ export default function SepticOrderDetail() {
           septic_tanks(id, tank_type, capacity_gallons, location_description)
         `)
         .eq('id', orderId)
-        .eq('shop_id', shopId)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
-    enabled: !!orderId && !!shopId,
+    enabled: !!orderId,
     staleTime: 0,
     refetchOnMount: 'always' as const,
   });

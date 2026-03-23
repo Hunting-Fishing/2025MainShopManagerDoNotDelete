@@ -60,6 +60,17 @@ interface SepticRouteStop {
   notes: string | null;
   drive_time_minutes: number | null;
   distance_from_previous_miles: number | null;
+  septic_service_orders?: {
+    id: string;
+    order_number: string | null;
+    status: string | null;
+    customer_id: string | null;
+    septic_customers?: {
+      id: string;
+      first_name: string | null;
+      last_name: string | null;
+    } | null;
+  } | null;
 }
 
 interface SepticDriver {
