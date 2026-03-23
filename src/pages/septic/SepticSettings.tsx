@@ -176,6 +176,7 @@ export default function SepticSettings() {
           <TabsList className="inline-flex w-max">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="regulations">System Regulations</TabsTrigger>
+            <TabsTrigger value="inspections">Inspection Forms</TabsTrigger>
             <TabsTrigger value="notifications">Alerts</TabsTrigger>
             <TabsTrigger value="defaults">Defaults</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
