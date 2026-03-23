@@ -248,6 +248,11 @@ export default function SepticSettings() {
           </Card>
         </TabsContent>
 
+        {/* ── System Regulations Tab ──────────────────── */}
+        <TabsContent value="regulations">
+          <SystemRegulationsTab />
+        </TabsContent>
+
         {/* ── Notifications Tab ───────────────────────── */}
         <TabsContent value="notifications" className="space-y-4">
           <Card>
