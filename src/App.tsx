@@ -434,6 +434,7 @@ const SepticProducts = lazy(() => import('@/pages/septic/SepticProducts'));
 const SepticTrucks = lazy(() => import('@/pages/septic/SepticTrucks'));
 const SepticDrivers = lazy(() => import('@/pages/septic/SepticDrivers'));
 const SepticDriverDetail = lazy(() => import('@/pages/septic/SepticDriverDetail'));
+const SepticEmployeeDetail = lazy(() => import('@/pages/septic/SepticEmployeeDetail'));
 const SepticRoutes = lazy(() => import('@/pages/septic/SepticRoutes'));
 const SepticCompletions = lazy(() => import('@/pages/septic/SepticCompletions'));
 const SepticInventory = lazy(() => import('@/pages/septic/SepticInventory'));
