@@ -1,133 +1,106 @@
 
 
-# Professional Septic Customer Details Page
+# Septic Inspection Form Builder — Settings Tab
 
 ## Overview
 
-Transform the basic customer details page into a comprehensive, multi-tab professional CRM view with inline editing, full service history, financial tracking, environmental monitoring, and cost-saving recommendations.
+Add an "Inspection Forms" tab to Septic Settings containing a full form builder that lets users create, name, edit, duplicate, and manage multiple inspection checklist templates. Each template has sections with checklist items supporting ✓/✗/N/A responses, notes, and photo/video attachments per line. Pre-loaded with the checklist from the uploaded image as a starter template.
 
-## Database Changes
+## Database
 
-### New Tables
+Already exists — `septic_inspection_templates`, `septic_inspection_template_sections`, `septic_inspection_template_items` are all in place with RLS. The `item_type` field supports `checkbox`, `text`, `number`, `photo`, `video`, `notes`, and `gyr_status`.
 
-**`septic_customer_notes`** — Internal notes, employee suggestions, and customer requests
-- `id`, `customer_id` (FK septic_customers), `shop_id` (FK shops), `note_type` (general / customer_request / employee_suggestion / recommendation), `title`, `content`, `priority` (low/medium/high/urgent), `status` (open/in_progress/resolved/dismissed), `created_by` (FK profiles), `assigned_to` (FK profiles, nullable), `estimated_cost` (numeric, nullable), `resolved_at`, `created_at`, `updated_at`
-
-**`septic_environmental_records`** — Environmental concerns and compliance tracking
-- `id`, `customer_id` (FK septic_customers), `shop_id` (FK shops), `record_type` (concern / violation / compliance_check / remediation), `severity` (low/medium/high/critical), `title`, `description`, `regulatory_body`, `citation_number`, `date_identified`, `date_resolved`, `remediation_plan`, `remediation_cost`, `status` (open/monitoring/resolved/escalated), `photos` (text[]), `created_by` (FK profiles), `created_at`, `updated_at`
-
-**`septic_cost_recommendations`** — Cost-saving and system upgrade recommendations
-- `id`, `customer_id` (FK septic_customers), `shop_id` (FK shops), `recommendation_type` (cost_saving / upgrade / maintenance_plan / system_replacement / environmental), `title`, `description`, `current_annual_cost` (numeric), `projected_annual_cost` (numeric), `estimated_savings` (numeric), `implementation_cost` (numeric), `payback_period_months` (integer), `priority`, `status` (proposed/accepted/in_progress/completed/declined), `accepted_at`, `completed_at`, `created_by` (FK profiles), `created_at`, `updated_at`
-
-All tables get RLS policies using `get_current_user_shop_id()`.
-
-### Columns Added to `septic_customers`
-
-- `customer_type TEXT DEFAULT 'residential'` — residential / commercial / municipal
-- `business_name TEXT`
-- `business_contact TEXT`
-- `preferred_payment_method TEXT`
-- `payment_terms TEXT`
-- `tax_exempt BOOLEAN DEFAULT false`
-- `emergency_contact_name TEXT`
-- `emergency_contact_phone TEXT`
-- `county TEXT`
-- `parcel_number TEXT`
-- `well_distance_ft INTEGER`
-- `water_source TEXT`
-- `occupants INTEGER`
-- `year_built INTEGER`
+**One migration needed**: Add columns to `septic_inspection_template_items` for the enhanced per-line capabilities:
+- `allows_notes BOOLEAN DEFAULT true` — whether the item has a notes field
+- `allows_photos BOOLEAN DEFAULT true` — whether photos can be attached
+- `allows_videos BOOLEAN DEFAULT false` — whether videos can be attached
+- `response_type TEXT DEFAULT 'pass_fail_na'` — the response format (pass_fail_na / gyr_status / checkbox / text / number)
 
 ## UI Architecture
 
-### File: `src/pages/septic/SepticCustomerDetails.tsx` (rewrite)
+### New Tab in Settings
 
-Multi-tab layout with editable header card:
+Add "Inspection Forms" tab (with `ClipboardCheck` icon) to `SepticSettings.tsx`.
 
-```text
-[Back] [Customer Name ✏️] [Residential/Commercial badge] [Active badge] [Edit | New Order]
+### Component: `InspectionFormBuilderTab.tsx`
 
-┌─────────────────────────────────────────────────────────────┐
-│ Overview │ Systems │ Service History │ Financial │ Notes │ Environmental │ Recommendations │
-└─────────────────────────────────────────────────────────────┘
-```
+**Form List View** (default):
+- Cards showing all saved templates with name, description, section count, item count, published status
+- "Create New Form" button
+- Actions per form: Edit, Duplicate, Delete, Publish/Unpublish
+- "Load Default Checklist" button that seeds the BC inspection checklist from the uploaded image
 
-### Tab 1 — Overview
-- **Contact Card**: Editable inline fields (name, phone, email, address with map link)
-- **Property Info**: Customer type (residential/commercial/municipal), business name (if commercial), bedrooms, property size, occupants, year built, parcel number
-- **System Summary**: Count of tanks, system types, last service date, next scheduled service
-- **Quick Stats**: Total spent lifetime, open orders count, days since last service, compliance status
-- **Emergency Contact**: Name and phone
+**Form Editor View** (when editing/creating):
+- Form name and description fields at top
+- Sections rendered as collapsible cards with drag handles
+- "+ Add Section" button
+- Each section has:
+  - Editable title and description
+  - List of checklist items
+  - "+ Add Item" button
+- Each checklist item row shows:
+  - Item name (editable inline)
+  - Response type selector (✓/✗/N/A, Green/Yellow/Red, text, number)
+  - Required toggle
+  - Notes toggle (allow notes per line)
+  - Photos toggle (allow photo attachments)
+  - Videos toggle
+  - Delete button
+- Save / Cancel buttons
+- "Preview" mode showing the form as it would appear to inspectors
 
-### Tab 2 — Systems & Tanks
-- Existing tanks list (enhanced with condition indicators)
-- System type, install date, capacity, last pump date
-- Property system details (well distance, water source)
-- Link to inspections per tank
+### Default Template Data (from uploaded image)
 
-### Tab 3 — Service History
-- All `septic_service_orders` for this customer (maintenance, installs, repairs)
-- Filterable by service_type and date range
-- Status badges, cost, assigned driver/tech
-- Clickable rows navigate to order details
+Pre-built "Septic Tank Inspection Checklist" with:
 
-### Tab 4 — Financial
-- **Payment Summary**: Total invoiced, total paid, outstanding balance
-- **Invoice Table**: From `septic_invoices` — invoice date, due date, paid date, amount, status, payment method
-- **Payment History**: From `septic_payments` — date, amount, method, reference
-- Payment terms and preferred method (editable)
-- **Cost Breakdown**: Pie chart — maintenance vs repairs vs installs vs inspections
+**Section 1 — Inspection Preparation** (5 items, checkbox response):
+- Inspector wearing rubber gloves and eye protection
+- Inspector has tools and materials necessary
+- Safety rules reviewed
+- If necessary, inspect with another person for safety
+- Avoid touching face during inspection
 
-### Tab 5 — Notes & Requests
-- Tabbed sub-view: All / Customer Requests / Employee Suggestions / Recommendations
-- Add note dialog with type selector, priority, optional cost estimate
-- Assign to employee, track status (open → in_progress → resolved)
-- Timeline view showing all notes chronologically
+**Section 2 — Septic Tank Checklist** (16 items, ✓/✗/N/A response):
+- Wastewater directed into sewage treatment system
+- Water not backing up and drains flow freely
+- Risers watertight and without leaks
+- Risers no visible damage
+- Tank odor levels acceptable
+- Liquid level above outlet pipe
+- Healthy scum layer in tank
+- Scum layer no more than 6 inches depth
+- Sludge layer no more than 12 inches depth
+- Signs of overflow
+- Scum layer below inlet
+- Baffles above scum layer
+- Clean outlet baffle filter
+- Diverter box above ground level
+- Diverter in place with lid
+- Ground around system — surface sewage
 
-### Tab 6 — Environmental
-- Environmental concerns log with severity indicators
-- Compliance check history
-- Active violations with remediation tracking
-- Groundwater contamination flags (from inspections)
-- Surface ponding, odor history
-- Remediation costs and timeline
-- Add new concern/record dialog
+**Section 3 — Measurements** (2 items, number response with units):
+- Scum Layer Thickness
+- Sludge Layer Thickness
 
-### Tab 7 — Recommendations
-- Cost-saving analysis cards showing current vs projected costs
-- System upgrade recommendations with ROI calculations
-- Maintenance plan suggestions (e.g., "pumping every 2 years vs 3 saves $X")
-- Environmental improvement recommendations
-- Status tracking: proposed → accepted → completed
-- Total potential savings summary at top
+**Section 4 — Notes** (1 item, text/notes):
+- General inspection notes
 
-## New Component Files
+## Files
 
-| File | Purpose |
+| File | Action |
 |---|---|
-| `src/components/septic/customer-details/CustomerOverviewTab.tsx` | Editable contact/property info with quick stats |
-| `src/components/septic/customer-details/CustomerSystemsTab.tsx` | Tanks and system details |
-| `src/components/septic/customer-details/CustomerServiceHistoryTab.tsx` | Filterable service order list |
-| `src/components/septic/customer-details/CustomerFinancialTab.tsx` | Invoices, payments, cost breakdown |
-| `src/components/septic/customer-details/CustomerNotesTab.tsx` | Notes, requests, suggestions with add/edit |
-| `src/components/septic/customer-details/CustomerEnvironmentalTab.tsx` | Environmental tracking and compliance |
-| `src/components/septic/customer-details/CustomerRecommendationsTab.tsx` | Cost-saving and upgrade recommendations |
-| `src/components/septic/customer-details/EditCustomerDialog.tsx` | Full edit dialog for all customer fields |
-| `src/components/septic/customer-details/AddNoteDialog.tsx` | Dialog for adding notes/requests/suggestions |
-| `src/components/septic/customer-details/AddEnvironmentalRecordDialog.tsx` | Dialog for environmental concerns |
-| `src/components/septic/customer-details/AddRecommendationDialog.tsx` | Dialog for cost-saving recommendations |
+| `src/components/septic/settings/InspectionFormBuilderTab.tsx` | **Create** — form list + editor with full CRUD |
+| `src/components/septic/settings/InspectionFormEditor.tsx` | **Create** — section/item editor with inline editing |
+| `src/components/septic/settings/InspectionFormPreview.tsx` | **Create** — read-only preview of the form |
+| `src/pages/septic/SepticSettings.tsx` | **Edit** — add "Inspection Forms" tab |
+| `src/integrations/supabase/types.ts` | **Edit** — add new columns |
+| Migration SQL | **Create** — add columns to `septic_inspection_template_items` |
 
-## Edited Files
+## Technical Details
 
-| File | Change |
-|---|---|
-| `src/pages/septic/SepticCustomerDetails.tsx` | Complete rewrite with tabs layout and data queries |
-
-## Key Design Decisions
-
-- All new tables use `septic_` prefix for full module isolation
-- Customer type field enables residential vs commercial workflows
-- Environmental tracking leverages existing inspection data (groundwater_contamination, surface_ponding, odor_present) plus new dedicated records
-- Cost recommendations include ROI math (payback period) to help sell upgrades to customers
-- Notes system doubles as internal CRM — employee suggestions create institutional knowledge
+- All CRUD operations use `supabase` client against `septic_inspection_templates`, `septic_inspection_template_sections`, `septic_inspection_template_items`
+- Sections and items use `display_order` for ordering
+- Save operation: upsert template → delete removed sections/items → upsert remaining sections → upsert items
+- The "Load Default Checklist" inserts the full BC checklist as a new template in one transaction
+- Form names are user-defined — users can create as many forms as they need
 
