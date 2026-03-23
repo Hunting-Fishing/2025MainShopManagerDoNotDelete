@@ -332,6 +332,48 @@ export function SubmissionReviewDialog({
             <p className="text-xs text-muted-foreground">
               Open this link to copy the product image and write a description
             </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-1"
+              disabled={isFetchingMeta || !submission.product_url}
+              onClick={async () => {
+                setIsFetchingMeta(true);
+                try {
+                  const { data, error } = await supabase.functions.invoke('fetch-product-meta', {
+                    body: { url: submission.product_url },
+                  });
+                  if (error) throw error;
+                  if (data?.success && data.data) {
+                    const meta = data.data;
+                    if (meta.description && !productDescription) setProductDescription(meta.description);
+                    if (meta.imageUrl && !imageUrl) setImageUrl(meta.imageUrl);
+                    if (meta.price && !productPrice) setProductPrice(String(meta.price));
+                    toast.success('Product info fetched! Review and edit as needed.');
+                  } else {
+                    toast.error(data?.error || 'Could not extract metadata from this URL');
+                  }
+                } catch (err: any) {
+                  console.error('Auto-fill error:', err);
+                  toast.error('Failed to fetch product info');
+                } finally {
+                  setIsFetchingMeta(false);
+                }
+              }}
+            >
+              {isFetchingMeta ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  Fetching...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-3 w-3 mr-1" />
+                  Auto-Fill from URL
+                </>
+              )}
+            </Button>
             {duplicateWarning && (
               <div className="mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded-md">
                 <p className="text-sm text-destructive font-medium">⚠️ Duplicate Link Detected</p>
