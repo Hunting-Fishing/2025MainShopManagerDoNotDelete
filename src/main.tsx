@@ -56,9 +56,7 @@ if ('serviceWorker' in navigator && shouldDisableServiceWorker) {
   if ('caches' in window) {
     caches.keys()
       .then((cacheKeys) => Promise.all(
-        cacheKeys
-          .filter((key) => key.startsWith('order-master-'))
-          .map((key) => caches.delete(key))
+        cacheKeys.map((key) => caches.delete(key))
       ))
       .catch((error) => console.warn('Cache cleanup failed:', error));
   }
