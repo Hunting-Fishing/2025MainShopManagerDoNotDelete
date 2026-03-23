@@ -1,117 +1,118 @@
 // Service Worker for PWA functionality
-const CACHE_NAME = 'order-master-v1.0.0';
-const STATIC_CACHE_NAME = 'order-master-static-v1';
-const DYNAMIC_CACHE_NAME = 'order-master-dynamic-v1';
+const STATIC_CACHE_NAME = 'order-master-static-v2';
+const RUNTIME_CACHE_NAME = 'order-master-runtime-v2';
 
 // Files to cache for offline functionality
-const STATIC_ASSETS = [
-  '/',
-  '/offline.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
-];
+const STATIC_ASSETS = ['/', '/offline.html', '/manifest.json'];
+
+const isBypassRequest = (request) => {
+  if (request.method !== 'GET') return true;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return true;
+  if (url.pathname.startsWith('/api/') || url.hostname.includes('supabase.co')) return true;
+
+  // Avoid stale-bundle white screens by never caching scripts/styles/fonts/workers.
+  if (['script', 'style', 'font', 'worker'].includes(request.destination)) return true;
+  if (url.pathname.startsWith('/@vite')) return true;
+
+  return false;
+};
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installing...');
-  event.waitUntil(
-    caches.open(STATIC_CACHE_NAME)
-      .then((cache) => {
-        console.log('Service Worker: Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
-      })
-      .then(() => {
-        console.log('Service Worker: Installation complete');
-        return self.skipWaiting();
-      })
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(STATIC_CACHE_NAME);
+    await Promise.all(STATIC_ASSETS.map(async (asset) => {
+      try {
+        await cache.add(asset);
+      } catch (error) {
+        console.warn('Service Worker: Failed to cache static asset', asset, error);
+      }
+    }));
+    await self.skipWaiting();
+  })());
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activating...');
-  event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== STATIC_CACHE_NAME && cacheName !== DYNAMIC_CACHE_NAME) {
-              console.log('Service Worker: Deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
+  event.waitUntil((async () => {
+    const cacheNames = await caches.keys();
+    await Promise.all(
+      cacheNames.map((cacheName) => {
+        if (cacheName !== STATIC_CACHE_NAME && cacheName !== RUNTIME_CACHE_NAME) {
+          return caches.delete(cacheName);
+        }
       })
-      .then(() => {
-        console.log('Service Worker: Activation complete');
-        return self.clients.claim();
-      })
-  );
+    );
+    await self.clients.claim();
+  })());
 });
 
-// Fetch event - serve cached content when offline
+// Fetch event - network-first for page navigations, stale-while-revalidate for assets
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
+
+  if (isBypassRequest(request)) {
     return;
   }
 
-  // Skip external requests and API calls
-  if (!request.url.startsWith(self.location.origin) || 
-      request.url.includes('/api/') ||
-      request.url.includes('supabase.co')) {
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const networkResponse = await fetch(request);
+        if (networkResponse.ok) {
+          const cache = await caches.open(RUNTIME_CACHE_NAME);
+          cache.put(request, networkResponse.clone());
+        }
+        return networkResponse;
+      } catch {
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) return cachedResponse;
+
+        const appShell = await caches.match('/');
+        if (appShell) return appShell;
+
+        const offlinePage = await caches.match('/offline.html');
+        if (offlinePage) return offlinePage;
+
+        return new Response('Offline', {
+          status: 503,
+          statusText: 'Service Unavailable'
+        });
+      }
+    })());
     return;
   }
 
-  event.respondWith(
-    caches.match(request)
-      .then((response) => {
-        // Return cached response if found
-        if (response) {
-          return response;
-        }
+  event.respondWith((async () => {
+    const cachedResponse = await caches.match(request);
 
-        // For navigation requests, try network first, then offline page
-        if (request.mode === 'navigate') {
-          return fetch(request)
-            .then((response) => {
-              // Cache successful navigation responses
-              if (response.status === 200) {
-                const responseClone = response.clone();
-                caches.open(DYNAMIC_CACHE_NAME)
-                  .then((cache) => cache.put(request, responseClone));
-              }
-              return response;
-            })
-            .catch(() => {
-              // Return offline page for navigation requests
-              return caches.match('/offline.html');
-            });
-        }
+    if (cachedResponse) {
+      fetch(request)
+        .then(async (networkResponse) => {
+          if (!networkResponse.ok) return;
+          const cache = await caches.open(RUNTIME_CACHE_NAME);
+          cache.put(request, networkResponse.clone());
+        })
+        .catch(() => {});
+      return cachedResponse;
+    }
 
-        // For other requests, try network then cache
-        return fetch(request)
-          .then((response) => {
-            // Cache successful responses
-            if (response.status === 200) {
-              const responseClone = response.clone();
-              caches.open(DYNAMIC_CACHE_NAME)
-                .then((cache) => cache.put(request, responseClone));
-            }
-            return response;
-          })
-          .catch(() => {
-            // Return fallback for failed requests
-            return new Response('Offline content not available', {
-              status: 503,
-              statusText: 'Service Unavailable'
-            });
-          });
-      })
-  );
+    try {
+      const networkResponse = await fetch(request);
+      if (networkResponse.ok) {
+        const cache = await caches.open(RUNTIME_CACHE_NAME);
+        cache.put(request, networkResponse.clone());
+      }
+      return networkResponse;
+    } catch {
+      return new Response('Offline content not available', {
+        status: 503,
+        statusText: 'Service Unavailable'
+      });
+    }
+  })());
 });
 
 // Handle background sync for offline actions

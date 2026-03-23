@@ -41,6 +41,29 @@ const queryClient = new QueryClient({
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Root element not found');
 
+const shouldDisableServiceWorker =
+  typeof window !== 'undefined' && (
+    window.location.hostname.includes('lovable.app') ||
+    window.location.hostname.includes('lovableproject.com') ||
+    window.location.search.includes('__lovable_token=')
+  );
+
+if ('serviceWorker' in navigator && shouldDisableServiceWorker) {
+  navigator.serviceWorker.getRegistrations()
+    .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+    .catch((error) => console.warn('Service worker unregister failed:', error));
+
+  if ('caches' in window) {
+    caches.keys()
+      .then((cacheKeys) => Promise.all(
+        cacheKeys
+          .filter((key) => key.startsWith('order-master-'))
+          .map((key) => caches.delete(key))
+      ))
+      .catch((error) => console.warn('Cache cleanup failed:', error));
+  }
+}
+
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <GlobalErrorBoundary>

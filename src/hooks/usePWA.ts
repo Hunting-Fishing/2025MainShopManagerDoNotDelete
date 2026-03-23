@@ -41,6 +41,12 @@ export function usePWA(): PWAHookReturn {
   const isInstallable = !!installPrompt && !isInstalled && !isStandalone;
 
   useEffect(() => {
+    const isLovableHosted =
+      window.location.hostname.includes('lovable.app') ||
+      window.location.hostname.includes('lovableproject.com');
+    const isPreviewSession = window.location.search.includes('__lovable_token=');
+    const shouldRegisterServiceWorker = import.meta.env.PROD && !isLovableHosted && !isPreviewSession;
+
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -56,6 +62,29 @@ export function usePWA(): PWAHookReturn {
     // Listen for online/offline events
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'SW_UPDATE_AVAILABLE') {
+        setUpdateAvailable(true);
+      }
+    };
+
+    const cleanupLegacyServiceWorkers = async () => {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((reg) => reg.unregister()));
+
+        if ('caches' in window) {
+          const cacheKeys = await caches.keys();
+          await Promise.all(
+            cacheKeys
+              .filter((key) => key.startsWith('order-master-'))
+              .map((key) => caches.delete(key))
+          );
+        }
+      } catch (error) {
+        console.warn('Service worker cleanup failed:', error);
+      }
+    };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
@@ -67,34 +96,34 @@ export function usePWA(): PWAHookReturn {
       setIsInstalled(true);
     }
 
-    // Register service worker
+    // Register service worker only outside Lovable-hosted/preview environments
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          setRegistration(registration);
-          
-          // Check for updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  setUpdateAvailable(true);
-                }
-              });
-            }
+      if (!shouldRegisterServiceWorker) {
+        cleanupLegacyServiceWorkers();
+      } else {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            setRegistration(registration);
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    setUpdateAvailable(true);
+                  }
+                });
+              }
+            });
+          })
+          .catch((error) => {
+            console.error('Service worker registration failed:', error);
           });
-        })
-        .catch((error) => {
-          console.error('Service worker registration failed:', error);
-        });
 
-      // Listen for service worker messages
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'SW_UPDATE_AVAILABLE') {
-          setUpdateAvailable(true);
-        }
-      });
+        // Listen for service worker messages
+        navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+      }
     }
 
     return () => {
@@ -102,6 +131,9 @@ export function usePWA(): PWAHookReturn {
       window.removeEventListener('appinstalled', handleAppInstalled);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+      }
     };
   }, [isStandalone]);
 
