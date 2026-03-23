@@ -79,6 +79,7 @@ const BC_DEFAULT_TEMPLATE = {
 };
 
 export default function InspectionFormBuilderTab() {
+  const navigate = useNavigate();
   const { shopId } = useShopId();
   const queryClient = useQueryClient();
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
