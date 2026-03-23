@@ -355,6 +355,42 @@ export default function SystemRegulationsTab() {
         </CardContent>
       </Card>
 
+      {/* BC Reference Document */}
+      {selectedRegion === 'BC' && (
+        <Card className="border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/30 dark:bg-emerald-950/20">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                <FileText className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm">Public Health Act — Sewerage System Regulation</p>
+                <p className="text-xs text-muted-foreground">B.C. Reg. 326/2004 • Last amended March 30, 2022 • Consolidated to November 10, 2022</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="shrink-0"
+              >
+                <a href={BC_REGULATION_PDF} target="_blank" rel="noopener noreferrer">
+                  <FileText className="h-3.5 w-3.5 mr-1.5" />
+                  View PDF
+                </a>
+              </Button>
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground space-y-1 pl-[52px]">
+              <p>• <strong>Applies to:</strong> Holding tanks, single family/duplex sewerage systems, and systems with combined flow &lt; 22,700 L/day (SSR s.2)</p>
+              <p>• <strong>Well setbacks:</strong> Holding tanks ≥ 15m, Sewerage systems ≥ 30m from wells (SSR s.3.1)</p>
+              <p>• <strong>Type 1 &amp; 2:</strong> May be constructed by ROWPs or professionals (SSR s.6)</p>
+              <p>• <strong>Type 3 &amp; systems &gt; 9,100 L/day:</strong> Must be supervised by a professional (SSR s.6(3))</p>
+              <p>• <strong>Filing required:</strong> Plans/specs must be filed with health authority before construction (SSR s.8)</p>
+              <p>• <strong>Certification:</strong> Letter of certification required within 30 days of completing construction (SSR s.9)</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Classifications List */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
