@@ -7,6 +7,9 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AuthGate } from '@/components/AuthGate';
 import { authMonitor } from '@/utils/authMonitoring';
 import { GlobalUX } from '@/components/ux/GlobalUX';
+import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
+import { NotificationsProvider } from '@/context/notifications';
+import { CompanyProvider } from '@/contexts/CompanyContext';
 import Index from '@/pages/Index';
 
 // Suspense fallback component
