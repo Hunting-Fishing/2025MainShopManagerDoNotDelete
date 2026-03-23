@@ -1721,6 +1721,7 @@ function App() {
                   <Route path="/purchases" element={<SepticPurchases />} />
                   <Route path="/staff" element={<SepticStaff />} />
                   <Route path="/inspections" element={<SepticInspections />} />
+                  <Route path="/inspection-form/:templateId" element={<SepticInspectionForm />} />
                   <Route path="/profile" element={<SepticProfile />} />
                   <Route path="/settings" element={<SepticSettings />} />
                   <Route path="/store" element={<SepticStore />} />
