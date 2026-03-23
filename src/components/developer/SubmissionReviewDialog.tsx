@@ -58,6 +58,7 @@ export function SubmissionReviewDialog({
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [approvalError, setApprovalError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [isFetchingMeta, setIsFetchingMeta] = useState(false);
 
   const resetForm = () => {
     setProductDescription('');
