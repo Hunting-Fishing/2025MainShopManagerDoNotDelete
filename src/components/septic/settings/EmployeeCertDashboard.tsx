@@ -11,6 +11,7 @@ import { differenceInDays, format } from 'date-fns';
 
 export default function EmployeeCertDashboard() {
   const { shopId } = useShopId();
+  const navigate = useNavigate();
 
   const { data: employees = [], isLoading: empLoading } = useQuery({
     queryKey: ['septic-employees-dash', shopId],
