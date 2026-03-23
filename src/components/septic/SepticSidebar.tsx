@@ -70,8 +70,8 @@ const navSections: NavSection[] = [
     title: 'Fleet Management',
     items: [
       { title: 'Pump Trucks', href: '/septic/trucks', icon: Truck, color: 'from-slate-500 to-zinc-600' },
+      { title: 'Employees', href: '/septic/staff', icon: Users, color: 'from-amber-500 to-orange-600' },
       { title: 'Drivers', href: '/septic/drivers', icon: UserCheck, color: 'from-green-500 to-emerald-600' },
-      { title: 'Staff', href: '/septic/staff', icon: Users, color: 'from-amber-500 to-orange-600' },
       { title: 'Driver App', href: '/septic/driver-app', icon: Container, color: 'from-stone-500 to-stone-700' },
     ],
   },
