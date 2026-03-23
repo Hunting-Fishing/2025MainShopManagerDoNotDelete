@@ -623,6 +623,9 @@ function App() {
           path="/*"
           element={
             <AuthGate>
+              <ImpersonationProvider>
+              <NotificationsProvider>
+              <CompanyProvider>
               <Layout>
                 <Routes>
                   <Route path="/module-hub" element={<ModuleHub />} />
