@@ -22,14 +22,14 @@ export function useAuthUser() {
   
   const { attemptSessionRecovery, isRecoveryInProgress } = useSessionRecovery();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleAuthStateChangeRef = useRef<(event: string, currentSession: Session | null) => void>();
 
   // Function to fetch user roles from database with recovery support
-  const fetchUserRoles = useCallback(async (authUserId: string, retryWithRecovery = true): Promise<void> => {
+  const fetchUserRoles = async (authUserId: string, retryWithRecovery = true): Promise<void> => {
     setIsRolesLoading(true);
     try {
       console.log('🔍 Fetching user roles for auth.uid():', authUserId);
       
-      // First try direct auth.uid() lookup (newer pattern)
       const { data: directRoles, error: directError } = await supabase
         .from('user_roles')
         .select(`roles (name)`)
@@ -47,7 +47,6 @@ export function useAuthUser() {
         return;
       }
 
-      // If no roles found directly, try via profile.id (older pattern)
       const { data: profileData } = await supabase
         .from('profiles')
         .select('id')
@@ -89,7 +88,6 @@ export function useAuthUser() {
         }
       }
 
-      // No roles found via either pattern
       console.warn('⚠️ No roles found for user:', authUserId);
       setUserRoles([]);
       setIsAdmin(false);
@@ -106,13 +104,12 @@ export function useAuthUser() {
     } finally {
       setIsRolesLoading(false);
     }
-  }, [attemptSessionRecovery, isRecoveryInProgress]);
+  };
 
-  // Memoized auth state handler to prevent unnecessary re-renders
-  const handleAuthStateChange = useCallback((event: string, currentSession: Session | null) => {
+  // Keep the ref updated with latest handler (avoids stale closures)
+  handleAuthStateChangeRef.current = (event: string, currentSession: Session | null) => {
     console.log('useAuthUser: Auth state change:', event, currentSession?.user?.id);
     
-    // Clear timeout since we got a response
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -126,9 +123,7 @@ export function useAuthUser() {
       setUserId(currentSession?.user?.id ?? null);
       setUserName(currentSession?.user?.email ?? currentSession?.user?.user_metadata?.full_name ?? null);
       
-      // Fetch real user roles from database
       if (currentSession?.user?.id) {
-        // Fetch roles - isLoading stays true until roles are fetched
         fetchUserRoles(currentSession.user.id).finally(() => {
           setIsLoading(false);
         });
@@ -150,83 +145,56 @@ export function useAuthUser() {
       setUserName(null);
       setIsLoading(false);
     }
-  }, [fetchUserRoles]);
+  };
 
   useEffect(() => {
-    console.log('useAuthUser: Setting up auth state listener...');
-    
     let isMounted = true;
-    let authSubscription: { unsubscribe: () => void } | null = null;
     
-    // Hard timeout: if auth doesn't resolve in 8s, stop loading
+    // Hard timeout
     timeoutRef.current = setTimeout(() => {
       if (isMounted) {
-        console.warn('⚠️ Auth bootstrap timeout after', AUTH_TIMEOUT_MS, 'ms — forcing loading to complete');
+        console.warn('⚠️ Auth bootstrap timeout after', AUTH_TIMEOUT_MS, 'ms');
         setIsLoading(false);
         setError('Authentication took too long. Please refresh or try logging in again.');
       }
     }, AUTH_TIMEOUT_MS);
     
-    // Set up auth state listener with cleanup
-    try {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
-      authSubscription = subscription;
-    } catch (err) {
-      console.error('useAuthUser: Error setting up auth listener:', err);
+    // Stable wrapper that delegates to the ref
+    const stableHandler = (event: string, currentSession: Session | null) => {
       if (isMounted) {
-        setError('Failed to initialize authentication');
-        setIsLoading(false);
-      }
-      return;
-    }
-
-    // Check for existing session
-    const initializeAuth = async () => {
-      try {
-        console.log('useAuthUser: Checking for existing session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (!isMounted) return;
-        
-        if (error) {
-          console.error('useAuthUser: Error getting session:', error);
-          setError('Failed to get session');
-          setIsLoading(false);
-        } else {
-          console.log('useAuthUser: Initial session check:', session?.user?.id);
-          // Manually trigger the auth state handler for initial session
-          handleAuthStateChange('INITIAL_SESSION', session);
-        }
-      } catch (error) {
-        if (isMounted) {
-          console.error('useAuthUser: Error in initial auth check:', error);
-          setError('Authentication initialization failed');
-          setIsLoading(false);
-        }
+        handleAuthStateChangeRef.current?.(event, currentSession);
       }
     };
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(stableHandler);
 
-    // Add small delay to prevent race conditions
-    const timer = setTimeout(() => {
-      if (isMounted) {
-        initializeAuth();
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (!isMounted) return;
+      if (error) {
+        console.error('useAuthUser: Error getting session:', error);
+        setError('Failed to get session');
+        setIsLoading(false);
+      } else {
+        stableHandler('INITIAL_SESSION', session);
       }
-    }, 50);
+    }).catch((err) => {
+      if (isMounted) {
+        console.error('useAuthUser: Error in initial auth check:', err);
+        setError('Authentication initialization failed');
+        setIsLoading(false);
+      }
+    });
 
-    // Cleanup function
     return () => {
-      console.log('useAuthUser: Cleaning up auth listener');
       isMounted = false;
-      clearTimeout(timer);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
-      if (authSubscription) {
-        authSubscription.unsubscribe();
-      }
+      subscription.unsubscribe();
     };
-  }, [handleAuthStateChange]);
+  }, []); // stable — no deps needed, handler accessed via ref
 
   const refetchRoles = useCallback(() => {
     if (userId) {
