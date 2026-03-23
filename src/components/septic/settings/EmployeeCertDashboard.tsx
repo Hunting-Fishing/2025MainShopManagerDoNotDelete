@@ -1,7 +1,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Users, AlertTriangle, CheckCircle2, Clock, Award } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Users, AlertTriangle, CheckCircle2, Clock, Award, Plus, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
