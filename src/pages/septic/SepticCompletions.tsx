@@ -16,7 +16,7 @@ export default function SepticCompletions() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_completions')
-        .select('*, septic_customers(first_name, last_name), septic_drivers(first_name, last_name)')
+        .select('*, septic_customers(first_name, last_name), septic_employees(first_name, last_name)')
         .eq('shop_id', shopId)
         .order('completion_date', { ascending: false });
       if (error) throw error;
@@ -36,7 +36,7 @@ export default function SepticCompletions() {
         <div className="space-y-3">
           {completions.map((c: any) => {
             const cust = c.septic_customers as any;
-            const driver = c.septic_drivers as any;
+            const employee = c.septic_employees as any;
             return (
               <Card key={c.id}>
                 <CardContent className="p-4">
@@ -47,7 +47,7 @@ export default function SepticCompletions() {
                         {c.gallons_pumped && <Badge variant="outline">{c.gallons_pumped} gal</Badge>}
                       </div>
                       {cust && <p className="text-sm text-muted-foreground">{cust.first_name} {cust.last_name}</p>}
-                      {driver && <p className="text-xs text-muted-foreground">Driver: {driver.first_name} {driver.last_name}</p>}
+                      {employee && <p className="text-xs text-muted-foreground">Driver: {employee.first_name} {employee.last_name}</p>}
                       {c.disposal_site && <p className="text-xs text-muted-foreground">Disposed at: {c.disposal_site}</p>}
                     </div>
                     <div className="text-right text-xs text-muted-foreground space-y-1">
