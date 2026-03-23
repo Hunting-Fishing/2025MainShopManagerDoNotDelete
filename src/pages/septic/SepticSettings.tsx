@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Settings, Bell, MapPin, Container, DollarSign, Save, Loader2, Building2, Truck, Shield } from 'lucide-react';
+import { ArrowLeft, Settings, Bell, MapPin, Container, DollarSign, Save, Loader2, Building2, Truck, Shield, ClipboardCheck } from 'lucide-react';
 import SystemRegulationsTab from '@/components/septic/settings/SystemRegulationsTab';
+import InspectionFormBuilderTab from '@/components/septic/settings/InspectionFormBuilderTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShopId } from '@/hooks/useShopId';
@@ -175,6 +176,7 @@ export default function SepticSettings() {
           <TabsList className="inline-flex w-max">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="regulations">System Regulations</TabsTrigger>
+            <TabsTrigger value="inspections">Inspection Forms</TabsTrigger>
             <TabsTrigger value="notifications">Alerts</TabsTrigger>
             <TabsTrigger value="defaults">Defaults</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
@@ -251,6 +253,11 @@ export default function SepticSettings() {
         {/* ── System Regulations Tab ──────────────────── */}
         <TabsContent value="regulations">
           <SystemRegulationsTab />
+        </TabsContent>
+
+        {/* ── Inspection Forms Tab ───────────────────── */}
+        <TabsContent value="inspections">
+          <InspectionFormBuilderTab />
         </TabsContent>
 
         {/* ── Notifications Tab ───────────────────────── */}

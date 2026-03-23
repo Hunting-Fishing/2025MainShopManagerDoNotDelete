@@ -45960,6 +45960,9 @@ export type Database = {
       }
       septic_inspection_template_items: {
         Row: {
+          allows_notes: boolean | null
+          allows_photos: boolean | null
+          allows_videos: boolean | null
           component_category: string | null
           created_at: string
           default_value: string | null
@@ -45971,11 +45974,15 @@ export type Database = {
           item_name: string
           item_type: string
           linked_component_type: string | null
+          response_type: string | null
           section_id: string
           unit: string | null
           updated_at: string
         }
         Insert: {
+          allows_notes?: boolean | null
+          allows_photos?: boolean | null
+          allows_videos?: boolean | null
           component_category?: string | null
           created_at?: string
           default_value?: string | null
@@ -45987,11 +45994,15 @@ export type Database = {
           item_name: string
           item_type?: string
           linked_component_type?: string | null
+          response_type?: string | null
           section_id: string
           unit?: string | null
           updated_at?: string
         }
         Update: {
+          allows_notes?: boolean | null
+          allows_photos?: boolean | null
+          allows_videos?: boolean | null
           component_category?: string | null
           created_at?: string
           default_value?: string | null
@@ -46003,6 +46014,7 @@ export type Database = {
           item_name?: string
           item_type?: string
           linked_component_type?: string | null
+          response_type?: string | null
           section_id?: string
           unit?: string | null
           updated_at?: string
