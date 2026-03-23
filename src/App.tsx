@@ -1700,6 +1700,7 @@ function App() {
                   <Route path="/" element={<SepticDashboard />} />
                   <Route path="/orders" element={<SepticOrders />} />
                   <Route path="/orders/new" element={<SepticOrderForm />} />
+                  <Route path="/orders/:orderId" element={<SepticOrderDetail />} />
                   <Route path="/customers" element={<SepticCustomers />} />
                   <Route path="/customers/:customerId" element={<SepticCustomerDetails />} />
                   <Route path="/locations" element={<SepticLocations />} />
