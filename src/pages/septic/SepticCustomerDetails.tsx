@@ -48,6 +48,8 @@ export default function SepticCustomerDetails() {
       return data || [];
     },
     enabled: !!id && !!shopId,
+    staleTime: 0,
+    refetchOnMount: 'always' as const,
   });
 
   const { data: orders = [] } = useQuery({
