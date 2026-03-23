@@ -45185,7 +45185,9 @@ export type Database = {
       }
       septic_customers: {
         Row: {
+          access_notes: string | null
           address: string | null
+          bedrooms: number | null
           city: string | null
           created_at: string | null
           email: string | null
@@ -45193,15 +45195,23 @@ export type Database = {
           id: string
           is_active: boolean | null
           last_name: string
+          last_pump_date: string | null
+          latitude: number | null
+          longitude: number | null
           notes: string | null
           phone: string | null
+          property_size: string | null
+          property_type: string | null
           shop_id: string
           state: string | null
+          system_type: string | null
           updated_at: string | null
           zip_code: string | null
         }
         Insert: {
+          access_notes?: string | null
           address?: string | null
+          bedrooms?: number | null
           city?: string | null
           created_at?: string | null
           email?: string | null
@@ -45209,15 +45219,23 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_name: string
+          last_pump_date?: string | null
+          latitude?: number | null
+          longitude?: number | null
           notes?: string | null
           phone?: string | null
+          property_size?: string | null
+          property_type?: string | null
           shop_id: string
           state?: string | null
+          system_type?: string | null
           updated_at?: string | null
           zip_code?: string | null
         }
         Update: {
+          access_notes?: string | null
           address?: string | null
+          bedrooms?: number | null
           city?: string | null
           created_at?: string | null
           email?: string | null
@@ -45225,10 +45243,16 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_name?: string
+          last_pump_date?: string | null
+          latitude?: number | null
+          longitude?: number | null
           notes?: string | null
           phone?: string | null
+          property_size?: string | null
+          property_type?: string | null
           shop_id?: string
           state?: string | null
+          system_type?: string | null
           updated_at?: string | null
           zip_code?: string | null
         }
