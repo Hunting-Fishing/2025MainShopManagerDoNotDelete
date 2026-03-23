@@ -22,7 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAllUserRoles } from '@/hooks/useAllUserRoles';
 
 export default function SepticInspections() {
-  const shopId = useShopId();
+  const { shopId } = useShopId();
   const navigate = useNavigate();
   const { data: roles = [] } = useAllUserRoles();
 
