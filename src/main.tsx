@@ -62,6 +62,19 @@ if ('serviceWorker' in navigator && shouldDisableServiceWorker) {
   }
 }
 
+// Clear bootstrap fallback timer once React mounts
+if (typeof window !== 'undefined' && (window as any).__clearBootTimer) {
+  (window as any).__clearBootTimer();
+}
+
+// Global chunk load error recovery
+window.addEventListener('error', (e) => {
+  if (e.message?.includes('ChunkLoadError') || e.message?.includes('Failed to fetch dynamically imported module')) {
+    console.warn('Chunk load error detected, reloading...');
+    window.location.reload();
+  }
+});
+
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <GlobalErrorBoundary>
