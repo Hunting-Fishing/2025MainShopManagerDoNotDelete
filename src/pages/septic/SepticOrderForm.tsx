@@ -27,6 +27,7 @@ export default function SepticOrderForm() {
     location_address: '',
     notes: '',
     internal_notes: '',
+    assigned_employee_id: '',
   });
 
   // Fetch customers
@@ -61,6 +62,23 @@ export default function SepticOrderForm() {
     enabled: !!shopId && !!formData.customer_id,
   });
 
+  // Fetch employees for assignment
+  const { data: employees = [] } = useQuery({
+    queryKey: ['septic-employees-active', shopId],
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from('septic_employees')
+        .select('id, first_name, last_name, septic_employee_roles(role)')
+        .eq('shop_id', shopId)
+        .eq('status', 'active')
+        .order('last_name');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!shopId,
+  });
+
   // Create order mutation
   const createOrder = useMutation({
     mutationFn: async () => {
@@ -80,6 +98,7 @@ export default function SepticOrderForm() {
           location_address: formData.location_address || null,
           notes: formData.notes || null,
           internal_notes: formData.internal_notes || null,
+          assigned_employee_id: formData.assigned_employee_id || null,
           status: 'pending',
           created_by: user?.user?.id || null,
         })
@@ -221,6 +240,26 @@ export default function SepticOrderForm() {
             <div className="space-y-2">
               <Label>Service Location</Label>
               <Input value={formData.location_address} onChange={(e) => updateField('location_address', e.target.value)} placeholder="Address for the service" />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Assign Employee</Label>
+              <Select value={formData.assigned_employee_id} onValueChange={(v) => updateField('assigned_employee_id', v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((emp: any) => {
+                    const empRoles = (emp.septic_employee_roles || []) as any[];
+                    const roleLabels = empRoles.map((r: any) => r.role).join(', ');
+                    return (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.first_name} {emp.last_name}{roleLabels ? ` (${roleLabels})` : ''}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>

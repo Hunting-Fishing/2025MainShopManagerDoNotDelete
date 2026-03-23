@@ -45,7 +45,7 @@ export default function SepticStaff() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [form, setForm] = useState({
-    first_name: '', last_name: '', phone: '', email: '', hire_date: '', roles: [] as string[], status: 'active'
+    first_name: '', last_name: '', phone: '', email: '', hire_date: '', hourly_rate: '', home_address: '', roles: [] as string[], status: 'active'
   });
 
   const { data: employees = [], isLoading } = useQuery({
@@ -73,6 +73,8 @@ export default function SepticStaff() {
         phone: form.phone || null,
         email: form.email || null,
         hire_date: form.hire_date || null,
+        hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : null,
+        home_address: form.home_address || null,
         status: form.status,
       }).select('id').single();
       if (error) throw error;
@@ -91,7 +93,7 @@ export default function SepticStaff() {
       toast.success('Employee added');
       queryClient.invalidateQueries({ queryKey: ['septic-employees'] });
       setShowAdd(false);
-      setForm({ first_name: '', last_name: '', phone: '', email: '', hire_date: '', roles: [], status: 'active' });
+      setForm({ first_name: '', last_name: '', phone: '', email: '', hire_date: '', hourly_rate: '', home_address: '', roles: [], status: 'active' });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -197,6 +199,10 @@ export default function SepticStaff() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Hire Date</Label><Input type="date" value={form.hire_date} onChange={e => setForm(p => ({ ...p, hire_date: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Hourly Rate ($)</Label><Input type="number" step="0.01" value={form.hourly_rate} onChange={e => setForm(p => ({ ...p, hourly_rate: e.target.value }))} placeholder="0.00" /></div>
+            </div>
+            <div className="space-y-2"><Label>Home Address</Label><Input value={form.home_address} onChange={e => setForm(p => ({ ...p, home_address: e.target.value }))} placeholder="Employee address" /></div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>

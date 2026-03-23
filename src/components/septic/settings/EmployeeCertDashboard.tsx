@@ -1,7 +1,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Users, AlertTriangle, CheckCircle2, Clock, Award } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Users, AlertTriangle, CheckCircle2, Clock, Award, Plus, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +11,7 @@ import { differenceInDays, format } from 'date-fns';
 
 export default function EmployeeCertDashboard() {
   const { shopId } = useShopId();
+  const navigate = useNavigate();
 
   const { data: employees = [], isLoading: empLoading } = useQuery({
     queryKey: ['septic-employees-dash', shopId],
@@ -57,6 +60,16 @@ export default function EmployeeCertDashboard() {
 
   return (
     <div className="space-y-4">
+      {/* Quick Actions */}
+      <div className="flex gap-2 flex-wrap">
+        <Button size="sm" onClick={() => navigate('/septic/staff')} variant="outline">
+          <ExternalLink className="h-4 w-4 mr-1" />View All Employees
+        </Button>
+        <Button size="sm" onClick={() => navigate('/septic/staff')} className="bg-emerald-600 hover:bg-emerald-700">
+          <Plus className="h-4 w-4 mr-1" />Add Employee
+        </Button>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
