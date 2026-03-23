@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Check, X, Loader2, AlertCircle } from 'lucide-react';
+import { ExternalLink, Check, X, Loader2, AlertCircle, Wand2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -58,6 +58,7 @@ export function SubmissionReviewDialog({
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [approvalError, setApprovalError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [isFetchingMeta, setIsFetchingMeta] = useState(false);
 
   const resetForm = () => {
     setProductDescription('');
@@ -284,7 +285,7 @@ export function SubmissionReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Review Submission
@@ -331,6 +332,48 @@ export function SubmissionReviewDialog({
             <p className="text-xs text-muted-foreground">
               Open this link to copy the product image and write a description
             </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-1"
+              disabled={isFetchingMeta || !submission.product_url}
+              onClick={async () => {
+                setIsFetchingMeta(true);
+                try {
+                  const { data, error } = await supabase.functions.invoke('fetch-product-meta', {
+                    body: { url: submission.product_url },
+                  });
+                  if (error) throw error;
+                  if (data?.success && data.data) {
+                    const meta = data.data;
+                    if (meta.description && !productDescription) setProductDescription(meta.description);
+                    if (meta.imageUrl && !imageUrl) setImageUrl(meta.imageUrl);
+                    if (meta.price && !productPrice) setProductPrice(String(meta.price));
+                    toast.success('Product info fetched! Review and edit as needed.');
+                  } else {
+                    toast.error(data?.error || 'Could not extract metadata from this URL');
+                  }
+                } catch (err: any) {
+                  console.error('Auto-fill error:', err);
+                  toast.error('Failed to fetch product info');
+                } finally {
+                  setIsFetchingMeta(false);
+                }
+              }}
+            >
+              {isFetchingMeta ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  Fetching...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-3 w-3 mr-1" />
+                  Auto-Fill from URL
+                </>
+              )}
+            </Button>
             {duplicateWarning && (
               <div className="mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded-md">
                 <p className="text-sm text-destructive font-medium">⚠️ Duplicate Link Detected</p>
