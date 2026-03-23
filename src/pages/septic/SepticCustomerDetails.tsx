@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 export default function SepticCustomerDetails() {
-  const { id } = useParams<{ id: string }>();
+  const { customerId: id } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
   const { shopId } = useShopId();
 
@@ -18,7 +18,7 @@ export default function SepticCustomerDetails() {
     queryKey: ['septic-customer', id],
     queryFn: async () => {
       if (!id) return null;
-      const { data, error } = await supabase.from('septic_customers').select('*').eq('id', id).single();
+      const { data, error } = await supabase.from('septic_customers').select('*').eq('id', id).maybeSingle();
       if (error) throw error;
       return data;
     },
