@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 export default function SepticCustomerDetails() {
-  const { id } = useParams<{ id: string }>();
+  const { customerId: id } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
   const { shopId } = useShopId();
 
