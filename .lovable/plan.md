@@ -1,52 +1,127 @@
 
-Issue restated: the app appears as a white screen across routes after recent upgrades. I checked runtime behavior and code: in a clean browser session the app loads `/` and redirects `/index` → `/login` via auth flow, so this is likely a route/auth bootstrap failure in the preview session (not a total compile break).
 
-## What I found
-- `App.tsx` has a public route for `/`, but no explicit route for `/index`.
-- Current user preview route is `/index`, which falls into the protected `/*` branch.
-- `AuthGate`/`ProtectedRoute` rely on `useAuthUser` and show minimal skeletons while loading; if auth/session init stalls, this can look like a blank page.
-- Client network context shows `text/x-vite-ping` 404 to `https://...:/`, which is consistent with preview/HMR instability and can leave the UI in a bad state.
-- No hard compile/runtime fatal error reproduced in clean session.
+# Septic Module: Employee Management with Roles, Training & Certifications
 
-## Repair plan (implementation)
-1. **Normalize startup routes in `App.tsx`**
-   - Add explicit public redirects:
-     - `/index` → `/`
-     - `/index.html` → `/`
-   - Place these before protected catch-all routes so preview route variants never drop into auth-gated blank states.
+## Overview
 
-2. **Add auth bootstrap fail-safe in `useAuthUser.ts`**
-   - Add a hard timeout for initial session load (e.g., 6–8s).
-   - If timeout hits, set `isLoading=false`, set a recoverable auth error state, and allow UI to render with a “go to login / retry auth” path.
-   - Wrap `fetchUserRoles` and initial session fetch in timeout-safe Promise wrappers so auth cannot stay pending forever.
+Expand the septic module from "Drivers only" to a full **Employee** system. Employees can hold multiple job roles (installer, driver, inspector, manager, reception, etc.), and each employee tracks certifications/training with expiry alerts for WorkSafe compliance.
 
-3. **Make `AuthGate` and `ProtectedRoute` resilient**
-   - Replace low-visibility skeleton-only loading with a full-screen loader card + explicit messaging.
-   - Add visible recovery actions on auth stalls/errors:
-     - “Retry auth”
-     - “Go to login”
-     - “Go home”
-   - Ensure unauthenticated navigation is deterministic and never silently hangs.
+## Database Changes
 
-4. **Improve startup error visibility (prevent white-screen ambiguity)**
-   - In global error handling (`GlobalErrorBoundary` + optional top-level bootstrap guard), ensure any render failure shows a visible fallback screen with retry/home actions.
-   - Keep console diagnostics but avoid silent fail paths.
+### 1. New table: `septic_employees`
+Replaces the driver-only model with a broader staff table.
 
-5. **Stabilize preview behavior validation**
-   - Verify in this exact order:
-     - Direct open `/index` (should redirect/render, never blank)
-     - Open `/` (landing should render)
-     - Open protected route while logged out (should go to `/login`)
-     - Log in and open protected routes (should render or show explicit error UI, not white)
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | |
+| shop_id | uuid FK → shops | RLS via `get_current_user_shop_id()` |
+| profile_id | uuid nullable | Link to auth profile if they're a system user |
+| first_name | text NOT NULL | |
+| last_name | text NOT NULL | |
+| phone | text | |
+| email | text | |
+| hire_date | date | |
+| hourly_rate | numeric | |
+| status | text DEFAULT 'active' | active, inactive, terminated |
+| emergency_contact_name | text | |
+| emergency_contact_phone | text | |
+| home_address | text | |
+| notes | text | |
+| created_at / updated_at | timestamptz | |
 
-## Files to update
-- `src/App.tsx`
-- `src/hooks/useAuthUser.ts`
-- `src/components/AuthGate.tsx`
-- `src/components/auth/ProtectedRoute.tsx`
-- `src/components/error/GlobalErrorBoundary.tsx` (and optionally `src/main.tsx` for bootstrap-level fallback)
+### 2. New table: `septic_employee_roles`
+Many-to-many: an employee can be a driver AND an inspector.
 
-## Technical notes
-- No database schema changes are needed.
-- This fix targets route normalization + auth init deadlock handling, which are the most likely causes of route-wide white screens in preview sessions.
-- If preview HMR instability persists after this, we’ll add a one-time auto-recovery reload guard for disconnected dev sessions.
+| Column | Type |
+|---|---|
+| id | uuid PK |
+| employee_id | uuid FK → septic_employees |
+| role | text NOT NULL | Values: `driver`, `installer`, `inspector`, `pump_operator`, `manager`, `reception`, `technician`, `laborer` |
+| is_primary | boolean DEFAULT false |
+| assigned_at | timestamptz |
+
+Unique constraint on (employee_id, role).
+
+### 3. New table: `septic_certification_types`
+Module-specific cert types (separate from the general `staff_certificate_types`).
+
+| Column | Type |
+|---|---|
+| id | uuid PK |
+| shop_id | uuid FK |
+| name | text | e.g. "CDL Class B", "Tanker Endorsement", "HazMat", "Installer License", "Inspector Certification", "First Aid/CPR", "Confined Space Entry" |
+| description | text | |
+| requires_renewal | boolean DEFAULT true |
+| default_validity_months | integer | |
+| category | text | `license`, `certification`, `training`, `endorsement` |
+
+### 4. New table: `septic_employee_certifications`
+
+| Column | Type |
+|---|---|
+| id | uuid PK |
+| employee_id | uuid FK → septic_employees |
+| certification_type_id | uuid FK → septic_certification_types |
+| certificate_number | text | |
+| issue_date | date | |
+| expiry_date | date | |
+| issuing_authority | text | |
+| status | text | `valid`, `expired`, `pending_renewal` |
+| document_url | text | Upload scan/photo |
+| notes | text | |
+
+### 5. Migrate `septic_drivers` data
+Insert existing `septic_drivers` rows into `septic_employees` with a `driver` role entry in `septic_employee_roles`. Keep CDL fields as certifications. Update references in routes/completions to point to new table via a `driver_id` alias view or by updating queries.
+
+### 6. Seed default certification types
+Pre-populate common septic industry certifications per shop:
+- CDL Class A/B, Tanker Endorsement, HazMat Endorsement
+- Septic Installer License, Inspector Certification
+- Confined Space Entry, First Aid/CPR, OSHA 10/30
+- Medical Card, Water Quality Certification
+
+### 7. RLS policies
+All four new tables use `shop_id = get_current_user_shop_id()` for full CRUD.
+
+## UI Changes
+
+### Settings Tab: "Employees" (new tab in `SepticSettings.tsx`)
+Add an "Employees" tab alongside existing Profile, Regulations, etc.
+
+### Employee List Page: Upgrade `SepticStaff.tsx`
+- Rename page title from "Staff" to "Employees"
+- Show role badges (Driver, Inspector, Installer, etc.) on each card
+- Filter/search by role
+- "Add Employee" dialog with:
+  - Name, phone, email, hire date
+  - Multi-select role picker (checkboxes for all role types)
+  - Status
+
+### Employee Detail Page: Upgrade `SepticDriverDetail.tsx` → generalize
+- **Info tab**: Name, contact, emergency contact, hire date, pay rate
+- **Roles tab**: Current roles with toggle on/off, primary role indicator
+- **Certifications tab**: List all certs with expiry status (green/yellow/red badges), add/edit cert dialog, upload document
+- **Training tab**: Training history log
+
+### Certification Dashboard (in Settings → Employees tab)
+- Summary cards: Total employees, Expiring soon (30 days), Expired, Fully compliant
+- Table view of all certs across employees with sort by expiry
+- Bulk reminder capability (future)
+
+### Update existing references
+- `SepticRoutes.tsx`: Query `septic_employees` with role filter `driver` instead of `septic_drivers`
+- `SepticCompletions.tsx`: Join to `septic_employees` instead of `septic_drivers`
+- `SepticDrivers.tsx`: Redirect to new employees page or keep as filtered view
+
+## Files
+
+| File | Action |
+|---|---|
+| Migration SQL | Create 4 tables + migrate driver data + seed cert types |
+| `src/pages/septic/SepticStaff.tsx` | Rewrite to use `septic_employees` + role badges |
+| `src/pages/septic/SepticDriverDetail.tsx` | Generalize to employee detail with roles + certs tabs |
+| `src/pages/septic/SepticSettings.tsx` | Add "Employees" tab with cert dashboard |
+| `src/pages/septic/SepticRoutes.tsx` | Update driver queries to `septic_employees` filtered by role |
+| `src/pages/septic/SepticCompletions.tsx` | Update driver join |
+| `src/pages/septic/SepticDrivers.tsx` | Redirect to `/septic/staff` or keep as role-filtered view |
+
