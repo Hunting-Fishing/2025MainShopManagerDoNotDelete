@@ -1712,6 +1712,7 @@ function App() {
                   <Route path="/trucks" element={<SepticTrucks />} />
                   <Route path="/drivers" element={<SepticDrivers />} />
                   <Route path="/drivers/:id" element={<SepticDriverDetail />} />
+                  <Route path="/employees/:id" element={<SepticEmployeeDetail />} />
                   <Route path="/routes" element={<SepticRoutes />} />
                   <Route path="/completions" element={<SepticCompletions />} />
                   <Route path="/inventory" element={<SepticInventory />} />
