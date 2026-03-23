@@ -174,6 +174,7 @@ export default function SepticSettings() {
         <ScrollArea className="w-full">
           <TabsList className="inline-flex w-max">
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="regulations">System Regulations</TabsTrigger>
             <TabsTrigger value="notifications">Alerts</TabsTrigger>
             <TabsTrigger value="defaults">Defaults</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
