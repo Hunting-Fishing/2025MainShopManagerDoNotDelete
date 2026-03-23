@@ -47194,6 +47194,86 @@ export type Database = {
           },
         ]
       }
+      septic_regulatory_classifications: {
+        Row: {
+          classification_code: string
+          classification_name: string
+          country: string
+          created_at: string | null
+          description: string | null
+          dispersal_method: string | null
+          display_order: number | null
+          effluent_quality_standard: string | null
+          id: string
+          inspection_frequency_months: number | null
+          is_active: boolean | null
+          maintenance_requirements: string | null
+          province_state: string
+          regulatory_body: string | null
+          regulatory_reference: string | null
+          requires_additional_treatment: boolean | null
+          requires_disinfection: boolean | null
+          shop_id: string
+          treatment_level: string | null
+          typical_components: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          classification_code: string
+          classification_name: string
+          country?: string
+          created_at?: string | null
+          description?: string | null
+          dispersal_method?: string | null
+          display_order?: number | null
+          effluent_quality_standard?: string | null
+          id?: string
+          inspection_frequency_months?: number | null
+          is_active?: boolean | null
+          maintenance_requirements?: string | null
+          province_state: string
+          regulatory_body?: string | null
+          regulatory_reference?: string | null
+          requires_additional_treatment?: boolean | null
+          requires_disinfection?: boolean | null
+          shop_id: string
+          treatment_level?: string | null
+          typical_components?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          classification_code?: string
+          classification_name?: string
+          country?: string
+          created_at?: string | null
+          description?: string | null
+          dispersal_method?: string | null
+          display_order?: number | null
+          effluent_quality_standard?: string | null
+          id?: string
+          inspection_frequency_months?: number | null
+          is_active?: boolean | null
+          maintenance_requirements?: string | null
+          province_state?: string
+          regulatory_body?: string | null
+          regulatory_reference?: string | null
+          requires_additional_treatment?: boolean | null
+          requires_disinfection?: boolean | null
+          shop_id?: string
+          treatment_level?: string | null
+          typical_components?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_regulatory_classifications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       septic_route_stops: {
         Row: {
           actual_arrival: string | null
@@ -47642,6 +47722,8 @@ export type Database = {
           inspection_template_id: string | null
           is_active: boolean
           name: string
+          province_state: string | null
+          regulatory_classification_id: string | null
           shop_id: string
           updated_at: string
         }
@@ -47652,6 +47734,8 @@ export type Database = {
           inspection_template_id?: string | null
           is_active?: boolean
           name: string
+          province_state?: string | null
+          regulatory_classification_id?: string | null
           shop_id: string
           updated_at?: string
         }
@@ -47662,6 +47746,8 @@ export type Database = {
           inspection_template_id?: string | null
           is_active?: boolean
           name?: string
+          province_state?: string | null
+          regulatory_classification_id?: string | null
           shop_id?: string
           updated_at?: string
         }
@@ -47671,6 +47757,13 @@ export type Database = {
             columns: ["inspection_template_id"]
             isOneToOne: false
             referencedRelation: "septic_inspection_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_system_types_regulatory_classification_id_fkey"
+            columns: ["regulatory_classification_id"]
+            isOneToOne: false
+            referencedRelation: "septic_regulatory_classifications"
             referencedColumns: ["id"]
           },
           {
