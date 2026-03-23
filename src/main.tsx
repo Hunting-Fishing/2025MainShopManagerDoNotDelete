@@ -38,6 +38,50 @@ const queryClient = new QueryClient({
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Root element not found');
 
+const CHUNK_RELOAD_GUARD_KEY = '__ab365_chunk_reload_once__';
+
+const showBootFallback = (message: string) => {
+  if (typeof document === 'undefined') return;
+
+  const fallback = document.getElementById('boot-fallback') as HTMLElement | null;
+  if (!fallback) return;
+
+  const messageEl = fallback.querySelector('p') as HTMLElement | null;
+  if (messageEl) {
+    messageEl.textContent = message;
+  }
+
+  fallback.style.display = 'flex';
+};
+
+const isChunkLoadFailure = (message?: string) => {
+  if (!message) return false;
+
+  return (
+    message.includes('ChunkLoadError') ||
+    message.includes('Failed to fetch dynamically imported module') ||
+    message.includes('Importing a module script failed')
+  );
+};
+
+const tryChunkRecoveryReload = () => {
+  try {
+    const hasRetried = sessionStorage.getItem(CHUNK_RELOAD_GUARD_KEY) === '1';
+
+    if (!hasRetried) {
+      sessionStorage.setItem(CHUNK_RELOAD_GUARD_KEY, '1');
+      window.location.reload();
+      return true;
+    }
+  } catch {
+    window.location.reload();
+    return true;
+  }
+
+  showBootFallback('Loading failed. Try Reload or Clear Cache.');
+  return false;
+};
+
 const shouldDisableServiceWorker =
   typeof window !== 'undefined' && (
     window.location.hostname.includes('lovable.app') ||
@@ -59,21 +103,47 @@ if ('serviceWorker' in navigator && shouldDisableServiceWorker) {
   }
 }
 
-// Clear bootstrap fallback timer once React mounts
-if (typeof window !== 'undefined' && (window as any).__clearBootTimer) {
-  (window as any).__clearBootTimer();
-}
-
 // Global chunk load error recovery
 window.addEventListener('error', (e) => {
-  if (e.message?.includes('ChunkLoadError') || e.message?.includes('Failed to fetch dynamically imported module')) {
-    console.warn('Chunk load error detected, reloading...');
-    window.location.reload();
+  if (isChunkLoadFailure(e.message)) {
+    console.warn('Chunk load error detected, attempting one-time reload...');
+    tryChunkRecoveryReload();
+    return;
   }
+
+  showBootFallback('The app failed to start. Please tap Reload.');
 });
 
-ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
+window.addEventListener('unhandledrejection', (e) => {
+  const reasonMessage =
+    typeof e.reason === 'string'
+      ? e.reason
+      : e.reason?.message || '';
+
+  if (isChunkLoadFailure(reasonMessage)) {
+    console.warn('Chunk load rejection detected, attempting one-time reload...');
+    e.preventDefault?.();
+    tryChunkRecoveryReload();
+    return;
+  }
+
+  showBootFallback('The app failed to start. Please tap Reload.');
+});
+
+const AppWithBootReady: React.FC = () => {
+  React.useEffect(() => {
+    try {
+      sessionStorage.removeItem(CHUNK_RELOAD_GUARD_KEY);
+    } catch {
+      // noop
+    }
+
+    if (typeof window !== 'undefined' && (window as any).__clearBootTimer) {
+      (window as any).__clearBootTimer();
+    }
+  }, []);
+
+  return (
     <GlobalErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
@@ -88,5 +158,11 @@ ReactDOM.createRoot(rootElement).render(
         </QueryClientProvider>
       </HelmetProvider>
     </GlobalErrorBoundary>
+  );
+};
+
+ReactDOM.createRoot(rootElement).render(
+  <React.StrictMode>
+    <AppWithBootReady />
   </React.StrictMode>
 );
