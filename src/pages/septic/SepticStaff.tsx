@@ -93,7 +93,7 @@ export default function SepticStaff() {
       toast.success('Employee added');
       queryClient.invalidateQueries({ queryKey: ['septic-employees'] });
       setShowAdd(false);
-      setForm({ first_name: '', last_name: '', phone: '', email: '', hire_date: '', roles: [], status: 'active' });
+      setForm({ first_name: '', last_name: '', phone: '', email: '', hire_date: '', hourly_rate: '', home_address: '', roles: [], status: 'active' });
     },
     onError: (e: any) => toast.error(e.message),
   });
