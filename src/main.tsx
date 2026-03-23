@@ -5,9 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { I18nextProvider } from 'react-i18next';
 import { LanguageProvider } from '@/context/LanguageContext';
-import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
-import { NotificationsProvider } from '@/context/notifications';
-import { CompanyProvider } from '@/contexts/CompanyContext';
 import { ConsoleErrorLogger } from '@/components/debug/ConsoleErrorLogger';
 import { GlobalErrorBoundary } from '@/components/error/GlobalErrorBoundary';
 import i18n from './i18n/config';
@@ -62,6 +59,19 @@ if ('serviceWorker' in navigator && shouldDisableServiceWorker) {
   }
 }
 
+// Clear bootstrap fallback timer once React mounts
+if (typeof window !== 'undefined' && (window as any).__clearBootTimer) {
+  (window as any).__clearBootTimer();
+}
+
+// Global chunk load error recovery
+window.addEventListener('error', (e) => {
+  if (e.message?.includes('ChunkLoadError') || e.message?.includes('Failed to fetch dynamically imported module')) {
+    console.warn('Chunk load error detected, reloading...');
+    window.location.reload();
+  }
+});
+
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <GlobalErrorBoundary>
@@ -69,16 +79,10 @@ ReactDOM.createRoot(rootElement).render(
         <QueryClientProvider client={queryClient}>
           <I18nextProvider i18n={i18n}>
             <LanguageProvider>
-              <ImpersonationProvider>
-                <NotificationsProvider>
-                  <CompanyProvider>
-                    <BrowserRouter>
-                      <ConsoleErrorLogger />
-                      <App />
-                    </BrowserRouter>
-                  </CompanyProvider>
-                </NotificationsProvider>
-              </ImpersonationProvider>
+              <BrowserRouter>
+                <ConsoleErrorLogger />
+                <App />
+              </BrowserRouter>
             </LanguageProvider>
           </I18nextProvider>
         </QueryClientProvider>

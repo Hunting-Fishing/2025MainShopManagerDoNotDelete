@@ -7,6 +7,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AuthGate } from '@/components/AuthGate';
 import { authMonitor } from '@/utils/authMonitoring';
 import { GlobalUX } from '@/components/ux/GlobalUX';
+import { AuthenticatedProviders } from '@/components/auth/AuthenticatedProviders';
 import Index from '@/pages/Index';
 
 // Suspense fallback component
@@ -620,6 +621,7 @@ function App() {
           path="/*"
           element={
             <AuthGate>
+              <AuthenticatedProviders>
               <Layout>
                 <Routes>
                   <Route path="/module-hub" element={<ModuleHub />} />
@@ -1557,6 +1559,7 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>
+              </AuthenticatedProviders>
             </AuthGate>
           }
         />
@@ -1566,6 +1569,7 @@ function App() {
           path="/fuel-delivery/*"
           element={
             <AuthGate>
+              <AuthenticatedProviders>
               <FuelDeliveryLayout>
                 <Routes>
                   <Route path="/" element={<FuelDeliveryDashboard />} />
@@ -1597,6 +1601,7 @@ function App() {
                   <Route path="/store" element={<FuelDeliveryStore />} />
                 </Routes>
               </FuelDeliveryLayout>
+              </AuthenticatedProviders>
             </AuthGate>
           }
         />
@@ -1606,6 +1611,7 @@ function App() {
           path="/water-delivery/*"
           element={
             <AuthGate>
+              <AuthenticatedProviders>
               <WaterDeliveryLayout>
                 <Routes>
                   <Route path="/" element={<WaterDeliveryDashboard />} />
@@ -1642,6 +1648,7 @@ function App() {
                   <Route path="/developer" element={<WaterDeliveryDeveloper />} />
                 </Routes>
               </WaterDeliveryLayout>
+              </AuthenticatedProviders>
             </AuthGate>
           }
         />
@@ -1651,6 +1658,7 @@ function App() {
           path="/personal-trainer/*"
           element={
             <AuthGate>
+              <AuthenticatedProviders>
               <PersonalTrainerLayout>
                 <Routes>
                   <Route path="/" element={<PersonalTrainerDashboard />} />
@@ -1684,6 +1692,7 @@ function App() {
                   <Route path="/about" element={<PersonalTrainerAbout />} />
                 </Routes>
               </PersonalTrainerLayout>
+              </AuthenticatedProviders>
             </AuthGate>
           }
         />
@@ -1699,6 +1708,7 @@ function App() {
           path="/septic/*"
           element={
             <AuthGate>
+              <AuthenticatedProviders>
               <SepticLayout>
                 <Routes>
                   <Route path="/" element={<SepticDashboard />} />
@@ -1735,6 +1745,7 @@ function App() {
                   <Route path="/developer" element={<SepticDeveloper />} />
                 </Routes>
               </SepticLayout>
+              </AuthenticatedProviders>
             </AuthGate>
           }
         />
@@ -1744,6 +1755,7 @@ function App() {
           path="/export/*"
           element={
             <AuthGate>
+              <AuthenticatedProviders>
               <ExportLayout>
                 <Routes>
                   <Route path="/" element={<ExportDashboard />} />
@@ -1834,6 +1846,7 @@ function App() {
                   <Route path="/kpi-dashboard" element={<ExportKpiDashboard />} />
                 </Routes>
               </ExportLayout>
+              </AuthenticatedProviders>
             </AuthGate>
           }
         />
