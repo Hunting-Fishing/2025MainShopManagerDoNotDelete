@@ -98,6 +98,7 @@ export default function SepticOrderForm() {
           location_address: formData.location_address || null,
           notes: formData.notes || null,
           internal_notes: formData.internal_notes || null,
+          assigned_employee_id: formData.assigned_employee_id || null,
           status: 'pending',
           created_by: user?.user?.id || null,
         })
