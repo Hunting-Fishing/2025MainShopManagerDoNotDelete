@@ -546,7 +546,12 @@ export default function SepticRoutes() {
     latitude: s.latitude ?? undefined,
     longitude: s.longitude ?? undefined,
     status: s.status,
-    order_number: '',
+    order_number: (s.septic_service_orders as any)?.order_number || '',
+    customer_name: (s.septic_service_orders as any)?.septic_customers
+      ? `${(s.septic_service_orders as any).septic_customers.first_name || ''} ${(s.septic_service_orders as any).septic_customers.last_name || ''}`.trim()
+      : '',
+    service_order_id: s.service_order_id,
+    customer_id: s.customer_id,
     drive_time_minutes: s.drive_time_minutes,
     distance_from_previous_miles: s.distance_from_previous_miles,
     estimated_duration_minutes: s.estimated_duration_minutes,
