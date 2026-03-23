@@ -1658,6 +1658,7 @@ function App() {
           path="/personal-trainer/*"
           element={
             <AuthGate>
+              <AuthenticatedProviders>
               <PersonalTrainerLayout>
                 <Routes>
                   <Route path="/" element={<PersonalTrainerDashboard />} />
