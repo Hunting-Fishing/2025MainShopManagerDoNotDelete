@@ -1,46 +1,14 @@
 
 
-# Fix: White Screen Caused by Stale Browser Cache
+# Enhance Septic Employee System: Full Profile + Accountability Tracking
 
-## Confirmed Diagnosis
+## What We're Building
 
-I just loaded your app in a clean browser — **it renders perfectly**. The landing page, all routes, and all recent changes (employee system, sonner toaster, etc.) are working. There are zero JavaScript errors.
+Expand the employee detail page and settings to provide complete employee management with accountability tracking — showing every service order, invoice, quote, and customer interaction tied to each employee.
 
-Your device is serving a cached, broken version of the app from a previous Service Worker or browser cache. The published domain has the same issue because the browser cached the old broken bundle there too.
+## Current State
 
-## Immediate Fix (Manual — Do This Now)
-
-On your phone/browser:
-1. **Chrome Android**: Settings → Site settings → find your domain → Clear & reset
-2. **Or**: Chrome → Settings → Privacy → Clear browsing data → select "Cached images and files" → Clear
-3. **Or**: Long-press the app icon → App info → Storage → Clear cache + Clear data
-
-## Code Fix (Prevents This From Happening Again)
-
-### File: `index.html`
-Add no-cache meta tags to the HTML head so the browser never caches the entry HTML shell:
-
-```html
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
-```
-
-### File: `src/main.tsx`
-Change the cache cleanup to clear **all** caches (not just `order-master-*` prefixed ones):
-
-```ts
-// Current: only clears order-master-* caches
-cacheKeys.filter((key) => key.startsWith('order-master-')).map(...)
-
-// Fix: clear ALL caches
-cacheKeys.map((key) => caches.delete(key))
-```
-
-## Summary
-
-- The code is working — verified via browser tool screenshot
-- The white screen is 100% a stale cache on your device
-- Two small changes prevent this from recurring
-- Manual cache clear on your device will fix it immediately
-
+- Employee list exists with add dialog (name, phone, email, hire date, roles)
+- Employee detail has 4 tabs: Info, Roles, Certifications, History (completions only)
+- `septic_service_orders` has `assigned_driver_id` and `created_by` columns
+- `septic_invoices` has `
