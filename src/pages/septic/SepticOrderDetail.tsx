@@ -175,9 +175,9 @@ export default function SepticOrderDetail() {
           <CardContent className="space-y-2">
             {tank && (
               <div className="text-sm space-y-1">
-                <p><span className="text-muted-foreground">Tank:</span> {tank.tank_type} — {tank.capacity_gallons} gal</p>
-                {tank.location_description && (
-                  <p><span className="text-muted-foreground">Location:</span> {tank.location_description}</p>
+                <p><span className="text-muted-foreground">Tank:</span> {tank.tank_type} — {tank.tank_size_gallons} gal</p>
+                {tank.location_address && (
+                  <p><span className="text-muted-foreground">Location:</span> {tank.location_address}</p>
                 )}
               </div>
             )}
