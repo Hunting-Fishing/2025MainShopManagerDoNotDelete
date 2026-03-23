@@ -82,16 +82,10 @@ ReactDOM.createRoot(rootElement).render(
         <QueryClientProvider client={queryClient}>
           <I18nextProvider i18n={i18n}>
             <LanguageProvider>
-              <ImpersonationProvider>
-                <NotificationsProvider>
-                  <CompanyProvider>
-                    <BrowserRouter>
-                      <ConsoleErrorLogger />
-                      <App />
-                    </BrowserRouter>
-                  </CompanyProvider>
-                </NotificationsProvider>
-              </ImpersonationProvider>
+              <BrowserRouter>
+                <ConsoleErrorLogger />
+                <App />
+              </BrowserRouter>
             </LanguageProvider>
           </I18nextProvider>
         </QueryClientProvider>
