@@ -1708,6 +1708,7 @@ function App() {
           path="/septic/*"
           element={
             <AuthGate>
+              <AuthenticatedProviders>
               <SepticLayout>
                 <Routes>
                   <Route path="/" element={<SepticDashboard />} />
