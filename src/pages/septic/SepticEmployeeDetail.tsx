@@ -611,12 +611,21 @@ export default function SepticEmployeeDetail() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Certification Type *</Label>
-              <Select value={certForm.certification_type_id} onValueChange={v => setCertForm(p => ({ ...p, certification_type_id: v }))}>
+              <Select value={certForm.certification_type_id} onValueChange={v => {
+                if (v === '__add_new__') {
+                  setShowAddCertType(true);
+                } else {
+                  setCertForm(p => ({ ...p, certification_type_id: v }));
+                }
+              }}>
                 <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
                 <SelectContent>
                   {certTypes.map((ct: any) => (
                     <SelectItem key={ct.id} value={ct.id}>{ct.name}</SelectItem>
                   ))}
+                  <SelectItem value="__add_new__" className="text-emerald-600 font-medium border-t mt-1 pt-1">
+                    <span className="flex items-center gap-1"><Plus className="h-3.5 w-3.5" />Add New Type...</span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
