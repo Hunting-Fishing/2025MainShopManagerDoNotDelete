@@ -402,6 +402,9 @@ export default function InspectionFormBuilderTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 ml-3">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600" onClick={() => navigate(`/septic/inspection-form/${t.id}`)} title="Use Form">
+                      <PlayCircle className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPreviewTemplateId(t.id)} title="Preview">
                       <Eye className="h-4 w-4" />
                     </Button>
