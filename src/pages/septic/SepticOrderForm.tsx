@@ -27,6 +27,7 @@ export default function SepticOrderForm() {
     location_address: '',
     notes: '',
     internal_notes: '',
+    assigned_employee_id: '',
   });
 
   // Fetch customers
