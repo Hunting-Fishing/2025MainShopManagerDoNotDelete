@@ -443,6 +443,21 @@ export default function SepticSettings() {
             </CardContent>
           </Card>
         </TabsContent>
+        {/* ── Employees Tab ─────────────────────────────── */}
+        <TabsContent value="employees" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-emerald-600" />
+                <CardTitle>Employee Certifications & Compliance</CardTitle>
+              </div>
+              <CardDescription>Track certifications, training, and WorkSafe compliance across your team.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EmployeeCertDashboard />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
