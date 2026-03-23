@@ -35,10 +35,14 @@ export default function SepticEmployeeDetail() {
   const { shopId } = useShopId();
   const queryClient = useQueryClient();
   const [showAddCert, setShowAddCert] = useState(false);
+  const [showAddCertType, setShowAddCertType] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [certForm, setCertForm] = useState({
     certification_type_id: '', certificate_number: '', issue_date: '', expiry_date: '', issuing_authority: '', notes: ''
+  });
+  const [newCertType, setNewCertType] = useState({
+    name: '', category: 'certification', requires_renewal: true, default_validity_months: '24', description: ''
   });
 
   // Editable profile fields
