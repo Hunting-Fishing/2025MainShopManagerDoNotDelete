@@ -697,7 +697,13 @@ export default function SepticRoutes() {
                                     <p className="text-xs text-muted-foreground">↓ {Number(stop.drive_time_minutes).toFixed(0)} min / {stop.distance_from_previous_miles ? Number(stop.distance_from_previous_miles).toFixed(1) : '?'} mi</p>
                                   </div>
                                 )}
-                                <div className={cn("flex items-start gap-3 hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors", stop.status === 'in_progress' && "bg-amber-500/5")}>
+                                <div className={cn(
+                                  "flex items-start gap-3 hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors cursor-pointer",
+                                  stop.status === 'in_progress' && "bg-accent/50",
+                                  stop.status === 'completed' && "opacity-60"
+                                )}
+                                  onClick={() => stop.service_order_id && navigate(`/septic/orders/${stop.service_order_id}`)}
+                                >
                                   <div className="flex flex-col items-center">
                                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><span className="text-sm font-bold text-primary">{stop.stop_order}</span></div>
                                     {idx < sortedStops.length - 1 && <div className="w-0.5 h-full min-h-[40px] bg-border mt-1" />}
@@ -707,9 +713,53 @@ export default function SepticRoutes() {
                                       <p className="font-medium text-sm truncate">{stop.address}</p>
                                       {stop.status === 'completed' ? <CheckCircle2 className="h-5 w-5 text-green-500" /> :
                                        stop.status === 'in_progress' ? <Circle className="h-5 w-5 text-amber-500 fill-amber-500" /> :
+                                       stop.status === 'skipped' ? <AlertCircle className="h-5 w-5 text-destructive" /> :
                                        <Circle className="h-5 w-5 text-muted-foreground" />}
                                     </div>
+                                    {stop.customer_name && (
+                                      <p className="text-xs font-medium text-primary truncate">{stop.customer_name}</p>
+                                    )}
+                                    {stop.order_number && (
+                                      <p className="text-xs text-muted-foreground">Order: {stop.order_number}</p>
+                                    )}
                                     <span className="text-xs text-muted-foreground">Est. {stop.estimated_duration_minutes || 30} min</span>
+                                    
+                                    {/* Action buttons */}
+                                    <div className="flex items-center gap-1.5 mt-2 flex-wrap" onClick={e => e.stopPropagation()}>
+                                      <Select
+                                        value={stop.status}
+                                        onValueChange={(val) => {
+                                          const original = routeStops.find(rs => rs.id === stop.id);
+                                          if (original) updateStopStatus.mutate({ stopId: stop.id, status: val });
+                                        }}
+                                      >
+                                        <SelectTrigger className="h-7 text-xs w-[110px]">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="pending">Pending</SelectItem>
+                                          <SelectItem value="arrived">Arrived</SelectItem>
+                                          <SelectItem value="in_progress">In Progress</SelectItem>
+                                          <SelectItem value="completed">Completed</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      {stop.latitude && stop.longitude && (
+                                        <Button variant="outline" size="sm" className="h-7 text-xs px-2"
+                                          onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`, '_blank')}>
+                                          <Navigation className="h-3 w-3 mr-1" />Nav
+                                        </Button>
+                                      )}
+                                      {stop.customer_id && (
+                                        <Button variant="ghost" size="sm" className="h-7 text-xs px-2"
+                                          onClick={() => navigate(`/septic/customers/${stop.customer_id}`)}>
+                                          <User className="h-3 w-3 mr-1" />Customer
+                                        </Button>
+                                      )}
+                                      <Button variant="ghost" size="sm" className="h-7 text-xs px-2 text-destructive hover:text-destructive"
+                                        onClick={() => skipStop.mutate({ stopId: stop.id, serviceOrderId: stop.service_order_id || null, routeId: selectedRoute!.id })}>
+                                        Skip
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
