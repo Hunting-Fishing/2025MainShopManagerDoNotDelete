@@ -1,106 +1,79 @@
 
 
-# Septic Inspection Form Builder — Settings Tab
+# Build Generic Septic Inspection Form Template
 
 ## Overview
 
-Add an "Inspection Forms" tab to Septic Settings containing a full form builder that lets users create, name, edit, duplicate, and manage multiple inspection checklist templates. Each template has sections with checklist items supporting ✓/✗/N/A responses, notes, and photo/video attachments per line. Pre-loaded with the checklist from the uploaded image as a starter template.
+Enhance the existing `InspectionFormPreview.tsx` to render a professional, print-ready inspection form matching the uploaded reference image — with header fields (Location, Date, Assigned To, Checklist Score, Signed By), color-coded section rows, ✓/✗/N/A columns, and measurement fields. Also create a standalone generic form page accessible outside the settings builder.
 
-## Database
+## Changes
 
-Already exists — `septic_inspection_templates`, `septic_inspection_template_sections`, `septic_inspection_template_items` are all in place with RLS. The `item_type` field supports `checkbox`, `text`, `number`, `photo`, `video`, `notes`, and `gyr_status`.
+### 1. New Component: `SepticInspectionFormTemplate.tsx`
 
-**One migration needed**: Add columns to `septic_inspection_template_items` for the enhanced per-line capabilities:
-- `allows_notes BOOLEAN DEFAULT true` — whether the item has a notes field
-- `allows_photos BOOLEAN DEFAULT true` — whether photos can be attached
-- `allows_videos BOOLEAN DEFAULT false` — whether videos can be attached
-- `response_type TEXT DEFAULT 'pass_fail_na'` — the response format (pass_fail_na / gyr_status / checkbox / text / number)
+A reusable, interactive form component that renders any saved inspection template in the visual style shown in the image:
 
-## UI Architecture
+- **Header block**: Company logo area, form title, Location, Date, Assigned To, Checklist Score, Signed By fields
+- **Section rendering**:
+  - Checkbox sections: Purple header bar with ✓ column + item rows with alternating colors (pink/yellow/blue/green)
+  - Pass/Fail/N/A sections: Three-column header (✓ | ✗ | N/A) + item rows with alternating colors
+  - Number sections: Input fields with units
+  - Text/Notes sections: Textarea areas
+- **Per-item**: Notes, photo, video attachment indicators based on item settings
+- **Footer**: Page number, form version
 
-### New Tab in Settings
+### 2. New Page: `SepticInspectionForm.tsx`
 
-Add "Inspection Forms" tab (with `ClipboardCheck` icon) to `SepticSettings.tsx`.
+Route: `/septic/inspection-form/:templateId`
 
-### Component: `InspectionFormBuilderTab.tsx`
+A page that loads a template by ID and renders the generic form for filling out during an actual inspection. Includes:
+- Print button (CSS print styles)
+- Save/Submit functionality
+- Read-only vs fill mode
 
-**Form List View** (default):
-- Cards showing all saved templates with name, description, section count, item count, published status
-- "Create New Form" button
-- Actions per form: Edit, Duplicate, Delete, Publish/Unpublish
-- "Load Default Checklist" button that seeds the BC inspection checklist from the uploaded image
+### 3. Update `InspectionFormPreview.tsx`
 
-**Form Editor View** (when editing/creating):
-- Form name and description fields at top
-- Sections rendered as collapsible cards with drag handles
-- "+ Add Section" button
-- Each section has:
-  - Editable title and description
-  - List of checklist items
-  - "+ Add Item" button
-- Each checklist item row shows:
-  - Item name (editable inline)
-  - Response type selector (✓/✗/N/A, Green/Yellow/Red, text, number)
-  - Required toggle
-  - Notes toggle (allow notes per line)
-  - Photos toggle (allow photo attachments)
-  - Videos toggle
-  - Delete button
-- Save / Cancel buttons
-- "Preview" mode showing the form as it would appear to inspectors
+Replace the current basic preview with the new styled `SepticInspectionFormTemplate` component so the preview in settings matches the professional look.
 
-### Default Template Data (from uploaded image)
+### 4. Update `InspectionFormBuilderTab.tsx`
 
-Pre-built "Septic Tank Inspection Checklist" with:
-
-**Section 1 — Inspection Preparation** (5 items, checkbox response):
-- Inspector wearing rubber gloves and eye protection
-- Inspector has tools and materials necessary
-- Safety rules reviewed
-- If necessary, inspect with another person for safety
-- Avoid touching face during inspection
-
-**Section 2 — Septic Tank Checklist** (16 items, ✓/✗/N/A response):
-- Wastewater directed into sewage treatment system
-- Water not backing up and drains flow freely
-- Risers watertight and without leaks
-- Risers no visible damage
-- Tank odor levels acceptable
-- Liquid level above outlet pipe
-- Healthy scum layer in tank
-- Scum layer no more than 6 inches depth
-- Sludge layer no more than 12 inches depth
-- Signs of overflow
-- Scum layer below inlet
-- Baffles above scum layer
-- Clean outlet baffle filter
-- Diverter box above ground level
-- Diverter in place with lid
-- Ground around system — surface sewage
-
-**Section 3 — Measurements** (2 items, number response with units):
-- Scum Layer Thickness
-- Sludge Layer Thickness
-
-**Section 4 — Notes** (1 item, text/notes):
-- General inspection notes
+Add a "Use Form" action on each template card that navigates to the fill-out page.
 
 ## Files
 
 | File | Action |
 |---|---|
-| `src/components/septic/settings/InspectionFormBuilderTab.tsx` | **Create** — form list + editor with full CRUD |
-| `src/components/septic/settings/InspectionFormEditor.tsx` | **Create** — section/item editor with inline editing |
-| `src/components/septic/settings/InspectionFormPreview.tsx` | **Create** — read-only preview of the form |
-| `src/pages/septic/SepticSettings.tsx` | **Edit** — add "Inspection Forms" tab |
-| `src/integrations/supabase/types.ts` | **Edit** — add new columns |
-| Migration SQL | **Create** — add columns to `septic_inspection_template_items` |
+| `src/components/septic/inspection/SepticInspectionFormTemplate.tsx` | **Create** — Professional styled form renderer |
+| `src/components/septic/settings/InspectionFormPreview.tsx` | **Edit** — Use new styled renderer |
+| `src/components/septic/settings/InspectionFormBuilderTab.tsx` | **Edit** — Add "Use Form" action |
+| `src/pages/septic/SepticInspectionForm.tsx` | **Create** — Fill-out page with print support |
 
-## Technical Details
+## Visual Design (matching reference image)
 
-- All CRUD operations use `supabase` client against `septic_inspection_templates`, `septic_inspection_template_sections`, `septic_inspection_template_items`
-- Sections and items use `display_order` for ordering
-- Save operation: upsert template → delete removed sections/items → upsert remaining sections → upsert items
-- The "Load Default Checklist" inserts the full BC checklist as a new template in one transaction
-- Form names are user-defined — users can create as many forms as they need
+```text
+┌──────────────────────────────────────────────────┐
+│ Septic Tank Inspection Checklist          [Logo] │
+├──────────────────────────────────────────────────┤
+│ Location: ________    Date: ________             │
+│ Assigned To: ______   Checklist Score: ________  │
+│ Signed By: ________                              │
+├──────────────────────────────────────────────────┤
+│ [✓] Septic Tank Inspection Preparation           │  ← purple header
+│  ░  Inspector wearing rubber gloves...           │  ← alternating row colors
+│  ░  Inspector has tools and materials...         │
+│  ...                                             │
+├──────────────────────────────────────────────────┤
+│ [✓][✗][N/A] Septic Tank Checklist                │  ← purple header with 3 cols
+│  ░  ░  ░   Wastewater directed into...           │
+│  ░  ░  ░   Water not backing up...               │
+│  ...                                             │
+├──────────────────────────────────────────────────┤
+│ Scum Layer Thickness: ______                     │
+│ Sludge Layer Thickness: ______                   │
+└──────────────────────────────────────────────────┘
+```
+
+- Row colors cycle: pink (#fce4ec), yellow (#fff9c4), blue (#e3f2fd), green (#e8f5e9)
+- Section headers: dark purple background with white text
+- Clean borders and professional spacing
+- Print-optimized CSS with `@media print` styles
 
