@@ -96,15 +96,30 @@ export function useUpdateModuleDisplayInfo() {
       throw new Error(`Module ${moduleSlug} not found`);
     }
 
-    // Update the shop_enabled_modules record
-    const { error } = await supabase
+    // Check if record exists
+    const { data: existing } = await supabase
       .from('shop_enabled_modules')
-      .update(displayInfo)
+      .select('id')
       .eq('shop_id', shopId)
-      .eq('module_id', module.id);
+      .eq('module_id', module.id)
+      .maybeSingle();
 
-    if (error) {
-      throw error;
+    if (existing) {
+      const { error } = await supabase
+        .from('shop_enabled_modules')
+        .update(displayInfo)
+        .eq('id', existing.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('shop_enabled_modules')
+        .insert({
+          shop_id: shopId,
+          module_id: module.id,
+          is_enabled: true,
+          ...displayInfo,
+        });
+      if (error) throw error;
     }
   };
 
