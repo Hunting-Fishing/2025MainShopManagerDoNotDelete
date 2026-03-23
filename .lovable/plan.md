@@ -1,49 +1,43 @@
 
-Issue rephrased: your app shows a white screen on both preview and published, even after cache clear, with no visible error.
 
-Short answer: this is likely **client-side startup failure/performance pressure**, not a Supabase/database memory issue.
+# Fix: Drivers Page & Driver App — Connect to Employee System
 
-What I found:
-- In a clean runtime session, `/` renders correctly (so not a universal code crash).
-- Current bootstrap protections exist (`/index` redirects, auth timeout, error boundaries, cache/SW cleanup).
-- Runtime profile shows heavy startup cost on landing: many script loads and slow first paint, which can fail silently on constrained mobile devices.
-- Do I know what the issue is? **Yes, likely a fragile frontend bootstrap on your device (load pressure + silent startup failure), not backend memory/storage.**
+## Problem
 
-Implementation plan to repair this robustly:
+The **Drivers page** (`SepticDrivers.tsx`) and **Driver Detail** (`SepticDriverDetail.tsx`) still query the old `septic_drivers` table, which is empty. Meanwhile, employees with the "driver" role exist in `septic_employees` + `septic_employee_roles`. The Driver App also doesn't filter by the logged-in driver.
 
-1) Add explicit startup-failure UI (no more silent white screen)
-- In `src/main.tsx`, add a bootstrap watchdog (e.g., 6–8s) that shows a visible fallback card if React doesn’t mount.
-- Catch global `error`/`unhandledrejection` at bootstrap and render a minimal recovery screen (Reload / Safe Mode / Login).
+## Plan
 
-2) Reduce initial boot workload for public routes
-- Move heavy authenticated-only providers out of global boot path:
-  - Keep minimal providers for `/` and public routes.
-  - Mount `CompanyProvider`, auth-heavy data hooks, and other expensive providers only inside authenticated route trees.
-- This prevents unauth/public page startup from paying full app cost.
+### 1. Rewrite `SepticDrivers.tsx` to query `septic_employees` with driver role
 
-3) Make landing page lighter on low-memory devices
-- In `src/pages/Index.tsx`, lazy-load non-critical sections (testimonials/pricing/module grids) below the fold.
-- Defer large background/media assets until after first content render.
-- Keep hero/header interactive first; progressively hydrate the rest.
+- Query `septic_employees` joined with `septic_employee_roles!inner(role)` filtered to `role = 'driver'`
+- Display employee name, status, phone, email, role badges
+- "Add Driver" button → navigates to `/septic/staff` (Add Employee dialog) instead of maintaining a separate add flow
+- Clicking a driver card → navigates to `/septic/staff/{id}` (the existing employee detail page with full profile, certs, orders tabs)
 
-4) Harden chunk/script loading
-- Keep route-level lazy loading, but add a chunk-load recovery path (retry once on `ChunkLoadError`, then show fallback UI).
-- In `vite.config.ts`, refine chunking so landing/public path excludes unnecessary heavy deps from initial graph.
+### 2. Redirect `SepticDriverDetail.tsx` to Employee Detail
 
-5) Add a “Safe Mode” fallback
-- Query flag like `?safe=1` (or auto-trigger after bootstrap timeout):
-  - disable heavy visuals/animations
-  - render lightweight static landing shell
-- Gives users a guaranteed non-white recovery path on weak devices.
+- Replace the entire component with a redirect: `navigate('/septic/staff/{id}', { replace: true })`
+- This avoids maintaining two separate detail pages — the employee detail already has all driver info plus certs, roles, orders, invoices
 
-6) Validation checklist (must pass before publish)
-- Test on the affected mobile device for both:
-  - Preview URL
-  - Published domain
-- Verify logged-out and logged-in flows.
-- Confirm: no white screen, visible fallback on forced failure, first paint improves materially.
+### 3. Enhance `SepticDriverApp.tsx` — filter by logged-in driver
 
-Technical details:
-- This is frontend runtime stability/perf, not septic database schema/data.
-- Likely failure modes: script/chunk load timeout, mobile tab resource pressure, or early mount failure before app UI appears.
-- Existing cache/SW cleanup is helpful but not sufficient if startup remains too heavy/fragile.
+- Look up the current auth user's `septic_employees` record (match `profile_id` or email)
+- Filter today's orders to only those assigned to this employee (`assigned_employee_id` or `assigned_driver_id`)
+- Show the driver's name and today's job count in header
+- Keep existing job card UI (navigate, status badges, customer info)
+
+### 4. Update `SepticCompletions.tsx` join
+
+- Change `septic_drivers(first_name, last_name)` → join `septic_employees` via `driver_id` FK
+- Display employee name instead of old driver name
+
+## Files to modify
+
+| File | Change |
+|---|---|
+| `src/pages/septic/SepticDrivers.tsx` | Query `septic_employees` + `septic_employee_roles` filtered by driver role |
+| `src/pages/septic/SepticDriverDetail.tsx` | Redirect to `/septic/staff/:id` |
+| `src/pages/septic/SepticDriverApp.tsx` | Filter orders by logged-in employee |
+| `src/pages/septic/SepticCompletions.tsx` | Update driver join to `septic_employees` |
+
