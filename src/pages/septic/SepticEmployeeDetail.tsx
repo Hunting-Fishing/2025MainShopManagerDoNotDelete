@@ -35,10 +35,14 @@ export default function SepticEmployeeDetail() {
   const { shopId } = useShopId();
   const queryClient = useQueryClient();
   const [showAddCert, setShowAddCert] = useState(false);
+  const [showAddCertType, setShowAddCertType] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [certForm, setCertForm] = useState({
     certification_type_id: '', certificate_number: '', issue_date: '', expiry_date: '', issuing_authority: '', notes: ''
+  });
+  const [newCertType, setNewCertType] = useState({
+    name: '', category: 'certification', requires_renewal: true, default_validity_months: '24', description: ''
   });
 
   // Editable profile fields
@@ -607,12 +611,21 @@ export default function SepticEmployeeDetail() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Certification Type *</Label>
-              <Select value={certForm.certification_type_id} onValueChange={v => setCertForm(p => ({ ...p, certification_type_id: v }))}>
+              <Select value={certForm.certification_type_id} onValueChange={v => {
+                if (v === '__add_new__') {
+                  setShowAddCertType(true);
+                } else {
+                  setCertForm(p => ({ ...p, certification_type_id: v }));
+                }
+              }}>
                 <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
                 <SelectContent>
                   {certTypes.map((ct: any) => (
                     <SelectItem key={ct.id} value={ct.id}>{ct.name}</SelectItem>
                   ))}
+                  <SelectItem value="__add_new__" className="text-emerald-600 font-medium border-t mt-1 pt-1">
+                    <span className="flex items-center gap-1"><Plus className="h-3.5 w-3.5" />Add New Type...</span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -629,6 +642,73 @@ export default function SepticEmployeeDetail() {
             <Button onClick={() => addCert.mutate()} disabled={!certForm.certification_type_id || addCert.isPending} className="bg-emerald-600 hover:bg-emerald-700">
               {addCert.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Save
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add New Certification Type Dialog */}
+      <Dialog open={showAddCertType} onOpenChange={setShowAddCertType}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add New Certification Type</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name *</Label>
+              <Input value={newCertType.name} onChange={e => setNewCertType(p => ({ ...p, name: e.target.value }))} placeholder="e.g. State Installer License" />
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={newCertType.category} onValueChange={v => setNewCertType(p => ({ ...p, category: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="license">License</SelectItem>
+                  <SelectItem value="certification">Certification</SelectItem>
+                  <SelectItem value="training">Training</SelectItem>
+                  <SelectItem value="endorsement">Endorsement</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input value={newCertType.description} onChange={e => setNewCertType(p => ({ ...p, description: e.target.value }))} placeholder="Optional description" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Checkbox checked={newCertType.requires_renewal} onCheckedChange={v => setNewCertType(p => ({ ...p, requires_renewal: !!v }))} />
+              <Label>Requires Renewal</Label>
+            </div>
+            {newCertType.requires_renewal && (
+              <div className="space-y-2">
+                <Label>Default Validity (months)</Label>
+                <Input type="number" value={newCertType.default_validity_months} onChange={e => setNewCertType(p => ({ ...p, default_validity_months: e.target.value }))} />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddCertType(false)}>Cancel</Button>
+            <Button
+              disabled={!newCertType.name.trim()}
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={async () => {
+                if (!shopId || !newCertType.name.trim()) return;
+                try {
+                  const { data, error } = await supabase.from('septic_certification_types').insert({
+                    shop_id: shopId,
+                    name: newCertType.name.trim(),
+                    category: newCertType.category,
+                    description: newCertType.description || null,
+                    requires_renewal: newCertType.requires_renewal,
+                    default_validity_months: newCertType.requires_renewal && newCertType.default_validity_months ? parseInt(newCertType.default_validity_months) : null,
+                  }).select('id').single();
+                  if (error) throw error;
+                  toast.success(`"${newCertType.name}" added`);
+                  queryClient.invalidateQueries({ queryKey: ['septic-cert-types', shopId] });
+                  setCertForm(p => ({ ...p, certification_type_id: data.id }));
+                  setShowAddCertType(false);
+                  setNewCertType({ name: '', category: 'certification', requires_renewal: true, default_validity_months: '24', description: '' });
+                } catch (e: any) {
+                  toast.error(e.message);
+                }
+              }}
+            >Save Type</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
