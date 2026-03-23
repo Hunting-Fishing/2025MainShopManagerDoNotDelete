@@ -60,6 +60,17 @@ interface SepticRouteStop {
   notes: string | null;
   drive_time_minutes: number | null;
   distance_from_previous_miles: number | null;
+  septic_service_orders?: {
+    id: string;
+    order_number: string | null;
+    status: string | null;
+    customer_id: string | null;
+    septic_customers?: {
+      id: string;
+      first_name: string | null;
+      last_name: string | null;
+    } | null;
+  } | null;
 }
 
 interface SepticDriver {
@@ -305,13 +316,49 @@ export default function SepticRoutes() {
       if (!selectedRoute) return [];
       const { data, error } = await supabase
         .from('septic_route_stops')
-        .select('*')
+        .select('*, septic_service_orders(id, order_number, status, customer_id, septic_customers(id, first_name, last_name))')
         .eq('route_id', selectedRoute.id)
         .order('stop_order');
       if (error) throw error;
       return (data || []) as SepticRouteStop[];
     },
     enabled: !!selectedRoute,
+  });
+
+  // Update stop status
+  const updateStopStatus = useMutation({
+    mutationFn: async ({ stopId, status }: { stopId: string; status: string }) => {
+      const updates: Record<string, any> = { status };
+      if (status === 'arrived') updates.actual_arrival = new Date().toISOString();
+      const { error } = await supabase.from('septic_route_stops').update(updates).eq('id', stopId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['septic-route-stops'] });
+      toast.success('Stop status updated');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Skip stop — remove from route and set order back to pending
+  const skipStop = useMutation({
+    mutationFn: async ({ stopId, serviceOrderId, routeId }: { stopId: string; serviceOrderId: string | null; routeId: string }) => {
+      const { error: delErr } = await supabase.from('septic_route_stops').delete().eq('id', stopId);
+      if (delErr) throw delErr;
+      if (serviceOrderId) {
+        await supabase.from('septic_service_orders').update({ status: 'pending' }).eq('id', serviceOrderId);
+      }
+      // Decrement total_jobs
+      const { data: remaining } = await supabase.from('septic_route_stops').select('id').eq('route_id', routeId);
+      await supabase.from('septic_routes').update({ total_jobs: remaining?.length || 0 }).eq('id', routeId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['septic-route-stops'] });
+      queryClient.invalidateQueries({ queryKey: ['septic-routes'] });
+      queryClient.invalidateQueries({ queryKey: ['septic-unassigned-orders'] });
+      toast.success('Stop skipped — order moved to unassigned');
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   // Unassigned service orders
@@ -499,7 +546,12 @@ export default function SepticRoutes() {
     latitude: s.latitude ?? undefined,
     longitude: s.longitude ?? undefined,
     status: s.status,
-    order_number: '',
+    order_number: (s.septic_service_orders as any)?.order_number || '',
+    customer_name: (s.septic_service_orders as any)?.septic_customers
+      ? `${(s.septic_service_orders as any).septic_customers.first_name || ''} ${(s.septic_service_orders as any).septic_customers.last_name || ''}`.trim()
+      : '',
+    service_order_id: s.service_order_id,
+    customer_id: s.customer_id,
     drive_time_minutes: s.drive_time_minutes,
     distance_from_previous_miles: s.distance_from_previous_miles,
     estimated_duration_minutes: s.estimated_duration_minutes,
@@ -645,7 +697,13 @@ export default function SepticRoutes() {
                                     <p className="text-xs text-muted-foreground">↓ {Number(stop.drive_time_minutes).toFixed(0)} min / {stop.distance_from_previous_miles ? Number(stop.distance_from_previous_miles).toFixed(1) : '?'} mi</p>
                                   </div>
                                 )}
-                                <div className={cn("flex items-start gap-3 hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors", stop.status === 'in_progress' && "bg-amber-500/5")}>
+                                <div className={cn(
+                                  "flex items-start gap-3 hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors cursor-pointer",
+                                  stop.status === 'in_progress' && "bg-accent/50",
+                                  stop.status === 'completed' && "opacity-60"
+                                )}
+                                  onClick={() => stop.service_order_id && navigate(`/septic/orders/${stop.service_order_id}`)}
+                                >
                                   <div className="flex flex-col items-center">
                                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><span className="text-sm font-bold text-primary">{stop.stop_order}</span></div>
                                     {idx < sortedStops.length - 1 && <div className="w-0.5 h-full min-h-[40px] bg-border mt-1" />}
@@ -655,9 +713,53 @@ export default function SepticRoutes() {
                                       <p className="font-medium text-sm truncate">{stop.address}</p>
                                       {stop.status === 'completed' ? <CheckCircle2 className="h-5 w-5 text-green-500" /> :
                                        stop.status === 'in_progress' ? <Circle className="h-5 w-5 text-amber-500 fill-amber-500" /> :
+                                       stop.status === 'skipped' ? <AlertCircle className="h-5 w-5 text-destructive" /> :
                                        <Circle className="h-5 w-5 text-muted-foreground" />}
                                     </div>
+                                    {stop.customer_name && (
+                                      <p className="text-xs font-medium text-primary truncate">{stop.customer_name}</p>
+                                    )}
+                                    {stop.order_number && (
+                                      <p className="text-xs text-muted-foreground">Order: {stop.order_number}</p>
+                                    )}
                                     <span className="text-xs text-muted-foreground">Est. {stop.estimated_duration_minutes || 30} min</span>
+                                    
+                                    {/* Action buttons */}
+                                    <div className="flex items-center gap-1.5 mt-2 flex-wrap" onClick={e => e.stopPropagation()}>
+                                      <Select
+                                        value={stop.status}
+                                        onValueChange={(val) => {
+                                          const original = routeStops.find(rs => rs.id === stop.id);
+                                          if (original) updateStopStatus.mutate({ stopId: stop.id, status: val });
+                                        }}
+                                      >
+                                        <SelectTrigger className="h-7 text-xs w-[110px]">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="pending">Pending</SelectItem>
+                                          <SelectItem value="arrived">Arrived</SelectItem>
+                                          <SelectItem value="in_progress">In Progress</SelectItem>
+                                          <SelectItem value="completed">Completed</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      {stop.latitude && stop.longitude && (
+                                        <Button variant="outline" size="sm" className="h-7 text-xs px-2"
+                                          onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`, '_blank')}>
+                                          <Navigation className="h-3 w-3 mr-1" />Nav
+                                        </Button>
+                                      )}
+                                      {stop.customer_id && (
+                                        <Button variant="ghost" size="sm" className="h-7 text-xs px-2"
+                                          onClick={() => navigate(`/septic/customers/${stop.customer_id}`)}>
+                                          <User className="h-3 w-3 mr-1" />Customer
+                                        </Button>
+                                      )}
+                                      <Button variant="ghost" size="sm" className="h-7 text-xs px-2 text-destructive hover:text-destructive"
+                                        onClick={() => skipStop.mutate({ stopId: stop.id, serviceOrderId: stop.service_order_id || null, routeId: selectedRoute!.id })}>
+                                        Skip
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
