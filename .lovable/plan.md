@@ -1,14 +1,27 @@
 
 
-# Enhance Septic Employee System: Full Profile + Accountability Tracking
+# Fix: Empty Certification Type List + Add Custom Type
 
-## What We're Building
+## Problem
 
-Expand the employee detail page and settings to provide complete employee management with accountability tracking — showing every service order, invoice, quote, and customer interaction tied to each employee.
+The seed migration only inserted certification types for shops that had the septic module enabled **at migration time**. Your shop likely enabled septic after the migration ran, so `septic_certification_types` has zero rows for your shop. The dropdown is empty.
 
-## Current State
+## Fix
 
-- Employee list exists with add dialog (name, phone, email, hire date, roles)
-- Employee detail has 4 tabs: Info, Roles, Certifications, History (completions only)
-- `septic_service_orders` has `assigned_driver_id` and `created_by` columns
-- `septic_invoices` has `
+### 1. Migration: Re-seed certification types for shops missing them
+
+A new migration that inserts the 12 default cert types for any shop that has septic enabled but has zero cert types. Uses `ON CONFLICT DO NOTHING` to be safe.
+
+### 2. UI: Add "+ Add Custom Type" option in the certification dropdown
+
+In `SepticEmployeeDetail.tsx`, add a special option at the bottom of the Select dropdown: **"+ Add New Type..."**. When selected, it opens a small inline dialog to create a new `septic_certification_types` record (name, category, requires_renewal, validity months). After saving, the dropdown refreshes and auto-selects the new type.
+
+This lets managers add certifications not in the pre-populated list (e.g., state-specific licenses, company-specific training).
+
+## Files
+
+| File | Action |
+|---|---|
+| Migration SQL | Re-seed default cert types for shops missing them |
+| `src/pages/septic/SepticEmployeeDetail.tsx` | Add "+ Add New Type" option in cert type dropdown with inline create dialog |
+
