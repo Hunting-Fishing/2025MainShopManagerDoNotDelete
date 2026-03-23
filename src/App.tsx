@@ -425,6 +425,7 @@ const PTPortalDashboard = lazy(() => import('@/pages/pt-portal/PTPortalDashboard
 const SepticDashboard = lazy(() => import('@/pages/septic/SepticDashboard'));
 const SepticOrders = lazy(() => import('@/pages/septic/SepticOrders'));
 const SepticOrderForm = lazy(() => import('@/pages/septic/SepticOrderForm'));
+const SepticOrderDetail = lazy(() => import('@/pages/septic/SepticOrderDetail'));
 const SepticCustomers = lazy(() => import('@/pages/septic/SepticCustomers'));
 const SepticCustomerDetails = lazy(() => import('@/pages/septic/SepticCustomerDetails'));
 const SepticLocations = lazy(() => import('@/pages/septic/SepticLocations'));
