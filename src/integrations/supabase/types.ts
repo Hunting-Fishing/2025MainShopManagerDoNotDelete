@@ -45183,14 +45183,185 @@ export type Database = {
           },
         ]
       }
+      septic_cost_recommendations: {
+        Row: {
+          accepted_at: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          current_annual_cost: number | null
+          customer_id: string
+          description: string | null
+          estimated_savings: number | null
+          id: string
+          implementation_cost: number | null
+          payback_period_months: number | null
+          priority: string | null
+          projected_annual_cost: number | null
+          recommendation_type: string
+          shop_id: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_annual_cost?: number | null
+          customer_id: string
+          description?: string | null
+          estimated_savings?: number | null
+          id?: string
+          implementation_cost?: number | null
+          payback_period_months?: number | null
+          priority?: string | null
+          projected_annual_cost?: number | null
+          recommendation_type?: string
+          shop_id: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_annual_cost?: number | null
+          customer_id?: string
+          description?: string | null
+          estimated_savings?: number | null
+          id?: string
+          implementation_cost?: number | null
+          payback_period_months?: number | null
+          priority?: string | null
+          projected_annual_cost?: number | null
+          recommendation_type?: string
+          shop_id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_cost_recommendations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_cost_recommendations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "septic_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_cost_recommendations_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_customer_notes: {
+        Row: {
+          assigned_to: string | null
+          content: string
+          created_at: string | null
+          created_by: string | null
+          customer_id: string
+          estimated_cost: number | null
+          id: string
+          note_type: string
+          priority: string | null
+          resolved_at: string | null
+          shop_id: string
+          status: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          customer_id: string
+          estimated_cost?: number | null
+          id?: string
+          note_type?: string
+          priority?: string | null
+          resolved_at?: string | null
+          shop_id: string
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string
+          estimated_cost?: number | null
+          id?: string
+          note_type?: string
+          priority?: string | null
+          resolved_at?: string | null
+          shop_id?: string
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_customer_notes_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_customer_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_customer_notes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "septic_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_customer_notes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       septic_customers: {
         Row: {
           access_notes: string | null
           address: string | null
           bedrooms: number | null
+          business_contact: string | null
+          business_name: string | null
           city: string | null
+          county: string | null
           created_at: string | null
+          customer_type: string | null
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           first_name: string
           id: string
           is_active: boolean | null
@@ -45199,22 +45370,36 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           notes: string | null
+          occupants: number | null
+          parcel_number: string | null
+          payment_terms: string | null
           phone: string | null
+          preferred_payment_method: string | null
           property_size: string | null
           property_type: string | null
           shop_id: string
           state: string | null
           system_type: string | null
+          tax_exempt: boolean | null
           updated_at: string | null
+          water_source: string | null
+          well_distance_ft: number | null
+          year_built: number | null
           zip_code: string | null
         }
         Insert: {
           access_notes?: string | null
           address?: string | null
           bedrooms?: number | null
+          business_contact?: string | null
+          business_name?: string | null
           city?: string | null
+          county?: string | null
           created_at?: string | null
+          customer_type?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           first_name: string
           id?: string
           is_active?: boolean | null
@@ -45223,22 +45408,36 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           notes?: string | null
+          occupants?: number | null
+          parcel_number?: string | null
+          payment_terms?: string | null
           phone?: string | null
+          preferred_payment_method?: string | null
           property_size?: string | null
           property_type?: string | null
           shop_id: string
           state?: string | null
           system_type?: string | null
+          tax_exempt?: boolean | null
           updated_at?: string | null
+          water_source?: string | null
+          well_distance_ft?: number | null
+          year_built?: number | null
           zip_code?: string | null
         }
         Update: {
           access_notes?: string | null
           address?: string | null
           bedrooms?: number | null
+          business_contact?: string | null
+          business_name?: string | null
           city?: string | null
+          county?: string | null
           created_at?: string | null
+          customer_type?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           first_name?: string
           id?: string
           is_active?: boolean | null
@@ -45247,13 +45446,21 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           notes?: string | null
+          occupants?: number | null
+          parcel_number?: string | null
+          payment_terms?: string | null
           phone?: string | null
+          preferred_payment_method?: string | null
           property_size?: string | null
           property_type?: string | null
           shop_id?: string
           state?: string | null
           system_type?: string | null
+          tax_exempt?: boolean | null
           updated_at?: string | null
+          water_source?: string | null
+          well_distance_ft?: number | null
+          year_built?: number | null
           zip_code?: string | null
         }
         Relationships: [
@@ -45465,6 +45672,91 @@ export type Database = {
           },
           {
             foreignKeyName: "septic_drivers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_environmental_records: {
+        Row: {
+          citation_number: string | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string
+          date_identified: string | null
+          date_resolved: string | null
+          description: string | null
+          id: string
+          photos: string[] | null
+          record_type: string
+          regulatory_body: string | null
+          remediation_cost: number | null
+          remediation_plan: string | null
+          severity: string | null
+          shop_id: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          citation_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id: string
+          date_identified?: string | null
+          date_resolved?: string | null
+          description?: string | null
+          id?: string
+          photos?: string[] | null
+          record_type?: string
+          regulatory_body?: string | null
+          remediation_cost?: number | null
+          remediation_plan?: string | null
+          severity?: string | null
+          shop_id: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          citation_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string
+          date_identified?: string | null
+          date_resolved?: string | null
+          description?: string | null
+          id?: string
+          photos?: string[] | null
+          record_type?: string
+          regulatory_body?: string | null
+          remediation_cost?: number | null
+          remediation_plan?: string | null
+          severity?: string | null
+          shop_id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_environmental_records_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_environmental_records_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "septic_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_environmental_records_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
