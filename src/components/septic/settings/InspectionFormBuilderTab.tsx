@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, ClipboardCheck, FileText, Copy, Trash2, Eye, Pencil, Loader2, Download } from 'lucide-react';
+import { Plus, ClipboardCheck, FileText, Copy, Trash2, Eye, Pencil, Loader2, Download, PlayCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopId } from '@/hooks/useShopId';
@@ -78,6 +79,7 @@ const BC_DEFAULT_TEMPLATE = {
 };
 
 export default function InspectionFormBuilderTab() {
+  const navigate = useNavigate();
   const { shopId } = useShopId();
   const queryClient = useQueryClient();
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
@@ -400,6 +402,9 @@ export default function InspectionFormBuilderTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 ml-3">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600" onClick={() => navigate(`/septic/inspection-form/${t.id}`)} title="Use Form">
+                      <PlayCircle className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPreviewTemplateId(t.id)} title="Preview">
                       <Eye className="h-4 w-4" />
                     </Button>

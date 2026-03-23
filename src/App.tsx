@@ -450,6 +450,7 @@ const SepticPurchases = lazy(() => import('@/pages/septic/SepticPurchases'));
 const SepticStaff = lazy(() => import('@/pages/septic/SepticStaff'));
 const SepticStore = lazy(() => import('@/pages/septic/SepticStore'));
 const SepticInspections = lazy(() => import('@/pages/septic/SepticInspections'));
+const SepticInspectionForm = lazy(() => import('@/pages/septic/SepticInspectionForm'));
 const SepticDeveloper = lazy(() => import('@/pages/septic/SepticDeveloper'));
 import { SepticLayout } from '@/components/septic';
 
@@ -1720,6 +1721,7 @@ function App() {
                   <Route path="/purchases" element={<SepticPurchases />} />
                   <Route path="/staff" element={<SepticStaff />} />
                   <Route path="/inspections" element={<SepticInspections />} />
+                  <Route path="/inspection-form/:templateId" element={<SepticInspectionForm />} />
                   <Route path="/profile" element={<SepticProfile />} />
                   <Route path="/settings" element={<SepticSettings />} />
                   <Route path="/store" element={<SepticStore />} />
