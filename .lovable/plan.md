@@ -1,53 +1,45 @@
 
 
-# Fix: Submission Review Dialog — Scrolling + Auto-Populate
+# Fix: Service Order Detail Page — Column Name Mismatch
 
-## Problems
+## Root Cause
 
-1. **No scroll**: `DialogContent` has `max-w-2xl` but no `max-height` or `overflow-y-auto`, so when content exceeds viewport height the dialog overflows and buttons are unreachable.
-2. **Manual data entry**: Admin must manually visit the product URL, find the image, write a description, and enter the price — tedious at scale.
+The `SepticOrderDetail.tsx` query joins `septic_tanks` using **wrong column names**:
+
+| Used in query | Actual column |
+|---|---|
+| `capacity_gallons` | `tank_size_gallons` |
+| `location_description` | `location_address` |
+
+PostgREST returns an error when selecting non-existent columns from a joined table. Since the error is caught and treated as "no data," the page shows "Service order not found" even though the order exists.
 
 ## Fix
 
-### 1. Make Dialog Scrollable
+### File: `src/pages/septic/SepticOrderDetail.tsx`
 
-**File: `src/components/developer/SubmissionReviewDialog.tsx`** (line 287)
+**Line 41** — Fix the `septic_tanks` select columns:
 
-Add `max-h-[85vh] overflow-y-auto` to the `DialogContent` wrapper so the entire dialog scrolls within the viewport. The footer buttons remain accessible.
+```ts
+// Before
+septic_tanks(id, tank_type, capacity_gallons, location_description)
 
-### 2. Auto-Populate Product Details
+// After
+septic_tanks(id, tank_type, tank_size_gallons, location_address)
+```
 
-Add a "Fetch Product Info" button next to the product URL that uses an edge function to scrape/extract metadata from the submitted URL:
+**Line 178** — Update the rendering to use the correct field names:
 
-- **Title confirmation** (pre-filled from submission)
-- **Description** — extracted from page `meta[name="description"]` or OG description
-- **Image URL** — extracted from `og:image` meta tag
-- **Price** — extracted from product structured data or price meta tags
+```ts
+// Before
+<p>Tank: {tank.tank_type} — {tank.capacity_gallons} gal</p>
+{tank.location_description && <p>Location: {tank.location_description}</p>}
 
-**New Edge Function: `fetch-product-meta`**
-- Accepts a URL
-- Fetches the page HTML (server-side to avoid CORS)
-- Parses `og:image`, `og:description`, `meta description`, and price from JSON-LD or meta tags
-- Returns `{ description, imageUrl, price }`
+// After
+<p>Tank: {tank.tank_type} — {tank.tank_size_gallons} gal</p>
+{tank.location_address && <p>Location: {tank.location_address}</p>}
+```
 
-**UI Changes in `SubmissionReviewDialog.tsx`:**
-- Add "Auto-Fill from URL" button below the product URL
-- On click, calls the edge function with the submission URL
-- Populates `productDescription`, `imageUrl`, and `productPrice` fields
-- Shows loading state during fetch
-- Falls back gracefully if metadata can't be extracted (fields remain editable)
+## Summary
 
-## Files
-
-| File | Action |
-|---|---|
-| `src/components/developer/SubmissionReviewDialog.tsx` | **Edit** — add scrolling, add auto-fill button + logic |
-| `supabase/functions/fetch-product-meta/index.ts` | **Create** — edge function to scrape URL metadata |
-
-## Technical Notes
-
-- Edge function uses `fetch()` to get HTML, then regex/string parsing for meta tags (no DOM parser needed in Deno)
-- Extracts: `og:image`, `og:description`, `product:price:amount`, JSON-LD price
-- Auto-fill is best-effort — fields remain manually editable after population
-- Scroll fix uses `max-h-[85vh] overflow-y-auto` on the content div inside DialogContent
+Two-line fix in one file. Wrong column names in the PostgREST join cause the entire query to error out silently.
 
