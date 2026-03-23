@@ -1755,6 +1755,7 @@ function App() {
           path="/export/*"
           element={
             <AuthGate>
+              <AuthenticatedProviders>
               <ExportLayout>
                 <Routes>
                   <Route path="/" element={<ExportDashboard />} />
