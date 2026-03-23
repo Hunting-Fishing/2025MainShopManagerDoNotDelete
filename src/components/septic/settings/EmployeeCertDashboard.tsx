@@ -60,6 +60,16 @@ export default function EmployeeCertDashboard() {
 
   return (
     <div className="space-y-4">
+      {/* Quick Actions */}
+      <div className="flex gap-2 flex-wrap">
+        <Button size="sm" onClick={() => navigate('/septic/staff')} variant="outline">
+          <ExternalLink className="h-4 w-4 mr-1" />View All Employees
+        </Button>
+        <Button size="sm" onClick={() => navigate('/septic/staff')} className="bg-emerald-600 hover:bg-emerald-700">
+          <Plus className="h-4 w-4 mr-1" />Add Employee
+        </Button>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
