@@ -45,7 +45,7 @@ export default function SepticStaff() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [form, setForm] = useState({
-    first_name: '', last_name: '', phone: '', email: '', hire_date: '', roles: [] as string[], status: 'active'
+    first_name: '', last_name: '', phone: '', email: '', hire_date: '', hourly_rate: '', home_address: '', roles: [] as string[], status: 'active'
   });
 
   const { data: employees = [], isLoading } = useQuery({
