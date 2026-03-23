@@ -1648,6 +1648,7 @@ function App() {
                   <Route path="/developer" element={<WaterDeliveryDeveloper />} />
                 </Routes>
               </WaterDeliveryLayout>
+              </AuthenticatedProviders>
             </AuthGate>
           }
         />
