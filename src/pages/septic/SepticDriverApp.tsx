@@ -1,8 +1,8 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, MapPin, Clock, CheckCircle2, Navigation } from 'lucide-react';
+import { Loader2, MapPin, Clock, CheckCircle2, Navigation, AlertCircle } from 'lucide-react';
 import { useShopId } from '@/hooks/useShopId';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,22 +12,66 @@ export default function SepticDriverApp() {
   const { shopId } = useShopId();
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  const { data: todayOrders = [], isLoading } = useQuery({
-    queryKey: ['septic-driver-today', shopId, today],
+  // Get current auth user
+  const { data: authUser } = useQuery({
+    queryKey: ['auth-user'],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getUser();
+      return data.user;
+    },
+  });
+
+  // Find the employee record for the logged-in user
+  const { data: myEmployee, isLoading: empLoading } = useQuery({
+    queryKey: ['my-septic-employee', shopId, authUser?.id],
+    queryFn: async () => {
+      if (!shopId || !authUser) return null;
+      // Try matching by profile_id first, then by email
+      let { data } = await supabase
+        .from('septic_employees')
+        .select('id, first_name, last_name')
+        .eq('shop_id', shopId)
+        .eq('profile_id', authUser.id)
+        .maybeSingle();
+      if (!data && authUser.email) {
+        const res = await supabase
+          .from('septic_employees')
+          .select('id, first_name, last_name')
+          .eq('shop_id', shopId)
+          .eq('email', authUser.email)
+          .maybeSingle();
+        data = res.data;
+      }
+      return data;
+    },
+    enabled: !!shopId && !!authUser,
+  });
+
+  // Get today's orders - if employee found, filter to them; otherwise show all
+  const { data: todayOrders = [], isLoading: ordersLoading } = useQuery({
+    queryKey: ['septic-driver-today', shopId, today, myEmployee?.id],
     queryFn: async () => {
       if (!shopId) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from('septic_service_orders')
         .select('id, order_number, service_type, status, scheduled_date, scheduled_time, location_address, customer_id, septic_customers(first_name, last_name)')
         .eq('shop_id', shopId)
         .eq('scheduled_date', today)
         .in('status', ['scheduled', 'in_progress'])
         .order('scheduled_time');
+
+      if (myEmployee?.id) {
+        query = query.eq('assigned_employee_id', myEmployee.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
-    enabled: !!shopId,
+    enabled: !!shopId && !empLoading,
   });
+
+  const isLoading = empLoading || ordersLoading;
 
   const statusColors: Record<string, string> = {
     scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -39,6 +83,15 @@ export default function SepticDriverApp() {
       <div>
         <h1 className="text-2xl font-bold">Today's Jobs</h1>
         <p className="text-muted-foreground text-sm">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+        {myEmployee && (
+          <p className="text-sm font-medium mt-1">{myEmployee.first_name} {myEmployee.last_name} — {todayOrders.length} job{todayOrders.length !== 1 ? 's' : ''}</p>
+        )}
+        {!empLoading && !myEmployee && (
+          <div className="flex items-center gap-2 mt-2 text-sm text-amber-600 dark:text-amber-400">
+            <AlertCircle className="h-4 w-4" />
+            <span>No employee profile linked — showing all jobs</span>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
