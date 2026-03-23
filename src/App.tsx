@@ -1846,6 +1846,7 @@ function App() {
                   <Route path="/kpi-dashboard" element={<ExportKpiDashboard />} />
                 </Routes>
               </ExportLayout>
+              </AuthenticatedProviders>
             </AuthGate>
           }
         />
