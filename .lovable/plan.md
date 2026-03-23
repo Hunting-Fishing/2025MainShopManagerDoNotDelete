@@ -1,48 +1,59 @@
 
 
-# Fix: Service Orders Not Showing on Customer Details Page
+# Inspections & Compliance — Read-Only with Role-Based Editing
 
-## Root Cause
+## Problem
 
-Two issues working together:
+The `SepticInspections.tsx` page (1,749 lines) contains full duplicate implementations of System Types management, Inventory Alerts, and a Template Builder — all editable inline. This duplicates what already exists in Settings. The user wants:
 
-1. **Cache invalidation mismatch**: When a service order is created in `SepticOrderForm.tsx`, it invalidates `queryKey: ['septic']`. But the customer details page uses `queryKey: ['septic-customer-orders', id, shopId]`. React Query's partial matching requires the key prefix to match as array elements — `'septic'` (string) does not match `'septic-customer-orders'` (string), so the customer details cache is never invalidated after order creation.
+1. This page shows **read-only** views of System Regulations and Inspection Forms data (sourced from Settings)
+2. Only **Owner** or **Manager** roles can edit — and editing happens in Settings, not here
+3. Non-privileged users see the data but cannot modify it
 
-2. **No `staleTime` set**: If the user visited the customer details page before creating the order, the cached empty result persists and won't automatically refetch on re-navigation.
+## Changes
 
-## Fix
+### File: `src/pages/septic/SepticInspections.tsx` (major rewrite)
 
-### File: `src/pages/septic/SepticOrderForm.tsx` (line 94)
+**Reduce from ~1,749 lines to ~400 lines** by removing all inline editing components (`SystemTypesManager`, `SystemTypeCard`, `SystemTypeDialog`, `InventoryAlertsManager`, `CreateAlertDialog`, `SepticTemplateBuilder`, `XDFieldPicker`, `SectionEditor`, `ItemRow`, `CreateSepticTemplateDialog` — roughly 1,300 lines of duplicated code).
 
-Broaden the cache invalidation after order creation to also invalidate customer-specific queries:
+Replace the 4 tabs with a cleaner layout:
+
+**Tab 1 — Inspection Forms** (read-only cards)
+- Show published templates from `septic_inspection_templates` as cards (name, description, version, section count)
+- "Use Form" button navigates to `/septic/inspection-form/:templateId`
+- If user is Owner/Manager: show "Manage in Settings" button linking to `/septic/settings` (regulations/inspections tab)
+- No edit/delete/duplicate/create actions on this page
+
+**Tab 2 — System Regulations** (read-only)
+- Fetch and display `septic_regulatory_classifications` and `septic_system_types` as informational cards
+- Show system type name, description, linked template, required products — all read-only
+- If Owner/Manager: "Edit in Settings" link
+
+**Tab 3 — Completed Inspections** (keep as-is)
+- Existing completed inspections list — this is operational data, not settings
+
+**Tab 4 — Inventory Alerts** (read-only summary)
+- Show active alerts and upcoming service warnings — read-only
+- Owner/Manager: "Manage in Settings" link
+
+### Role Check
+
+Use `useAllUserRoles` hook to check if user has `owner` or `manager` role:
 
 ```ts
-onSuccess: () => {
-  toast.success('Service order created successfully');
-  queryClient.invalidateQueries({ queryKey: ['septic'] });
-  queryClient.invalidateQueries({ queryKey: ['septic-customer-orders'] });
-  queryClient.invalidateQueries({ queryKey: ['septic-customer-invoices'] });
-  navigate('/septic/orders');
-},
+const { data: roles = [] } = useAllUserRoles();
+const canManageSettings = roles.some(r => 
+  ['owner', 'admin', 'manager'].includes(r.name)
+);
 ```
 
-### File: `src/pages/septic/SepticCustomerDetails.tsx` (orders query, ~line 53)
+When `canManageSettings` is true, show a subtle "Edit in Settings" button on each tab that navigates to the appropriate Settings tab. When false, no edit actions appear anywhere.
 
-Add `staleTime: 0` and `refetchOnMount: 'always'` to ensure fresh data every time the page is visited:
+### Files
 
-```ts
-const { data: orders = [] } = useQuery({
-  queryKey: ['septic-customer-orders', id, shopId],
-  queryFn: async () => { ... },
-  enabled: !!id && !!shopId,
-  staleTime: 0,
-  refetchOnMount: 'always',
-});
-```
+| File | Change |
+|---|---|
+| `src/pages/septic/SepticInspections.tsx` | **Rewrite** — remove all inline editors, replace with read-only views + role-gated "Edit in Settings" links |
 
-Apply the same to all queries on the customer details page (customer, tanks, invoices, notes, environmental, recommendations).
-
-### Summary
-
-Two small changes — broader invalidation on order creation and always-fresh queries on the customer details page. No database changes needed.
+No database changes needed. No new components needed — the page becomes a simple read-only dashboard pulling the same query data but without mutation hooks.
 
