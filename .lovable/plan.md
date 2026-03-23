@@ -1,79 +1,48 @@
 
 
-# Build Generic Septic Inspection Form Template
+# Fix: Service Orders Not Showing on Customer Details Page
 
-## Overview
+## Root Cause
 
-Enhance the existing `InspectionFormPreview.tsx` to render a professional, print-ready inspection form matching the uploaded reference image — with header fields (Location, Date, Assigned To, Checklist Score, Signed By), color-coded section rows, ✓/✗/N/A columns, and measurement fields. Also create a standalone generic form page accessible outside the settings builder.
+Two issues working together:
 
-## Changes
+1. **Cache invalidation mismatch**: When a service order is created in `SepticOrderForm.tsx`, it invalidates `queryKey: ['septic']`. But the customer details page uses `queryKey: ['septic-customer-orders', id, shopId]`. React Query's partial matching requires the key prefix to match as array elements — `'septic'` (string) does not match `'septic-customer-orders'` (string), so the customer details cache is never invalidated after order creation.
 
-### 1. New Component: `SepticInspectionFormTemplate.tsx`
+2. **No `staleTime` set**: If the user visited the customer details page before creating the order, the cached empty result persists and won't automatically refetch on re-navigation.
 
-A reusable, interactive form component that renders any saved inspection template in the visual style shown in the image:
+## Fix
 
-- **Header block**: Company logo area, form title, Location, Date, Assigned To, Checklist Score, Signed By fields
-- **Section rendering**:
-  - Checkbox sections: Purple header bar with ✓ column + item rows with alternating colors (pink/yellow/blue/green)
-  - Pass/Fail/N/A sections: Three-column header (✓ | ✗ | N/A) + item rows with alternating colors
-  - Number sections: Input fields with units
-  - Text/Notes sections: Textarea areas
-- **Per-item**: Notes, photo, video attachment indicators based on item settings
-- **Footer**: Page number, form version
+### File: `src/pages/septic/SepticOrderForm.tsx` (line 94)
 
-### 2. New Page: `SepticInspectionForm.tsx`
+Broaden the cache invalidation after order creation to also invalidate customer-specific queries:
 
-Route: `/septic/inspection-form/:templateId`
-
-A page that loads a template by ID and renders the generic form for filling out during an actual inspection. Includes:
-- Print button (CSS print styles)
-- Save/Submit functionality
-- Read-only vs fill mode
-
-### 3. Update `InspectionFormPreview.tsx`
-
-Replace the current basic preview with the new styled `SepticInspectionFormTemplate` component so the preview in settings matches the professional look.
-
-### 4. Update `InspectionFormBuilderTab.tsx`
-
-Add a "Use Form" action on each template card that navigates to the fill-out page.
-
-## Files
-
-| File | Action |
-|---|---|
-| `src/components/septic/inspection/SepticInspectionFormTemplate.tsx` | **Create** — Professional styled form renderer |
-| `src/components/septic/settings/InspectionFormPreview.tsx` | **Edit** — Use new styled renderer |
-| `src/components/septic/settings/InspectionFormBuilderTab.tsx` | **Edit** — Add "Use Form" action |
-| `src/pages/septic/SepticInspectionForm.tsx` | **Create** — Fill-out page with print support |
-
-## Visual Design (matching reference image)
-
-```text
-┌──────────────────────────────────────────────────┐
-│ Septic Tank Inspection Checklist          [Logo] │
-├──────────────────────────────────────────────────┤
-│ Location: ________    Date: ________             │
-│ Assigned To: ______   Checklist Score: ________  │
-│ Signed By: ________                              │
-├──────────────────────────────────────────────────┤
-│ [✓] Septic Tank Inspection Preparation           │  ← purple header
-│  ░  Inspector wearing rubber gloves...           │  ← alternating row colors
-│  ░  Inspector has tools and materials...         │
-│  ...                                             │
-├──────────────────────────────────────────────────┤
-│ [✓][✗][N/A] Septic Tank Checklist                │  ← purple header with 3 cols
-│  ░  ░  ░   Wastewater directed into...           │
-│  ░  ░  ░   Water not backing up...               │
-│  ...                                             │
-├──────────────────────────────────────────────────┤
-│ Scum Layer Thickness: ______                     │
-│ Sludge Layer Thickness: ______                   │
-└──────────────────────────────────────────────────┘
+```ts
+onSuccess: () => {
+  toast.success('Service order created successfully');
+  queryClient.invalidateQueries({ queryKey: ['septic'] });
+  queryClient.invalidateQueries({ queryKey: ['septic-customer-orders'] });
+  queryClient.invalidateQueries({ queryKey: ['septic-customer-invoices'] });
+  navigate('/septic/orders');
+},
 ```
 
-- Row colors cycle: pink (#fce4ec), yellow (#fff9c4), blue (#e3f2fd), green (#e8f5e9)
-- Section headers: dark purple background with white text
-- Clean borders and professional spacing
-- Print-optimized CSS with `@media print` styles
+### File: `src/pages/septic/SepticCustomerDetails.tsx` (orders query, ~line 53)
+
+Add `staleTime: 0` and `refetchOnMount: 'always'` to ensure fresh data every time the page is visited:
+
+```ts
+const { data: orders = [] } = useQuery({
+  queryKey: ['septic-customer-orders', id, shopId],
+  queryFn: async () => { ... },
+  enabled: !!id && !!shopId,
+  staleTime: 0,
+  refetchOnMount: 'always',
+});
+```
+
+Apply the same to all queries on the customer details page (customer, tanks, invoices, notes, environmental, recommendations).
+
+### Summary
+
+Two small changes — broader invalidation on order creation and always-fresh queries on the customer details page. No database changes needed.
 
