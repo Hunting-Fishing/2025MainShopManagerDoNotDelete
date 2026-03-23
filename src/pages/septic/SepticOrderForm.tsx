@@ -92,6 +92,8 @@ export default function SepticOrderForm() {
     onSuccess: () => {
       toast.success('Service order created successfully');
       queryClient.invalidateQueries({ queryKey: ['septic'] });
+      queryClient.invalidateQueries({ queryKey: ['septic-customer-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['septic-customer-invoices'] });
       navigate('/septic/orders');
     },
     onError: (error: any) => {

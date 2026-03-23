@@ -102,6 +102,8 @@ export default function SepticCustomerDetails() {
       return data || [];
     },
     enabled: !!id && !!shopId,
+    staleTime: 0,
+    refetchOnMount: 'always' as const,
   });
 
   if (isLoading) {
