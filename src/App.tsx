@@ -1745,6 +1745,7 @@ function App() {
                   <Route path="/developer" element={<SepticDeveloper />} />
                 </Routes>
               </SepticLayout>
+              </AuthenticatedProviders>
             </AuthGate>
           }
         />
