@@ -38,7 +38,7 @@ export default function SepticOrderDetail() {
         .select(`
           *,
           septic_customers(id, first_name, last_name, email, phone, address, city, state, zip_code),
-          septic_tanks(id, tank_type, capacity_gallons, location_description)
+          septic_tanks(id, tank_type, tank_size_gallons, location_address)
         `)
         .eq('id', orderId)
         .maybeSingle();
