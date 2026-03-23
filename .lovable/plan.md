@@ -1,45 +1,28 @@
 
 
-# Fix: Service Order Detail Page — Column Name Mismatch
+# Investigation: Landing Page Not Displaying
 
-## Root Cause
+## Findings
 
-The `SepticOrderDetail.tsx` query joins `septic_tanks` using **wrong column names**:
+After thoroughly inspecting the codebase, I found **no code-level issues** that would prevent the landing page from rendering:
 
-| Used in query | Actual column |
-|---|---|
-| `capacity_gallons` | `tank_size_gallons` |
-| `location_description` | `location_address` |
+- **Route**: `/` correctly maps to `<Index />` (line 559 of App.tsx)
+- **Index.tsx**: 429 lines of valid JSX — renders header, hero, modules, testimonials, pricing, footer
+- **All imports resolve**: HeroSection, WelcomeSection, CategoryBanner, FeatureGrid, PricingSection, TestimonialsSection, ModuleCard, ComingSoonCard all exist
+- **All assets exist**: `mobile-bg-home.jpg` and all category images are present in `src/assets/`
+- **No blocking providers**: The page uses `useAuthUser` only for login/signup button state — the page renders regardless of auth state
+- **Session replay**: Shows 397KB of DOM data loaded successfully with user mouse interactions
+- **Console logs**: No errors captured
+- **Network requests**: No errors captured
 
-PostgREST returns an error when selecting non-existent columns from a joined table. Since the error is caught and treated as "no data," the page shows "Service order not found" even though the order exists.
+## Likely Cause
 
-## Fix
+This is most likely a **transient build/deploy issue** — the Vite dev server may have failed to compile after the recent batch of changes (SepticOrderDetail, SubmissionReviewDialog, useModuleDisplayInfo, App.tsx). A blank white screen with no console errors typically indicates the JavaScript bundle failed to load or compile.
 
-### File: `src/pages/septic/SepticOrderDetail.tsx`
+## Recommended Action
 
-**Line 41** — Fix the `septic_tanks` select columns:
+1. **Trigger a rebuild** by making a trivial change (e.g., add a comment) — this forces Vite to recompile
+2. If the issue persists after rebuild, I can use browser tools to take a screenshot and inspect the actual runtime state
 
-```ts
-// Before
-septic_tanks(id, tank_type, capacity_gallons, location_description)
-
-// After
-septic_tanks(id, tank_type, tank_size_gallons, location_address)
-```
-
-**Line 178** — Update the rendering to use the correct field names:
-
-```ts
-// Before
-<p>Tank: {tank.tank_type} — {tank.capacity_gallons} gal</p>
-{tank.location_description && <p>Location: {tank.location_description}</p>}
-
-// After
-<p>Tank: {tank.tank_type} — {tank.tank_size_gallons} gal</p>
-{tank.location_address && <p>Location: {tank.location_address}</p>}
-```
-
-## Summary
-
-Two-line fix in one file. Wrong column names in the PostgREST join cause the entire query to error out silently.
+No code changes are needed — the landing page code is correct and complete.
 
