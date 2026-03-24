@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { AuthService } from '@/lib/services/AuthService';
 import { useToast } from '@/hooks/use-toast';
 import { getPostLoginDestination } from '@/lib/auth/getPostLoginDestination';
-import { UserPlus, Eye, EyeOff, Wrench, ArrowRight, LogOut, Sparkles } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, ArrowRight, LogOut, Sparkles } from 'lucide-react';
+import ab365Logo from '@/assets/ab365-logo.png';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 
 export default function Signup() {
