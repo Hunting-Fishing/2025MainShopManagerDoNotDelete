@@ -1,43 +1,27 @@
 
 
-# Fix: Drivers Page & Driver App — Connect to Employee System
+# Fix: Boot Fallback Appearing on Every Page Load
 
-## Problem
+## Root Cause
 
-The **Drivers page** (`SepticDrivers.tsx`) and **Driver Detail** (`SepticDriverDetail.tsx`) still query the old `septic_drivers` table, which is empty. Meanwhile, employees with the "driver" role exist in `septic_employees` + `septic_employee_roles`. The Driver App also doesn't filter by the logged-in driver.
+In `src/main.tsx`, the global `error` and `unhandledrejection` event listeners (lines 107-131) call `showBootFallback()` for **any** error — not just chunk load failures. Any minor runtime error (e.g., a failed network request, a non-critical warning) triggers the recovery screen, making it appear as the app's landing page.
 
-## Plan
+The 8-second watchdog timer in `index.html` is the correct safety net for genuine boot failures. The aggressive catch-all in `main.tsx` is redundant and harmful.
 
-### 1. Rewrite `SepticDrivers.tsx` to query `septic_employees` with driver role
+## Fix
 
-- Query `septic_employees` joined with `septic_employee_roles!inner(role)` filtered to `role = 'driver'`
-- Display employee name, status, phone, email, role badges
-- "Add Driver" button → navigates to `/septic/staff` (Add Employee dialog) instead of maintaining a separate add flow
-- Clicking a driver card → navigates to `/septic/staff/{id}` (the existing employee detail page with full profile, certs, orders tabs)
+### `src/main.tsx` — Remove catch-all fallback triggers
 
-### 2. Redirect `SepticDriverDetail.tsx` to Employee Detail
+- **Line 114**: Remove `showBootFallback(...)` from the generic `error` handler — only handle chunk load errors
+- **Line 130**: Remove `showBootFallback(...)` from the generic `unhandledrejection` handler — only handle chunk load errors
 
-- Replace the entire component with a redirect: `navigate('/septic/staff/{id}', { replace: true })`
-- This avoids maintaining two separate detail pages — the employee detail already has all driver info plus certs, roles, orders, invoices
+The `window.addEventListener('error', ...)` block should **only** act on chunk load failures and silently ignore everything else. The 8-second watchdog in `index.html` already covers the case where React never mounts.
 
-### 3. Enhance `SepticDriverApp.tsx` — filter by logged-in driver
+### Summary of change
 
-- Look up the current auth user's `septic_employees` record (match `profile_id` or email)
-- Filter today's orders to only those assigned to this employee (`assigned_employee_id` or `assigned_driver_id`)
-- Show the driver's name and today's job count in header
-- Keep existing job card UI (navigate, status badges, customer info)
+Two lines removed. The fallback UI will now only appear if:
+1. A chunk fails to load (and auto-reload already happened once)
+2. React genuinely fails to mount within 8 seconds (index.html watchdog)
 
-### 4. Update `SepticCompletions.tsx` join
-
-- Change `septic_drivers(first_name, last_name)` → join `septic_employees` via `driver_id` FK
-- Display employee name instead of old driver name
-
-## Files to modify
-
-| File | Change |
-|---|---|
-| `src/pages/septic/SepticDrivers.tsx` | Query `septic_employees` + `septic_employee_roles` filtered by driver role |
-| `src/pages/septic/SepticDriverDetail.tsx` | Redirect to `/septic/staff/:id` |
-| `src/pages/septic/SepticDriverApp.tsx` | Filter orders by logged-in employee |
-| `src/pages/septic/SepticCompletions.tsx` | Update driver join to `septic_employees` |
+It will no longer hijack the page on routine JS errors.
 
