@@ -23,11 +23,7 @@ export function SidebarLogo() {
     <Link to="/">
       <div className="flex items-center gap-2 font-semibold">
         <Avatar className={`${!isOpen ? "h-9 w-9" : "h-8 w-8"} transition-all duration-300`}>
-          {logoUrl ? (
-            <AvatarImage src={logoUrl} alt={companyName} />
-          ) : (
-            <AvatarImage src="https://github.com/shadcn.png" alt={companyName} />
-          )}
+          <AvatarImage src={logoUrl || "/images/ab365-logo.png"} alt={companyName} />
           <AvatarFallback className="bg-purple-600 text-white">
             {getInitials(companyName)}
           </AvatarFallback>

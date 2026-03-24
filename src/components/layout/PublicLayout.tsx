@@ -71,7 +71,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children, activeLink
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-primary" />
+              <img src={ab365Logo} alt="All Business 365" className="h-6 w-auto object-contain" />
               <span className="text-sm font-medium text-foreground">All Business 365</span>
             </div>
             

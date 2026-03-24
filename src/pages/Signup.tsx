@@ -212,8 +212,8 @@ export default function Signup() {
           <Card className="modern-card-elevated backdrop-blur-sm bg-card/95 border-border/50 shadow-glow">
             <CardHeader className="text-center pb-8">
               {/* Brand Icon */}
-              <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center mb-6 shadow-lg">
-                <Wrench className="w-8 h-8 text-primary-foreground" />
+              <div className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-6">
+                <img src={ab365Logo} alt="All Business 365" className="w-16 h-16 object-contain" />
               </div>
               
               <CardTitle className="text-3xl font-heading gradient-text mb-2">
