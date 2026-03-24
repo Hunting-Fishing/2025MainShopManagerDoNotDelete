@@ -111,7 +111,6 @@ window.addEventListener('error', (e) => {
     return;
   }
 
-  showBootFallback('The app failed to start. Please tap Reload.');
 });
 
 window.addEventListener('unhandledrejection', (e) => {
