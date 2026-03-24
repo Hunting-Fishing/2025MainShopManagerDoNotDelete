@@ -58,14 +58,15 @@
       </div>
     </div>
     <script>
-      // Show boot fallback if React doesn't mount within 8 seconds
+      // Show boot fallback only if React completely fails to mount within 15 seconds
       var _bootTimer = setTimeout(function() {
         var root = document.getElementById('root');
         var fallback = document.getElementById('boot-fallback');
+        // Only show if React hasn't rendered anything besides the fallback div
         if (root && fallback && root.childElementCount <= 1) {
           fallback.style.display = 'flex';
         }
-      }, 8000);
+      }, 15000);
       // React will clear this once mounted
       window.__clearBootTimer = function() { clearTimeout(_bootTimer); var f = document.getElementById('boot-fallback'); if(f) f.remove(); };
     </script>
