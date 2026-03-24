@@ -136,9 +136,6 @@ const AppWithBootReady: React.FC = () => {
       // noop
     }
 
-    if (typeof window !== 'undefined' && (window as any).__clearBootTimer) {
-      (window as any).__clearBootTimer();
-    }
   }, []);
 
   return (
