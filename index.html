@@ -51,7 +51,7 @@
           <p style="margin:0 0 1rem;font-size:.875rem;color:#64748b;">If the app doesn't load, try the options below.</p>
           <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;">
             <button onclick="window.location.reload()" style="padding:.5rem 1rem;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:.8125rem;">Reload</button>
-            <button onclick="window.location.href='/login'" style="padding:.5rem 1rem;border-radius:8px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-size:.8125rem;">Go to Login</button>
+            <button onclick="window.location.href='/'" style="padding:.5rem 1rem;border-radius:8px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-size:.8125rem;">Go to Home</button>
             <button onclick="if('caches' in window){caches.keys().then(k=>Promise.all(k.map(n=>caches.delete(n))))};window.location.reload()" style="padding:.5rem 1rem;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:.8125rem;">Clear Cache</button>
           </div>
         </div>
