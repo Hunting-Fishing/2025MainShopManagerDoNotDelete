@@ -42,34 +42,7 @@
   </head>
 
   <body>
-    <div id="root">
-      <!-- Bootstrap fallback: shown if React fails to mount within 8s -->
-      <div id="boot-fallback" style="display:none;min-height:100vh;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#f8fafc;padding:1rem;">
-        <div style="max-width:360px;text-align:center;background:#fff;border-radius:12px;padding:2rem;box-shadow:0 4px 24px rgba(0,0,0,.08);">
-          <img src="/images/ab365-logo.png" alt="All Business 365" style="width:64px;height:64px;object-fit:contain;margin-bottom:.5rem;" />
-          <h2 style="margin:0 0 .5rem;font-size:1.125rem;color:#1e293b;">Loading All Business 365</h2>
-          <p style="margin:0 0 1rem;font-size:.875rem;color:#64748b;">If the app doesn't load, try the options below.</p>
-          <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;">
-            <button onclick="window.location.reload()" style="padding:.5rem 1rem;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:.8125rem;">Reload</button>
-            <button onclick="window.location.href='/'" style="padding:.5rem 1rem;border-radius:8px;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-size:.8125rem;">Go to Home</button>
-            <button onclick="if('caches' in window){caches.keys().then(k=>Promise.all(k.map(n=>caches.delete(n))))};window.location.reload()" style="padding:.5rem 1rem;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:.8125rem;">Clear Cache</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <script>
-      // Show boot fallback only if React completely fails to mount within 15 seconds
-      var _bootTimer = setTimeout(function() {
-        var root = document.getElementById('root');
-        var fallback = document.getElementById('boot-fallback');
-        // Only show if React hasn't rendered anything besides the fallback div
-        if (root && fallback && root.childElementCount <= 1) {
-          fallback.style.display = 'flex';
-        }
-      }, 15000);
-      // React will clear this once mounted
-      window.__clearBootTimer = function() { clearTimeout(_bootTimer); var f = document.getElementById('boot-fallback'); if(f) f.remove(); };
-    </script>
+    <div id="root"></div>
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script>
