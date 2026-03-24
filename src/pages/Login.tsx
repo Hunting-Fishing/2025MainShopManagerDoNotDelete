@@ -9,7 +9,8 @@ import { AuthService } from '@/lib/services/AuthService';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getPostLoginDestination } from '@/lib/auth/getPostLoginDestination';
-import { Mail, Lock, LogIn, ArrowRight, Wrench, Info, Phone, HelpCircle, LogOut, Sparkles } from 'lucide-react';
+import { Mail, Lock, LogIn, ArrowRight, Info, Phone, HelpCircle, LogOut, Sparkles } from 'lucide-react';
+import ab365Logo from '@/assets/ab365-logo.png';
 import {
   Dialog,
   DialogContent,
