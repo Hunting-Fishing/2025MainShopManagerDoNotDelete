@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Wrench } from 'lucide-react';
+import ab365Logo from '@/assets/ab365-logo.png';
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -34,9 +34,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children, activeLink
       <header className="relative z-10 border-b border-border/50 bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-              <Wrench className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src={ab365Logo} alt="All Business 365" className="h-10 w-auto object-contain" />
             <span className="text-xl font-heading font-bold text-foreground">All Business 365</span>
           </Link>
           
@@ -73,7 +71,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children, activeLink
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-primary" />
+              <img src={ab365Logo} alt="All Business 365" className="h-6 w-auto object-contain" />
               <span className="text-sm font-medium text-foreground">All Business 365</span>
             </div>
             

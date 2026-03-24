@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Users, Wrench, Target } from 'lucide-react';
+import ab365Logo from '@/assets/ab365-logo.png';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 
 export default function About() {
@@ -10,8 +11,8 @@ export default function About() {
         <div className="max-w-4xl mx-auto space-y-8 py-8">
           {/* Header */}
           <div className="text-center space-y-4">
-            <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-primary flex items-center justify-center mb-6 shadow-lg">
-              <Wrench className="w-10 h-10 text-primary-foreground" />
+            <div className="mx-auto w-20 h-20 rounded-2xl flex items-center justify-center mb-6">
+              <img src={ab365Logo} alt="All Business 365" className="w-20 h-20 object-contain" />
             </div>
             <h1 className="text-4xl font-heading gradient-text">About All Business 365</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
