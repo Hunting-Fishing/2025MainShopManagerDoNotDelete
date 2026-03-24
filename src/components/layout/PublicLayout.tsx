@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Wrench } from 'lucide-react';
+import ab365Logo from '@/assets/ab365-logo.png';
 
 interface PublicLayoutProps {
   children: React.ReactNode;
