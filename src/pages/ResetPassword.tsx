@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AuthService } from '@/lib/services/AuthService';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, KeyRound, ArrowRight, CheckCircle, Wrench } from 'lucide-react';
+import { Lock, KeyRound, ArrowRight, CheckCircle } from 'lucide-react';
+import ab365Logo from '@/assets/ab365-logo.png';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
