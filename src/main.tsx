@@ -126,7 +126,6 @@ window.addEventListener('unhandledrejection', (e) => {
     return;
   }
 
-  showBootFallback('The app failed to start. Please tap Reload.');
 });
 
 const AppWithBootReady: React.FC = () => {
