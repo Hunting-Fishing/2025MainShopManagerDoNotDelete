@@ -183,6 +183,7 @@ export default function SepticSettings() {
             <TabsTrigger value="defaults">Defaults</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
             <TabsTrigger value="employees">Employees</TabsTrigger>
+            <TabsTrigger value="assets">Assets</TabsTrigger>
           </TabsList>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
