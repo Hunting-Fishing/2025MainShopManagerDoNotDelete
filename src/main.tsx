@@ -51,6 +51,7 @@ const normalizeIndexRoute = () => {
 normalizeIndexRoute();
 
 const CHUNK_RELOAD_GUARD_KEY = '__ab365_chunk_reload_once__';
+const CHUNK_RELOAD_COOLDOWN_MS = 10000; // 10 seconds between reload attempts
 
 const isChunkLoadFailure = (message?: string) => {
   if (!message) return false;
@@ -63,13 +64,16 @@ const isChunkLoadFailure = (message?: string) => {
 
 const tryChunkRecoveryReload = () => {
   try {
-    const hasRetried = sessionStorage.getItem(CHUNK_RELOAD_GUARD_KEY) === '1';
-    if (!hasRetried) {
-      sessionStorage.setItem(CHUNK_RELOAD_GUARD_KEY, '1');
+    const lastReload = sessionStorage.getItem(CHUNK_RELOAD_GUARD_KEY);
+    const now = Date.now();
+    // Only reload if we haven't reloaded in the last 10 seconds
+    if (!lastReload || (now - parseInt(lastReload, 10)) > CHUNK_RELOAD_COOLDOWN_MS) {
+      sessionStorage.setItem(CHUNK_RELOAD_GUARD_KEY, String(now));
       window.location.reload();
       return true;
     }
   } catch {
+    // If sessionStorage fails, just reload once
     window.location.reload();
     return true;
   }
