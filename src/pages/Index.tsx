@@ -14,8 +14,6 @@ import { CategoryBanner } from '@/components/landing/CategoryBanner';
 const FeatureGrid = lazy(() => import('@/components/landing/FeatureGrid').then(m => ({ default: m.FeatureGrid })));
 const PricingSection = lazy(() => import('@/components/landing/PricingSection').then(m => ({ default: m.PricingSection })));
 const TestimonialsSection = lazy(() => import('@/components/landing/TestimonialsSection').then(m => ({ default: m.TestimonialsSection })));
-import { WelcomeSection } from '@/components/landing/WelcomeSection';
-import { CategoryBanner } from '@/components/landing/CategoryBanner';
 import { LANDING_COMING_SOON_CATEGORIES, LANDING_MODULES } from '@/config/landingModules';
 import { useAuthUser } from '@/hooks/useAuthUser';
 
