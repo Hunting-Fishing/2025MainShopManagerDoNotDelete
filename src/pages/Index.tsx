@@ -1,15 +1,19 @@
 // All Business 365 — Landing Page
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Users, Wrench, ArrowRight, LogIn } from 'lucide-react';
 import { SearchInput } from '@/components/settings/SearchInput';
 import { ModuleCard } from '@/components/landing/ModuleCard';
 import { ComingSoonCard } from '@/components/landing/ComingSoonCard';
-import { FeatureGrid } from '@/components/landing/FeatureGrid';
-import { PricingSection } from '@/components/landing/PricingSection';
-import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
 import { HeroSection } from '@/components/landing/HeroSection';
+import { WelcomeSection } from '@/components/landing/WelcomeSection';
+import { CategoryBanner } from '@/components/landing/CategoryBanner';
+
+// Lazy-load below-fold sections
+const FeatureGrid = lazy(() => import('@/components/landing/FeatureGrid').then(m => ({ default: m.FeatureGrid })));
+const PricingSection = lazy(() => import('@/components/landing/PricingSection').then(m => ({ default: m.PricingSection })));
+const TestimonialsSection = lazy(() => import('@/components/landing/TestimonialsSection').then(m => ({ default: m.TestimonialsSection })));
 import { WelcomeSection } from '@/components/landing/WelcomeSection';
 import { CategoryBanner } from '@/components/landing/CategoryBanner';
 import { LANDING_COMING_SOON_CATEGORIES, LANDING_MODULES } from '@/config/landingModules';
