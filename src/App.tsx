@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+import React, { lazy, Suspense, useEffect, useState, Component, ErrorInfo, ReactNode } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
@@ -8,14 +8,98 @@ import { AuthGate } from '@/components/AuthGate';
 import { authMonitor } from '@/utils/authMonitoring';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import { AuthenticatedProviders } from '@/components/auth/AuthenticatedProviders';
+import ab365Logo from '@/assets/ab365-logo.png';
+
 const Index = lazy(() => import('@/pages/Index'));
 
-// Suspense fallback component
-const PageLoader = () => (
-  <div className="flex items-center justify-center h-64">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-  </div>
-);
+// Chunk-aware error boundary that auto-recovers from stale chunk failures
+const CHUNK_RETRY_KEY = '__ab365_chunk_retry__';
+
+function isChunkError(error: Error): boolean {
+  const msg = error?.message || '';
+  return (
+    error?.name === 'ChunkLoadError' ||
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed') ||
+    msg.includes('ChunkLoadError')
+  );
+}
+
+interface ChunkErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class ChunkErrorBoundary extends Component<{ children: ReactNode }, ChunkErrorBoundaryState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ChunkErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ChunkErrorBoundary caught:', error.message);
+    if (isChunkError(error)) {
+      const hasRetried = sessionStorage.getItem(CHUNK_RETRY_KEY) === '1';
+      if (!hasRetried) {
+        sessionStorage.setItem(CHUNK_RETRY_KEY, '1');
+        window.location.reload();
+        return;
+      }
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <div className="max-w-sm w-full text-center space-y-4">
+            <img src={ab365Logo} alt="All Business 365" className="h-12 mx-auto" />
+            <h2 className="text-lg font-semibold text-foreground">Page failed to load</h2>
+            <p className="text-sm text-muted-foreground">
+              A new version may be available. Please reload to continue.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Branded page loader with timeout fallback
+const PageLoader = () => {
+  const [showReloadHint, setShowReloadHint] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowReloadHint(true), 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-64 space-y-4">
+      <img src={ab365Logo} alt="Loading" className="h-10 opacity-80" />
+      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+      {showReloadHint && (
+        <button
+          onClick={() => window.location.reload()}
+          className="text-xs text-muted-foreground hover:text-primary underline"
+        >
+          Taking too long? Click to reload
+        </button>
+      )}
+    </div>
+  );
+};
 
 // ============================================================
 // ALL page imports are lazy-loaded for code-splitting
