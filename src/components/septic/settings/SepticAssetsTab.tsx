@@ -100,10 +100,10 @@ export default function SepticAssetsTab() {
   const saveMutation = useMutation({
     mutationFn: async (payload: any) => {
       if (editingId) {
-        const { error } = await supabase.from('septic_equipment').update(payload).eq('id', editingId);
+        const { error } = await supabase.from('septic_equipment').update(payload as any).eq('id', editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('septic_equipment').insert(payload);
+        const { error } = await supabase.from('septic_equipment').insert(payload as any);
         if (error) throw error;
       }
     },
