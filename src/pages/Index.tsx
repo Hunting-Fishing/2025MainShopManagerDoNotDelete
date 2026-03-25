@@ -348,17 +348,19 @@ export default function Index() {
       )}
 
       {/* Testimonials */}
-      <section className="py-10 md:py-16">
-        <div className="container mx-auto px-4">
-          <TestimonialsSection />
-        </div>
-      </section>
+      <Suspense fallback={null}>
+        <section className="py-10 md:py-16">
+          <div className="container mx-auto px-4">
+            <TestimonialsSection />
+          </div>
+        </section>
 
-      {/* Features Grid */}
-      <FeatureGrid />
+        {/* Features Grid */}
+        <FeatureGrid />
 
-      {/* Pricing Section */}
-      <PricingSection />
+        {/* Pricing Section */}
+        <PricingSection />
+      </Suspense>
 
       {/* CTA Section */}
       <section className="py-12 md:py-20 bg-primary text-primary-foreground">
