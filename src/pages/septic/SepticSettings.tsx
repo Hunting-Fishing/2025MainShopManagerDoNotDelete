@@ -10,10 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Settings, Bell, MapPin, Container, DollarSign, Save, Loader2, Building2, Truck, Shield, ClipboardCheck, Users } from 'lucide-react';
+import { ArrowLeft, Settings, Bell, MapPin, Container, DollarSign, Save, Loader2, Building2, Truck, Shield, ClipboardCheck, Users, HardHat } from 'lucide-react';
 import SystemRegulationsTab from '@/components/septic/settings/SystemRegulationsTab';
 import InspectionFormBuilderTab from '@/components/septic/settings/InspectionFormBuilderTab';
 import EmployeeCertDashboard from '@/components/septic/settings/EmployeeCertDashboard';
+import SepticAssetsTab from '@/components/septic/settings/SepticAssetsTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShopId } from '@/hooks/useShopId';
@@ -182,6 +183,7 @@ export default function SepticSettings() {
             <TabsTrigger value="defaults">Defaults</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
             <TabsTrigger value="employees">Employees</TabsTrigger>
+            <TabsTrigger value="assets">Assets</TabsTrigger>
           </TabsList>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -457,6 +459,11 @@ export default function SepticSettings() {
               <EmployeeCertDashboard />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ── Assets Tab ─────────────────────────────── */}
+        <TabsContent value="assets" className="space-y-4">
+          <SepticAssetsTab />
         </TabsContent>
       </Tabs>
     </div>

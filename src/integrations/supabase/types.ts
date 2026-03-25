@@ -45971,16 +45971,24 @@ export type Database = {
       }
       septic_equipment: {
         Row: {
+          assigned_employee_id: string | null
           assigned_truck_id: string | null
+          category: string | null
           created_at: string
           created_by: string | null
+          current_hours: number | null
+          current_mileage: number | null
           equipment_name: string
           equipment_type: string
           id: string
           location: string | null
+          manual_urls: Json | null
           manufacturer: string | null
           model: string | null
           notes: string | null
+          photos: Json | null
+          plate_number: string | null
+          profile_image_url: string | null
           purchase_date: string | null
           purchase_price: number | null
           serial_number: string | null
@@ -45988,18 +45996,30 @@ export type Database = {
           specifications: Json | null
           status: string | null
           updated_at: string
+          vin_number: string | null
+          warranty_expiry: string | null
+          warranty_status: string | null
+          year: number | null
         }
         Insert: {
+          assigned_employee_id?: string | null
           assigned_truck_id?: string | null
+          category?: string | null
           created_at?: string
           created_by?: string | null
+          current_hours?: number | null
+          current_mileage?: number | null
           equipment_name: string
           equipment_type: string
           id?: string
           location?: string | null
+          manual_urls?: Json | null
           manufacturer?: string | null
           model?: string | null
           notes?: string | null
+          photos?: Json | null
+          plate_number?: string | null
+          profile_image_url?: string | null
           purchase_date?: string | null
           purchase_price?: number | null
           serial_number?: string | null
@@ -46007,18 +46027,30 @@ export type Database = {
           specifications?: Json | null
           status?: string | null
           updated_at?: string
+          vin_number?: string | null
+          warranty_expiry?: string | null
+          warranty_status?: string | null
+          year?: number | null
         }
         Update: {
+          assigned_employee_id?: string | null
           assigned_truck_id?: string | null
+          category?: string | null
           created_at?: string
           created_by?: string | null
+          current_hours?: number | null
+          current_mileage?: number | null
           equipment_name?: string
           equipment_type?: string
           id?: string
           location?: string | null
+          manual_urls?: Json | null
           manufacturer?: string | null
           model?: string | null
           notes?: string | null
+          photos?: Json | null
+          plate_number?: string | null
+          profile_image_url?: string | null
           purchase_date?: string | null
           purchase_price?: number | null
           serial_number?: string | null
@@ -46026,8 +46058,19 @@ export type Database = {
           specifications?: Json | null
           status?: string | null
           updated_at?: string
+          vin_number?: string | null
+          warranty_expiry?: string | null
+          warranty_status?: string | null
+          year?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "septic_equipment_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "septic_employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "septic_equipment_assigned_truck_id_fkey"
             columns: ["assigned_truck_id"]
