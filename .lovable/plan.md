@@ -1,69 +1,46 @@
 
 
-# Add Assets Tab to Septic Settings
+# Fix: Recurring White Pages After Edits
 
-## What We're Building
+## Root Cause
 
-A new "Assets" tab in Septic Settings where management can register and manage all company equipment (vehicles, forklifts, skidsteers, boom trucks, telehandlers, compactors, etc.) with photos, serial numbers, purchase details, manuals, and assignment capability.
+Every time a code change is made, Vite rebuilds and generates new chunk filenames. The browser may still reference old chunk URLs from the previous build. When `React.lazy()` tries to load those old chunks, the import silently fails or hangs, leaving the `Suspense` fallback (a small spinner) stuck indefinitely — appearing as a "white page."
 
-## Database Changes
+The current error listeners in `main.tsx` only handle `ChunkLoadError` for global errors, but lazy-loaded route failures inside React's `Suspense` boundary don't always propagate to the global `window.onerror` — they get swallowed by the Suspense/ErrorBoundary system, which then shows nothing useful.
 
-### Migration: Extend `septic_equipment` table
+## Fix
 
-Add missing columns to the existing `septic_equipment` table:
+### 1. Wrap `Suspense` with a dedicated `ErrorBoundary` in `App.tsx`
 
-```sql
-ALTER TABLE public.septic_equipment
-  ADD COLUMN IF NOT EXISTS profile_image_url TEXT,
-  ADD COLUMN IF NOT EXISTS photos JSONB DEFAULT '[]',
-  ADD COLUMN IF NOT EXISTS manual_urls JSONB DEFAULT '[]',
-  ADD COLUMN IF NOT EXISTS warranty_expiry DATE,
-  ADD COLUMN IF NOT EXISTS warranty_status TEXT DEFAULT 'unknown',
-  ADD COLUMN IF NOT EXISTS year INTEGER,
-  ADD COLUMN IF NOT EXISTS vin_number TEXT,
-  ADD COLUMN IF NOT EXISTS plate_number TEXT,
-  ADD COLUMN IF NOT EXISTS category TEXT,
-  ADD COLUMN IF NOT EXISTS assigned_employee_id UUID REFERENCES public.septic_employees(id),
-  ADD COLUMN IF NOT EXISTS current_hours NUMERIC,
-  ADD COLUMN IF NOT EXISTS current_mileage NUMERIC;
-```
+Add a React ErrorBoundary **inside** the Suspense wrapper that catches chunk load failures and auto-reloads once (using sessionStorage guard), or shows a "Reload" button.
 
-This keeps the septic-scoped architecture while adding the rich fields needed for full asset management (photos, manuals, warranty, assignment to employees).
+**File**: `src/App.tsx`
+- Wrap `<Suspense fallback={<PageLoader />}>` with an `ErrorBoundary` that detects chunk load errors
+- On chunk error: auto-reload once (same sessionStorage guard pattern)
+- On second failure: show a card with "Reload Page" button instead of white screen
 
-## Frontend Changes
+### 2. Improve `PageLoader` fallback visibility
 
-### 1. New component: `SepticAssetsTab.tsx`
+**File**: `src/App.tsx`
+- Add the company logo and "Loading..." text to the `PageLoader` so it's clearly branded, not just a bare spinner
+- Add a 10-second timeout that shows a "Taking too long? Click to reload" link
 
-Location: `src/components/septic/settings/SepticAssetsTab.tsx`
+### 3. Remove dead `showBootFallback` code from `main.tsx`
 
-Features:
-- **Equipment list** — table/card grid showing all `septic_equipment` records for the shop, with status badges, photos, and type labels
-- **Add Equipment dialog** — form with fields: name, type (dropdown: Vehicle, Forklift, Skidsteer, Boom Truck, Telehandler, Compactor, Pump, Camera, Other), serial number, manufacturer, model, year, VIN, plate number, purchase date, purchase price, warranty expiry, notes
-- **Photo upload** — profile image + additional photos using Supabase Storage (reuse existing `septic-files` or create `septic-equipment-photos` bucket)
-- **Manual links** — ability to attach PDF/URL links to manuals
-- **Edit/Delete** — inline edit and delete actions per equipment item
-- **Status management** — available, in_use, maintenance, retired
-- **Employee assignment** — dropdown to assign equipment to a `septic_employee`, linking to driver/staff pages
+**File**: `src/main.tsx`
+- The `showBootFallback` function references `#boot-fallback` which no longer exists in `index.html`
+- Remove the dead function and its reference in `tryChunkRecoveryReload` — the chunk error listeners can just call `window.location.reload()` directly
 
-### 2. Update `SepticSettings.tsx`
-
-- Add "Assets" tab trigger (with `Wrench` or `HardHat` icon) to the TabsList
-- Add `TabsContent value="assets"` rendering the new `SepticAssetsTab` component
-- Support `?tab=assets` URL param
-
-### 3. Update `SepticDrivers.tsx` and `SepticStaff` (future linkage)
-
-The `assigned_employee_id` column enables the Drivers page and Employee detail to show which equipment is assigned to each person. This linkage is set up in the schema now; UI display on driver/employee pages can be added as a follow-up.
-
-## Files to Create/Modify
+## Files to Modify
 
 | File | Change |
 |---|---|
-| Migration SQL | Add columns to `septic_equipment` |
-| `src/components/septic/settings/SepticAssetsTab.tsx` | New component — full CRUD for equipment assets |
-| `src/pages/septic/SepticSettings.tsx` | Add "Assets" tab trigger + content |
+| `src/App.tsx` | Add ErrorBoundary around Suspense with chunk-error recovery + improve PageLoader |
+| `src/main.tsx` | Remove dead `showBootFallback` function, simplify chunk recovery |
 
-## Equipment Types Supported
+## Result
 
-Vehicle, Forklift, Skidsteer, Boom Truck, Telehandler, Compactor, Pump, Jetter, Camera, Locator, Hose, Trailer, Generator, Other
+- Chunk load failures from lazy routes will be caught and auto-recovered
+- Users see branded loading state instead of white screen
+- Dead code removed from main.tsx
 
