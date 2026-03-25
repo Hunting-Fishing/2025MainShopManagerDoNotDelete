@@ -38,6 +38,17 @@ const queryClient = new QueryClient({
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Root element not found');
 
+const normalizeIndexRoute = () => {
+  if (typeof window === 'undefined') return;
+
+  const { pathname, search, hash } = window.location;
+  if (pathname === '/index' || pathname === '/index.html') {
+    window.history.replaceState(window.history.state, '', `/${search}${hash}`);
+  }
+};
+
+normalizeIndexRoute();
+
 const CHUNK_RELOAD_GUARD_KEY = '__ab365_chunk_reload_once__';
 
 const isChunkLoadFailure = (message?: string) => {

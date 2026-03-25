@@ -13,7 +13,7 @@ import ab365Logo from '@/assets/ab365-logo.png';
 const Index = lazy(() => import('@/pages/Index'));
 
 // Chunk-aware error boundary that auto-recovers from stale chunk failures
-const CHUNK_RETRY_KEY = '__ab365_chunk_retry__';
+const CHUNK_RETRY_KEY = '__ab365_chunk_reload_once__';
 
 function isChunkError(error: Error): boolean {
   const msg = error?.message || '';
@@ -86,9 +86,10 @@ const PageLoader = () => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center h-64 space-y-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 text-center space-y-4">
       <img src={ab365Logo} alt="Loading" className="h-10 opacity-80" />
       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+      <p className="text-sm text-muted-foreground">Loading the latest version…</p>
       {showReloadHint && (
         <button
           onClick={() => window.location.reload()}
@@ -633,8 +634,11 @@ import { ExportLayout } from '@/components/export';
 
 function App() {
   useEffect(() => {
-    // Initialize auth monitoring
-    console.log('🚀 App initialized with auth monitoring');
+    try {
+      sessionStorage.removeItem(CHUNK_RETRY_KEY);
+    } catch {
+      // noop
+    }
   }, []);
 
   return (
