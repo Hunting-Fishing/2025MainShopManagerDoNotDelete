@@ -46384,24 +46384,30 @@ export type Database = {
       }
       septic_inspections: {
         Row: {
+          arrived_at: string | null
           baffle_condition: string | null
           corrective_actions: string | null
           created_at: string
+          customer_remarks: string | null
           deficiencies: string[] | null
+          departed_at: string | null
           distribution_box_condition: string | null
           drain_field_condition: string | null
           effluent_filter_condition: string | null
           groundwater_contamination: boolean | null
           id: string
+          inspection_data: Json | null
           inspection_date: string
           inspection_type: string
           inspector_id: string | null
           inspector_name: string | null
+          maintenance_items: Json | null
           metadata: Json | null
           next_inspection_due: string | null
           notes: string | null
           odor_present: boolean | null
           overall_condition: string | null
+          parts_requested: Json | null
           pass_fail: string | null
           permit_number: string | null
           photos: string[] | null
@@ -46413,27 +46419,35 @@ export type Database = {
           surface_ponding: boolean | null
           tank_condition: string | null
           tank_id: string | null
+          template_id: string | null
           updated_at: string
+          work_performed: string | null
         }
         Insert: {
+          arrived_at?: string | null
           baffle_condition?: string | null
           corrective_actions?: string | null
           created_at?: string
+          customer_remarks?: string | null
           deficiencies?: string[] | null
+          departed_at?: string | null
           distribution_box_condition?: string | null
           drain_field_condition?: string | null
           effluent_filter_condition?: string | null
           groundwater_contamination?: boolean | null
           id?: string
+          inspection_data?: Json | null
           inspection_date?: string
           inspection_type?: string
           inspector_id?: string | null
           inspector_name?: string | null
+          maintenance_items?: Json | null
           metadata?: Json | null
           next_inspection_due?: string | null
           notes?: string | null
           odor_present?: boolean | null
           overall_condition?: string | null
+          parts_requested?: Json | null
           pass_fail?: string | null
           permit_number?: string | null
           photos?: string[] | null
@@ -46445,27 +46459,35 @@ export type Database = {
           surface_ponding?: boolean | null
           tank_condition?: string | null
           tank_id?: string | null
+          template_id?: string | null
           updated_at?: string
+          work_performed?: string | null
         }
         Update: {
+          arrived_at?: string | null
           baffle_condition?: string | null
           corrective_actions?: string | null
           created_at?: string
+          customer_remarks?: string | null
           deficiencies?: string[] | null
+          departed_at?: string | null
           distribution_box_condition?: string | null
           drain_field_condition?: string | null
           effluent_filter_condition?: string | null
           groundwater_contamination?: boolean | null
           id?: string
+          inspection_data?: Json | null
           inspection_date?: string
           inspection_type?: string
           inspector_id?: string | null
           inspector_name?: string | null
+          maintenance_items?: Json | null
           metadata?: Json | null
           next_inspection_due?: string | null
           notes?: string | null
           odor_present?: boolean | null
           overall_condition?: string | null
+          parts_requested?: Json | null
           pass_fail?: string | null
           permit_number?: string | null
           photos?: string[] | null
@@ -46477,7 +46499,9 @@ export type Database = {
           surface_ponding?: boolean | null
           tank_condition?: string | null
           tank_id?: string | null
+          template_id?: string | null
           updated_at?: string
+          work_performed?: string | null
         }
         Relationships: [
           {
@@ -46492,6 +46516,13 @@ export type Database = {
             columns: ["tank_id"]
             isOneToOne: false
             referencedRelation: "septic_tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_inspections_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "septic_inspection_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -46848,6 +46879,176 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "septic_labor_rates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_order_materials: {
+        Row: {
+          created_at: string
+          id: string
+          item_name: string
+          notes: string | null
+          quantity: number | null
+          service_order_id: string
+          shop_id: string
+          total_cost: number | null
+          unit_cost: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_name: string
+          notes?: string | null
+          quantity?: number | null
+          service_order_id: string
+          shop_id: string
+          total_cost?: number | null
+          unit_cost?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_name?: string
+          notes?: string | null
+          quantity?: number | null
+          service_order_id?: string
+          shop_id?: string
+          total_cost?: number | null
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_order_materials_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "septic_service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_order_materials_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_order_status_log: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          changed_by_name: string | null
+          id: string
+          new_status: string
+          notes: string | null
+          previous_status: string | null
+          service_order_id: string
+          shop_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          id?: string
+          new_status: string
+          notes?: string | null
+          previous_status?: string | null
+          service_order_id: string
+          shop_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          id?: string
+          new_status?: string
+          notes?: string | null
+          previous_status?: string | null
+          service_order_id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_order_status_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_order_status_log_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "septic_service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_order_status_log_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_order_time_entries: {
+        Row: {
+          arrived_at: string | null
+          created_at: string
+          departed_at: string | null
+          duration_minutes: number | null
+          employee_id: string | null
+          employee_name: string | null
+          id: string
+          notes: string | null
+          service_order_id: string
+          shop_id: string
+        }
+        Insert: {
+          arrived_at?: string | null
+          created_at?: string
+          departed_at?: string | null
+          duration_minutes?: number | null
+          employee_id?: string | null
+          employee_name?: string | null
+          id?: string
+          notes?: string | null
+          service_order_id: string
+          shop_id: string
+        }
+        Update: {
+          arrived_at?: string | null
+          created_at?: string
+          departed_at?: string | null
+          duration_minutes?: number | null
+          employee_id?: string | null
+          employee_name?: string | null
+          id?: string
+          notes?: string | null
+          service_order_id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_order_time_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "septic_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_order_time_entries_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "septic_service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "septic_order_time_entries_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
