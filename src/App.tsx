@@ -8,7 +8,7 @@ import { AuthGate } from '@/components/AuthGate';
 import { authMonitor } from '@/utils/authMonitoring';
 import { GlobalUX } from '@/components/ux/GlobalUX';
 import { AuthenticatedProviders } from '@/components/auth/AuthenticatedProviders';
-import Index from '@/pages/Index';
+const Index = lazy(() => import('@/pages/Index'));
 
 // Suspense fallback component
 const PageLoader = () => (
