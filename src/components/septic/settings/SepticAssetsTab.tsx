@@ -205,16 +205,16 @@ export default function SepticAssetsTab() {
 
       const { data: urlData } = supabase.storage.from('septic-equipment-photos').getPublicUrl(path);
       const item = equipment.find((eq: any) => eq.id === equipmentId);
-      const currentPhotos = Array.isArray(item?.photos) ? item.photos : [];
+      const currentPhotos = Array.isArray((item as any)?.photos) ? (item as any).photos : [];
       const updatedPhotos = [...currentPhotos, urlData.publicUrl];
 
       // Set as profile image if first photo, otherwise add to gallery
       const updates: any = { photos: updatedPhotos };
-      if (!item?.profile_image_url) {
+      if (!(item as any)?.profile_image_url) {
         updates.profile_image_url = urlData.publicUrl;
       }
 
-      const { error } = await supabase.from('septic_equipment').update(updates).eq('id', equipmentId);
+      const { error } = await supabase.from('septic_equipment').update(updates as any).eq('id', equipmentId);
       if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ['septic-equipment-assets'] });
