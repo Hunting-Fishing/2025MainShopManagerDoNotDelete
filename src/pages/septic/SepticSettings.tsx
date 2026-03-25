@@ -460,6 +460,11 @@ export default function SepticSettings() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ── Assets Tab ─────────────────────────────── */}
+        <TabsContent value="assets" className="space-y-4">
+          <SepticAssetsTab />
+        </TabsContent>
       </Tabs>
     </div>
   );

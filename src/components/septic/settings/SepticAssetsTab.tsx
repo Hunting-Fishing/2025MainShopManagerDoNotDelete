@@ -230,11 +230,11 @@ export default function SepticAssetsTab() {
     if (!manualUrl.trim()) return;
     try {
       const item = equipment.find((eq: any) => eq.id === equipmentId);
-      const currentManuals = Array.isArray(item?.manual_urls) ? item.manual_urls : [];
+      const currentManuals = Array.isArray((item as any)?.manual_urls) ? (item as any).manual_urls : [];
       const newManual = { label: manualLabel || 'Manual', url: manualUrl };
       const updated = [...currentManuals, newManual];
 
-      const { error } = await supabase.from('septic_equipment').update({ manual_urls: updated }).eq('id', equipmentId);
+      const { error } = await supabase.from('septic_equipment').update({ manual_urls: updated } as any).eq('id', equipmentId);
       if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ['septic-equipment-assets'] });
