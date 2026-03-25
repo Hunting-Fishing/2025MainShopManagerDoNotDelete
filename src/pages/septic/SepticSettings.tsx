@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Settings, Bell, MapPin, Container, DollarSign, Save, Loader2, Building2, Truck, Shield, ClipboardCheck, Users } from 'lucide-react';
+import { ArrowLeft, Settings, Bell, MapPin, Container, DollarSign, Save, Loader2, Building2, Truck, Shield, ClipboardCheck, Users, HardHat } from 'lucide-react';
 import SystemRegulationsTab from '@/components/septic/settings/SystemRegulationsTab';
 import InspectionFormBuilderTab from '@/components/septic/settings/InspectionFormBuilderTab';
 import EmployeeCertDashboard from '@/components/septic/settings/EmployeeCertDashboard';
