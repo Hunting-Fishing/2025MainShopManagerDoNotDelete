@@ -42,14 +42,8 @@ class ChunkErrorBoundary extends Component<{ children: ReactNode }, ChunkErrorBo
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ChunkErrorBoundary caught:', error.message);
-    if (isChunkError(error)) {
-      const hasRetried = sessionStorage.getItem(CHUNK_RETRY_KEY) === '1';
-      if (!hasRetried) {
-        sessionStorage.setItem(CHUNK_RETRY_KEY, '1');
-        window.location.reload();
-        return;
-      }
-    }
+    // Do NOT reload here — main.tsx global listeners handle that.
+    // This boundary only shows fallback UI if global reload already failed.
   }
 
   render() {
@@ -63,7 +57,10 @@ class ChunkErrorBoundary extends Component<{ children: ReactNode }, ChunkErrorBo
               A new version may be available. Please reload to continue.
             </p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                try { sessionStorage.removeItem(CHUNK_RETRY_KEY); } catch {}
+                window.location.reload();
+              }}
               className="inline-flex items-center px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"
             >
               Reload Page
