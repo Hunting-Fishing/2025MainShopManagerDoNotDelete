@@ -1937,6 +1937,7 @@ function App() {
         />
       </Routes>
       </Suspense>
+      </ChunkErrorBoundary>
       <Toaster />
       <SonnerToaster />
       {/* Global UX enhancements */}
