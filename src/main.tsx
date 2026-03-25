@@ -123,25 +123,18 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 const AppWithBootReady: React.FC = () => {
-  React.useEffect(() => {
-    try {
-      sessionStorage.removeItem(CHUNK_RELOAD_GUARD_KEY);
-    } catch {
-      // noop
-    }
-
-  }, []);
-
   return (
     <GlobalErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
           <I18nextProvider i18n={i18n}>
             <LanguageProvider>
-              <BrowserRouter>
-                <ConsoleErrorLogger />
-                <App />
-              </BrowserRouter>
+              <AuthProvider>
+                <BrowserRouter>
+                  <ConsoleErrorLogger />
+                  <App />
+                </BrowserRouter>
+              </AuthProvider>
             </LanguageProvider>
           </I18nextProvider>
         </QueryClientProvider>
