@@ -328,11 +328,29 @@ export default function SepticRoutes() {
 
   // Update stop status
   const updateStopStatus = useMutation({
-    mutationFn: async ({ stopId, status }: { stopId: string; status: string }) => {
+    mutationFn: async ({ stopId, status, previousStatus, serviceOrderId }: { stopId: string; status: string; previousStatus?: string; serviceOrderId?: string | null }) => {
       const updates: Record<string, any> = { status };
       if (status === 'arrived') updates.actual_arrival = new Date().toISOString();
       const { error } = await supabase.from('septic_route_stops').update(updates).eq('id', stopId);
       if (error) throw error;
+
+      // Log status change
+      if (serviceOrderId) {
+        const { data: userData } = await supabase.auth.getUser();
+        const { data: profile } = userData?.user?.id
+          ? await supabase.from('profiles').select('first_name, last_name').eq('id', userData.user.id).maybeSingle()
+          : { data: null };
+        const profileName = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : null;
+
+        await supabase.from('septic_order_status_log' as any).insert({
+          shop_id: (await supabase.from('septic_service_orders').select('shop_id').eq('id', serviceOrderId).single()).data?.shop_id,
+          service_order_id: serviceOrderId,
+          previous_status: previousStatus || null,
+          new_status: status,
+          changed_by: userData?.user?.id || null,
+          changed_by_name: profileName || 'System',
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['septic-route-stops'] });
