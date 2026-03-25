@@ -170,7 +170,7 @@ export default function SepticOrderInspectionTab({ orderId, shopId, customerId }
             ) : null}
             <Button
               className="bg-emerald-600 hover:bg-emerald-700"
-              onClick={() => createInspection.mutate()}
+              onClick={() => createInspection.mutate(undefined)}
               disabled={createInspection.isPending}
             >
               {createInspection.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
