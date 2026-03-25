@@ -72,7 +72,7 @@ export default function SepticAssetsTab() {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from('septic_equipment')
-        .select('*, septic_employees(first_name, last_name)')
+        .select('*')
         .eq('shop_id', shopId)
         .order('equipment_name');
       if (error) throw error;
