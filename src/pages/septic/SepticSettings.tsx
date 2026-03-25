@@ -14,6 +14,7 @@ import { ArrowLeft, Settings, Bell, MapPin, Container, DollarSign, Save, Loader2
 import SystemRegulationsTab from '@/components/septic/settings/SystemRegulationsTab';
 import InspectionFormBuilderTab from '@/components/septic/settings/InspectionFormBuilderTab';
 import EmployeeCertDashboard from '@/components/septic/settings/EmployeeCertDashboard';
+import SepticAssetsTab from '@/components/septic/settings/SepticAssetsTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShopId } from '@/hooks/useShopId';
