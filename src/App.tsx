@@ -639,6 +639,7 @@ function App() {
 
   return (
     <>
+      <ChunkErrorBoundary>
       <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public routes - no auth required */}
