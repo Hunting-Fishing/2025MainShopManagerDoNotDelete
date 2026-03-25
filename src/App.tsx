@@ -630,13 +630,6 @@ const ExportConfigHub = lazy(() => import('@/pages/export/hubs/ExportConfigHub')
 import { ExportLayout } from '@/components/export';
 
 function App() {
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem(CHUNK_RETRY_KEY);
-    } catch {
-      // noop
-    }
-  }, []);
 
   return (
     <>
