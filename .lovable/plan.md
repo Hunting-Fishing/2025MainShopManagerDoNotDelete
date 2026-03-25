@@ -1,63 +1,69 @@
 
 
-# Speed Up App Loading — Professional Optimizations
+# Add Assets Tab to Septic Settings
 
-## Current State
+## What We're Building
 
-The app already has good foundations: lazy-loaded routes (~300+), manual chunk splitting, and code-splitting. But several areas can be significantly improved.
+A new "Assets" tab in Septic Settings where management can register and manage all company equipment (vehicles, forklifts, skidsteers, boom trucks, telehandlers, compactors, etc.) with photos, serial numbers, purchase details, manuals, and assignment capability.
 
-## Key Bottlenecks Identified
+## Database Changes
 
-1. **Index page is statically imported** — it's the only non-lazy page, pulling in 7 category images, multiple landing components, `useAuthUser`, and keyword search logic into the initial bundle
-2. **Google Fonts loaded via render-blocking `<link>`** — two font families (Inter + Space Grotesk) block first paint
-3. **Duplicate cache/SW cleanup runs on every load** — the `index.html` inline script clears caches and unregisters service workers on every single page load, adding unnecessary startup work (main.tsx already handles this for preview domains)
-4. **Three font systems loaded** — Plus Jakarta Sans (via npm), Inter + Space Grotesk (via Google Fonts) — likely only one or two are actually used
-5. **No resource hints** — no `<link rel="preload">` for critical assets like the logo or main CSS
+### Migration: Extend `septic_equipment` table
 
-## Plan
+Add missing columns to the existing `septic_equipment` table:
 
-### 1. Lazy-load the Index page
+```sql
+ALTER TABLE public.septic_equipment
+  ADD COLUMN IF NOT EXISTS profile_image_url TEXT,
+  ADD COLUMN IF NOT EXISTS photos JSONB DEFAULT '[]',
+  ADD COLUMN IF NOT EXISTS manual_urls JSONB DEFAULT '[]',
+  ADD COLUMN IF NOT EXISTS warranty_expiry DATE,
+  ADD COLUMN IF NOT EXISTS warranty_status TEXT DEFAULT 'unknown',
+  ADD COLUMN IF NOT EXISTS year INTEGER,
+  ADD COLUMN IF NOT EXISTS vin_number TEXT,
+  ADD COLUMN IF NOT EXISTS plate_number TEXT,
+  ADD COLUMN IF NOT EXISTS category TEXT,
+  ADD COLUMN IF NOT EXISTS assigned_employee_id UUID REFERENCES public.septic_employees(id),
+  ADD COLUMN IF NOT EXISTS current_hours NUMERIC,
+  ADD COLUMN IF NOT EXISTS current_mileage NUMERIC;
+```
 
-Change `Index` from a static import to `React.lazy()` like all other pages. This removes ~7 images + landing components + search logic from the critical initial bundle.
+This keeps the septic-scoped architecture while adding the rich fields needed for full asset management (photos, manuals, warranty, assignment to employees).
 
-**File**: `src/App.tsx` — Change line 11 from static import to lazy import.
+## Frontend Changes
 
-### 2. Preload Google Fonts (non-blocking)
+### 1. New component: `SepticAssetsTab.tsx`
 
-Change the Google Fonts `<link>` from render-blocking to async loading using the `media="print" onload` pattern or `rel="preload"`.
+Location: `src/components/septic/settings/SepticAssetsTab.tsx`
 
-**File**: `index.html` — Update the fonts link tag to load asynchronously.
+Features:
+- **Equipment list** — table/card grid showing all `septic_equipment` records for the shop, with status badges, photos, and type labels
+- **Add Equipment dialog** — form with fields: name, type (dropdown: Vehicle, Forklift, Skidsteer, Boom Truck, Telehandler, Compactor, Pump, Camera, Other), serial number, manufacturer, model, year, VIN, plate number, purchase date, purchase price, warranty expiry, notes
+- **Photo upload** — profile image + additional photos using Supabase Storage (reuse existing `septic-files` or create `septic-equipment-photos` bucket)
+- **Manual links** — ability to attach PDF/URL links to manuals
+- **Edit/Delete** — inline edit and delete actions per equipment item
+- **Status management** — available, in_use, maintenance, retired
+- **Employee assignment** — dropdown to assign equipment to a `septic_employee`, linking to driver/staff pages
 
-### 3. Remove duplicate cache cleanup from index.html
+### 2. Update `SepticSettings.tsx`
 
-The inline script (lines 49-65) that clears caches, unregisters SW, and removes localStorage items runs on **every page load** unnecessarily. `main.tsx` already handles SW/cache cleanup for preview domains. Remove this redundant script.
+- Add "Assets" tab trigger (with `Wrench` or `HardHat` icon) to the TabsList
+- Add `TabsContent value="assets"` rendering the new `SepticAssetsTab` component
+- Support `?tab=assets` URL param
 
-**File**: `index.html` — Remove the inline cache-clearing script block.
+### 3. Update `SepticDrivers.tsx` and `SepticStaff` (future linkage)
 
-### 4. Add resource preloads for critical assets
+The `assigned_employee_id` column enables the Drivers page and Employee detail to show which equipment is assigned to each person. This linkage is set up in the schema now; UI display on driver/employee pages can be added as a follow-up.
 
-Add `<link rel="preload">` for the company logo and critical fonts to start downloading them earlier.
-
-**File**: `index.html` — Add preload hints.
-
-### 5. Lazy-load below-fold landing sections
-
-Wrap `TestimonialsSection`, `PricingSection`, and `FeatureGrid` in lazy imports within `Index.tsx` so they only load when scrolled into view (or after initial render).
-
-**File**: `src/pages/Index.tsx` — Lazy-load heavy below-fold sections.
-
-## Files to Modify
+## Files to Create/Modify
 
 | File | Change |
 |---|---|
-| `src/App.tsx` | Lazy-load Index page |
-| `index.html` | Async fonts, remove duplicate cache script, add preloads |
-| `src/pages/Index.tsx` | Lazy-load below-fold sections |
+| Migration SQL | Add columns to `septic_equipment` |
+| `src/components/septic/settings/SepticAssetsTab.tsx` | New component — full CRUD for equipment assets |
+| `src/pages/septic/SepticSettings.tsx` | Add "Assets" tab trigger + content |
 
-## Expected Impact
+## Equipment Types Supported
 
-- **Smaller initial JS bundle** — Index page + images no longer in critical path
-- **Faster first paint** — non-blocking fonts, preloaded critical assets
-- **Less startup overhead** — no redundant cache clearing on every load
-- **Progressive loading** — below-fold content loads on demand
+Vehicle, Forklift, Skidsteer, Boom Truck, Telehandler, Compactor, Pump, Jetter, Camera, Locator, Hose, Trailer, Generator, Other
 
