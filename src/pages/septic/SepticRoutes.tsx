@@ -749,7 +749,13 @@ export default function SepticRoutes() {
                                         value={stop.status}
                                         onValueChange={(val) => {
                                           const original = routeStops.find(rs => rs.id === stop.id);
-                                          if (original) updateStopStatus.mutate({ stopId: stop.id, status: val });
+                                          if (original) updateStopStatus.mutate({
+                                            stopId: stop.id,
+                                            status: val,
+                                            previousStatus: stop.status,
+                                            serviceOrderId: stop.septic_service_orders?.id || null,
+                                          });
+                                        }}
                                         }}
                                       >
                                         <SelectTrigger className="h-7 text-xs w-[110px]">
