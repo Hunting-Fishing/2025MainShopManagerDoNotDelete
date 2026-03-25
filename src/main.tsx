@@ -40,23 +40,8 @@ if (!rootElement) throw new Error('Root element not found');
 
 const CHUNK_RELOAD_GUARD_KEY = '__ab365_chunk_reload_once__';
 
-const showBootFallback = (message: string) => {
-  if (typeof document === 'undefined') return;
-
-  const fallback = document.getElementById('boot-fallback') as HTMLElement | null;
-  if (!fallback) return;
-
-  const messageEl = fallback.querySelector('p') as HTMLElement | null;
-  if (messageEl) {
-    messageEl.textContent = message;
-  }
-
-  fallback.style.display = 'flex';
-};
-
 const isChunkLoadFailure = (message?: string) => {
   if (!message) return false;
-
   return (
     message.includes('ChunkLoadError') ||
     message.includes('Failed to fetch dynamically imported module') ||
@@ -67,7 +52,6 @@ const isChunkLoadFailure = (message?: string) => {
 const tryChunkRecoveryReload = () => {
   try {
     const hasRetried = sessionStorage.getItem(CHUNK_RELOAD_GUARD_KEY) === '1';
-
     if (!hasRetried) {
       sessionStorage.setItem(CHUNK_RELOAD_GUARD_KEY, '1');
       window.location.reload();
@@ -77,8 +61,6 @@ const tryChunkRecoveryReload = () => {
     window.location.reload();
     return true;
   }
-
-  showBootFallback('Loading failed. Try Reload or Clear Cache.');
   return false;
 };
 
