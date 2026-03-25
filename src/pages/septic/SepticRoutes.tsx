@@ -756,7 +756,6 @@ export default function SepticRoutes() {
                                             serviceOrderId: stop.septic_service_orders?.id || null,
                                           });
                                         }}
-                                        }}
                                       >
                                         <SelectTrigger className="h-7 text-xs w-[110px]">
                                           <SelectValue />
