@@ -1,64 +1,63 @@
 
 
-# Add Company Logo to All Required Pages
+# Speed Up App Loading — Professional Optimizations
 
-## What We're Doing
+## Current State
 
-Replace the placeholder Wrench icon and shadcn avatar with the actual All Business 365 logo across all pages where branding appears.
+The app already has good foundations: lazy-loaded routes (~300+), manual chunk splitting, and code-splitting. But several areas can be significantly improved.
 
-## Steps
+## Key Bottlenecks Identified
 
-### 1. Copy the uploaded logo into the project
+1. **Index page is statically imported** — it's the only non-lazy page, pulling in 7 category images, multiple landing components, `useAuthUser`, and keyword search logic into the initial bundle
+2. **Google Fonts loaded via render-blocking `<link>`** — two font families (Inter + Space Grotesk) block first paint
+3. **Duplicate cache/SW cleanup runs on every load** — the `index.html` inline script clears caches and unregisters service workers on every single page load, adding unnecessary startup work (main.tsx already handles this for preview domains)
+4. **Three font systems loaded** — Plus Jakarta Sans (via npm), Inter + Space Grotesk (via Google Fonts) — likely only one or two are actually used
+5. **No resource hints** — no `<link rel="preload">` for critical assets like the logo or main CSS
 
-Copy `user-uploads://All_Business_365_Logo.png` to `public/images/ab365-logo.png` (public folder for broad access including HTML, manifest, and components) and also to `src/assets/ab365-logo.png` for ES module imports in React components.
+## Plan
 
-### 2. Update `PublicLayout.tsx` — Header and Footer
+### 1. Lazy-load the Index page
 
-Replace the Wrench icon in both the header logo area and footer with an `<img>` tag using the logo. Remove the `Wrench` import if no longer needed.
+Change `Index` from a static import to `React.lazy()` like all other pages. This removes ~7 images + landing components + search logic from the critical initial bundle.
 
-### 3. Update `Login.tsx` — Two logo instances
+**File**: `src/App.tsx` — Change line 11 from static import to lazy import.
 
-Replace the Wrench icon (lines 126 and 191) with the logo image in both the "Already Signed In" card and the main login form.
+### 2. Preload Google Fonts (non-blocking)
 
-### 4. Update `Signup.tsx` — Two logo instances
+Change the Google Fonts `<link>` from render-blocking to async loading using the `media="print" onload` pattern or `rel="preload"`.
 
-Replace the Wrench icon (lines 160 and 215) with the logo image in both the "Already Signed In" card and the main signup form.
+**File**: `index.html` — Update the fonts link tag to load asynchronously.
 
-### 5. Update `ResetPassword.tsx` — One instance
+### 3. Remove duplicate cache cleanup from index.html
 
-Replace the Wrench icon (line 172) with the logo image.
+The inline script (lines 49-65) that clears caches, unregisters SW, and removes localStorage items runs on **every page load** unnecessarily. `main.tsx` already handles SW/cache cleanup for preview domains. Remove this redundant script.
 
-### 6. Update `About.tsx` — One instance
+**File**: `index.html` — Remove the inline cache-clearing script block.
 
-Replace the Wrench icon (line 14) with the logo image.
+### 4. Add resource preloads for critical assets
 
-### 7. Update `SidebarLogo.tsx` — Default fallback
+Add `<link rel="preload">` for the company logo and critical fonts to start downloading them earlier.
 
-Replace the shadcn.png fallback (`https://github.com/shadcn.png`) with the AB365 logo as the default when no custom company logo is set.
+**File**: `index.html` — Add preload hints.
 
-### 8. Update `HeroSection.tsx` — Remove Wrench import if unused
+### 5. Lazy-load below-fold landing sections
 
-Clean up unused Wrench import after logo replacement (Wrench is imported but may not be used as a logo here — will verify).
+Wrap `TestimonialsSection`, `PricingSection`, and `FeatureGrid` in lazy imports within `Index.tsx` so they only load when scrolled into view (or after initial render).
 
-### 9. Update `index.html` — Boot fallback branding
-
-Replace any text-only branding in the boot fallback div with the logo image (`/images/ab365-logo.png`).
-
-### 10. Update `manifest.json` icons (optional)
-
-Note: The manifest references `icon-192.png` and `icon-512.png` which should ideally be updated to match the new logo, but that requires properly sized/masked versions of the logo.
+**File**: `src/pages/Index.tsx` — Lazy-load heavy below-fold sections.
 
 ## Files to Modify
 
 | File | Change |
 |---|---|
-| `public/images/ab365-logo.png` | Copy logo asset |
-| `src/assets/ab365-logo.png` | Copy logo asset for imports |
-| `src/components/layout/PublicLayout.tsx` | Replace Wrench with logo img |
-| `src/pages/Login.tsx` | Replace 2x Wrench with logo |
-| `src/pages/Signup.tsx` | Replace 2x Wrench with logo |
-| `src/pages/ResetPassword.tsx` | Replace Wrench with logo |
-| `src/pages/About.tsx` | Replace Wrench with logo |
-| `src/components/layout/sidebar/SidebarLogo.tsx` | Replace shadcn fallback |
-| `index.html` | Add logo to boot fallback |
+| `src/App.tsx` | Lazy-load Index page |
+| `index.html` | Async fonts, remove duplicate cache script, add preloads |
+| `src/pages/Index.tsx` | Lazy-load below-fold sections |
+
+## Expected Impact
+
+- **Smaller initial JS bundle** — Index page + images no longer in critical path
+- **Faster first paint** — non-blocking fonts, preloaded critical assets
+- **Less startup overhead** — no redundant cache clearing on every load
+- **Progressive loading** — below-fold content loads on demand
 
