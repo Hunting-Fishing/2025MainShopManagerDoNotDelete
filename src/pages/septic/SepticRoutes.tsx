@@ -753,7 +753,7 @@ export default function SepticRoutes() {
                                             stopId: stop.id,
                                             status: val,
                                             previousStatus: stop.status,
-                                            serviceOrderId: stop.septic_service_orders?.id || null,
+                                            serviceOrderId: stop.service_order_id || null,
                                           });
                                         }}
                                       >
