@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { I18nextProvider } from 'react-i18next';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { ConsoleErrorLogger } from '@/components/debug/ConsoleErrorLogger';
 import { GlobalErrorBoundary } from '@/components/error/GlobalErrorBoundary';
 import i18n from './i18n/config';
@@ -50,6 +51,7 @@ const normalizeIndexRoute = () => {
 normalizeIndexRoute();
 
 const CHUNK_RELOAD_GUARD_KEY = '__ab365_chunk_reload_once__';
+const CHUNK_RELOAD_COOLDOWN_MS = 10000; // 10 seconds between reload attempts
 
 const isChunkLoadFailure = (message?: string) => {
   if (!message) return false;
@@ -62,13 +64,16 @@ const isChunkLoadFailure = (message?: string) => {
 
 const tryChunkRecoveryReload = () => {
   try {
-    const hasRetried = sessionStorage.getItem(CHUNK_RELOAD_GUARD_KEY) === '1';
-    if (!hasRetried) {
-      sessionStorage.setItem(CHUNK_RELOAD_GUARD_KEY, '1');
+    const lastReload = sessionStorage.getItem(CHUNK_RELOAD_GUARD_KEY);
+    const now = Date.now();
+    // Only reload if we haven't reloaded in the last 10 seconds
+    if (!lastReload || (now - parseInt(lastReload, 10)) > CHUNK_RELOAD_COOLDOWN_MS) {
+      sessionStorage.setItem(CHUNK_RELOAD_GUARD_KEY, String(now));
       window.location.reload();
       return true;
     }
   } catch {
+    // If sessionStorage fails, just reload once
     window.location.reload();
     return true;
   }
@@ -122,25 +127,18 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 const AppWithBootReady: React.FC = () => {
-  React.useEffect(() => {
-    try {
-      sessionStorage.removeItem(CHUNK_RELOAD_GUARD_KEY);
-    } catch {
-      // noop
-    }
-
-  }, []);
-
   return (
     <GlobalErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
           <I18nextProvider i18n={i18n}>
             <LanguageProvider>
-              <BrowserRouter>
-                <ConsoleErrorLogger />
-                <App />
-              </BrowserRouter>
+              <AuthProvider>
+                <BrowserRouter>
+                  <ConsoleErrorLogger />
+                  <App />
+                </BrowserRouter>
+              </AuthProvider>
             </LanguageProvider>
           </I18nextProvider>
         </QueryClientProvider>
