@@ -262,7 +262,7 @@ export default function InspectionFormBuilderTab() {
           name: BC_DEFAULT_TEMPLATE.name,
           description: BC_DEFAULT_TEMPLATE.description,
           asset_type: 'septic_system',
-          is_published: false,
+          is_published: true,
           version: 1,
           created_by: user.user?.id || null,
         })
@@ -311,6 +311,15 @@ export default function InspectionFormBuilderTab() {
     onError: (e) => { console.error(e); toast.error('Failed to load default'); },
   });
 
+  // Auto-seed BC default when shop has zero templates
+  const [autoSeeded, setAutoSeeded] = React.useState(false);
+  React.useEffect(() => {
+    if (templates && templates.length === 0 && !autoSeeded && !loadDefault.isPending && shopId) {
+      setAutoSeeded(true);
+      loadDefault.mutate();
+    }
+  }, [templates, autoSeeded, shopId]);
+
   // Show editor
   if (editingTemplateId || isCreating) {
     return (
@@ -350,15 +359,6 @@ export default function InspectionFormBuilderTab() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadDefault.mutate()}
-                disabled={loadDefault.isPending}
-              >
-                {loadDefault.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
-                Load BC Default
-              </Button>
               <Button
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700"
