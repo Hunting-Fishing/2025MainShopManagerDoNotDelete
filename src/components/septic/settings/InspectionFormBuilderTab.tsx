@@ -368,14 +368,6 @@ export default function InspectionFormBuilderTab() {
                 New Form
               </Button>
             </div>
-                size="sm"
-                className="bg-emerald-600 hover:bg-emerald-700"
-                onClick={() => setIsCreating(true)}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                New Form
-              </Button>
-            </div>
           </div>
         </CardHeader>
         <CardContent>
