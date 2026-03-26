@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Camera, Video, StickyNote, Printer } from 'lucide-react';
+import { Camera, Video, StickyNote, Printer, X } from 'lucide-react';
 import { CompactSignaturePad } from '@/components/signature';
 
 const ROW_COLORS = [
@@ -35,6 +35,7 @@ interface FormValues {
   [itemId: string]: {
     value: string | boolean | number | null;
     notes?: string;
+    photos?: string[];
   };
 }
 
@@ -75,11 +76,13 @@ export default function SepticInspectionFormTemplate({
     assignedTo: '',
     signedBy: null,
   });
+  const [openNotes, setOpenNotes] = useState<Set<string>>(new Set());
+  const [openPhotos, setOpenPhotos] = useState<Set<string>>(new Set());
 
   const values = externalValues ?? internalValues;
   const header = externalHeader ?? internalHeader;
 
-  const updateValue = (itemId: string, field: 'value' | 'notes', val: any) => {
+  const updateValue = (itemId: string, field: 'value' | 'notes' | 'photos', val: any) => {
     const next = {
       ...values,
       [itemId]: { ...values[itemId], [field]: val },
@@ -92,6 +95,45 @@ export default function SepticInspectionFormTemplate({
     const next = { ...header, [field]: val };
     if (onHeaderChange) onHeaderChange(next);
     else setInternalHeader(next);
+  };
+
+  const toggleNotes = (itemId: string) => {
+    setOpenNotes(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
+
+  const togglePhotos = (itemId: string) => {
+    setOpenPhotos(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
+
+  const handlePhotoUpload = (itemId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (ev.target?.result) {
+        const existing = values[itemId]?.photos || [];
+        updateValue(itemId, 'photos', [...existing, ev.target.result as string]);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const removePhoto = (itemId: string, index: number) => {
+    const existing = values[itemId]?.photos || [];
+    const next = [...existing];
+    next.splice(index, 1);
+    updateValue(itemId, 'photos', next);
   };
 
   // Calculate checklist score
@@ -143,6 +185,9 @@ export default function SepticInspectionFormTemplate({
     const colorClass = ROW_COLORS[index % ROW_COLORS.length];
     const currentValue = values[item.id]?.value;
     const currentNotes = values[item.id]?.notes || '';
+    const currentPhotos = values[item.id]?.photos || [];
+    const notesOpen = openNotes.has(item.id) || !!currentNotes;
+    const photosOpen = openPhotos.has(item.id) || currentPhotos.length > 0;
 
     return (
       <div key={item.id} className={`${colorClass} border-b border-border/40 print:border-gray-300`}>
@@ -233,12 +278,32 @@ export default function SepticInspectionFormTemplate({
             </div>
           )}
 
-          {/* Attachment indicators */}
+          {/* Interactive action buttons */}
           <div className="flex gap-1 ml-1 print:hidden">
-            {item.allows_notes && (
+            {item.allows_notes && interactive && (
+              <button
+                type="button"
+                onClick={() => toggleNotes(item.id)}
+                className={`p-1 rounded transition-colors ${notesOpen ? 'bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200' : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted'}`}
+                title="Add notes"
+              >
+                <StickyNote className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {item.allows_notes && !interactive && (
               <StickyNote className="h-3.5 w-3.5 text-muted-foreground/50" />
             )}
-            {item.allows_photos && (
+            {item.allows_photos && interactive && (
+              <button
+                type="button"
+                onClick={() => togglePhotos(item.id)}
+                className={`p-1 rounded transition-colors ${photosOpen ? 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200' : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted'}`}
+                title="Add photo"
+              >
+                <Camera className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {item.allows_photos && !interactive && (
               <Camera className="h-3.5 w-3.5 text-muted-foreground/50" />
             )}
             {item.allows_videos && (
@@ -248,14 +313,71 @@ export default function SepticInspectionFormTemplate({
         </div>
 
         {/* Expandable notes row */}
-        {interactive && item.allows_notes && (
+        {item.allows_notes && notesOpen && (
           <div className="px-4 pb-2">
             <Input
               value={currentNotes}
               onChange={e => updateValue(item.id, 'notes', e.target.value)}
               placeholder="Add notes..."
+              disabled={!interactive}
               className="h-7 text-xs bg-white/60 dark:bg-card/60"
             />
+          </div>
+        )}
+
+        {/* Expandable photos row */}
+        {item.allows_photos && photosOpen && (
+          <div className="px-4 pb-2 space-y-2">
+            {currentPhotos.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {currentPhotos.map((photo: string, idx: number) => (
+                  <div key={idx} className="relative w-16 h-16 rounded overflow-hidden border border-border">
+                    <img src={photo} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                    {interactive && (
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(item.id, idx)}
+                        className="absolute top-0 right-0 bg-destructive text-destructive-foreground rounded-bl p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {interactive && (
+              <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
+                <label className="cursor-pointer">
+                  <Camera className="h-3 w-3 mr-1" />
+                  {currentPhotos.length > 0 ? 'Add another photo' : 'Take / upload photo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="sr-only"
+                    onChange={(e) => handlePhotoUpload(item.id, e)}
+                  />
+                </label>
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Show saved notes in read-only mode */}
+        {!interactive && currentNotes && (
+          <div className="px-4 pb-2">
+            <p className="text-xs text-muted-foreground italic">📝 {currentNotes}</p>
+          </div>
+        )}
+        {/* Show saved photos in read-only mode */}
+        {!interactive && currentPhotos.length > 0 && (
+          <div className="px-4 pb-2 flex flex-wrap gap-2">
+            {currentPhotos.map((photo: string, idx: number) => (
+              <div key={idx} className="w-16 h-16 rounded overflow-hidden border border-border">
+                <img src={photo} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+              </div>
+            ))}
           </div>
         )}
       </div>
