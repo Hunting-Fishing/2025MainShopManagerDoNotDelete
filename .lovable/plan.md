@@ -1,30 +1,59 @@
 
 
-# Fix Inspection Tab — Schema Mismatch & Missing Templates
+# Fix: Inspection Forms Should Use Template Styles & Save to Customer Record
 
-## Problems Found
+## Problem
 
-1. **`customer_id` error**: The `septic_inspections` table has no `customer_id` column. The insert payload on line 74 of `SepticOrderInspectionTab.tsx` includes `customer_id: customerId`, which Supabase rejects.
-2. **No templates showing**: All 3 inspection templates in the database are set to `is_published: false`. The dropdown only queries for published templates, so it finds none and hides the selector entirely.
+When a user selects an inspection template in the service order's Inspection tab, `SepticInspectionFormCard` renders a **generic form** (condition dropdowns, text areas) — it completely ignores the template structure. The actual styled form (`SepticInspectionFormTemplate`) with purple headers, colored rows, pass/fail/GYR buttons, signature pad, and score tracking is only used in Settings preview and the standalone `/septic/inspection-form/:templateId` page.
 
-## Fixes
+Additionally, completed inspections are not saved/copied to the customer's record for historical reference.
 
-### 1. Remove `customer_id` from insert payload
-**File:** `src/components/septic/orders/SepticOrderInspectionTab.tsx`
-- Remove `customer_id: customerId` from the `createInspection` mutation payload (line 74)
-- The service order already links to the customer via `septic_service_orders`, so the relationship is preserved
+## Solution
 
-### 2. Show all templates (not just published)
-**File:** `src/components/septic/orders/SepticOrderInspectionTab.tsx`
-- Change the templates query to fetch all templates (remove `.eq('is_published', true)` filter), or fetch both published and draft templates with a label distinction
-- This ensures the existing templates appear in the dropdown immediately
+### 1. Replace generic form with real template renderer when `template_id` is present
 
-### 3. Optionally: publish the existing templates via data update
-- Update the 3 existing templates to `is_published: true` so they appear even with the current filter
+**File: `SepticInspectionFormCard.tsx`** — Major rewrite
+
+- When the inspection has a `template_id`, fetch the template sections and items (same query pattern used in `InspectionFormPreview.tsx`)
+- Render `SepticInspectionFormTemplate` with `interactive={true}` instead of the generic condition dropdowns
+- Keep the generic card as fallback for blank inspections (no template)
+- Wire `onValuesChange` to persist `inspection_data` JSONB field on the `septic_inspections` record
+- Wire `onHeaderChange` to persist header values (location, date, inspector name, signature)
+
+### 2. Add "Complete & Save to Customer" action
+
+**File: `SepticInspectionFormCard.tsx`**
+
+- Add a "Complete Inspection" button that:
+  - Sets `departed_at` timestamp on the inspection
+  - Marks overall status based on form responses
+  - Saves a snapshot of the completed inspection data (already in `inspection_data` JSONB)
+- The inspection is already linked to the service order which links to the customer, so no additional copy table is needed — just ensure the data is fully persisted and the inspection is marked complete
+
+**File: `SepticOrderInspectionTab.tsx`**
+
+- Show a "Completed" badge on inspections that have `departed_at` set
+- Prevent editing on completed inspections (`interactive={false}`)
+
+### 3. Load saved form values on re-open
+
+When expanding a previously saved inspection that has `inspection_data`, initialize the `SepticInspectionFormTemplate` values from that stored JSONB so work is preserved across sessions.
 
 ## Files to Modify
 
 | File | Change |
 |---|---|
-| `src/components/septic/orders/SepticOrderInspectionTab.tsx` | Remove `customer_id` from insert; show all templates in selector |
+| `src/components/septic/orders/SepticInspectionFormCard.tsx` | Fetch template sections when `template_id` exists; render `SepticInspectionFormTemplate` with interactive mode; auto-save values to `inspection_data`; add Complete button |
+| `src/components/septic/orders/SepticOrderInspectionTab.tsx` | Show completed badge; disable editing on completed inspections |
+
+## How It Works
+
+```text
+User selects template → Creates inspection record with template_id
+                       → Expands card
+                       → Fetches template sections/items
+                       → Renders SepticInspectionFormTemplate (purple headers, colored rows, pass/fail)
+                       → Changes auto-save to inspection_data JSONB
+                       → "Complete Inspection" locks it and sets departed_at
+```
 
