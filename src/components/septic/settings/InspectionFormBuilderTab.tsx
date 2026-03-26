@@ -360,15 +360,14 @@ export default function InspectionFormBuilderTab() {
             </div>
             <div className="flex gap-2">
               <Button
-                variant="outline"
                 size="sm"
-                onClick={() => loadDefault.mutate()}
-                disabled={loadDefault.isPending}
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => setIsCreating(true)}
               >
-                {loadDefault.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
-                Load BC Default
+                <Plus className="h-4 w-4 mr-1" />
+                New Form
               </Button>
-              <Button
+            </div>
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700"
                 onClick={() => setIsCreating(true)}
