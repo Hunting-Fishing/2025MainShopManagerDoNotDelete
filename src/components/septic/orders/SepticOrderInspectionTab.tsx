@@ -208,20 +208,15 @@ export default function SepticOrderInspectionTab({ orderId, shopId, customerId }
                   )}
                 </p>
               </div>
-              <Badge
-                variant="secondary"
-                className={
-                  insp.overall_condition === 'good'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                    : insp.overall_condition === 'fair'
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    : insp.overall_condition === 'poor'
-                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                    : 'bg-muted text-muted-foreground'
-                }
-              >
-                {insp.overall_condition || 'N/A'}
-              </Badge>
+              {insp.departed_at ? (
+                <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  ✅ Completed
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground">
+                  In Progress
+                </Badge>
+              )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -259,6 +254,7 @@ export default function SepticOrderInspectionTab({ orderId, shopId, customerId }
                 <SepticInspectionFormCard
                   inspection={insp}
                   orderId={orderId}
+                  isCompleted={!!insp.departed_at}
                 />
               </div>
             )}
