@@ -71,7 +71,7 @@ export default function SepticOrderInspectionTab({ orderId, shopId, customerId }
       const payload: any = {
         shop_id: shopId,
         service_order_id: orderId,
-        customer_id: customerId,
+        
         inspection_date: new Date().toISOString().split('T')[0],
         inspector_name: '',
         overall_condition: 'good',
