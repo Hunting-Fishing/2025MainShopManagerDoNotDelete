@@ -254,6 +254,7 @@ export default function SepticOrderInspectionTab({ orderId, shopId, customerId }
                 <SepticInspectionFormCard
                   inspection={insp}
                   orderId={orderId}
+                  isCompleted={!!insp.departed_at}
                 />
               </div>
             )}
