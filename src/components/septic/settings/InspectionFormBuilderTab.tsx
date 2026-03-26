@@ -262,7 +262,7 @@ export default function InspectionFormBuilderTab() {
           name: BC_DEFAULT_TEMPLATE.name,
           description: BC_DEFAULT_TEMPLATE.description,
           asset_type: 'septic_system',
-          is_published: false,
+          is_published: true,
           version: 1,
           created_by: user.user?.id || null,
         })
@@ -310,6 +310,15 @@ export default function InspectionFormBuilderTab() {
     },
     onError: (e) => { console.error(e); toast.error('Failed to load default'); },
   });
+
+  // Auto-seed BC default when shop has zero templates
+  const [autoSeeded, setAutoSeeded] = React.useState(false);
+  React.useEffect(() => {
+    if (templates && templates.length === 0 && !autoSeeded && !loadDefault.isPending && shopId) {
+      setAutoSeeded(true);
+      loadDefault.mutate();
+    }
+  }, [templates, autoSeeded, shopId]);
 
   // Show editor
   if (editingTemplateId || isCreating) {
