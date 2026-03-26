@@ -58,7 +58,7 @@ export default function SepticOrderInspectionTab({ orderId, shopId, customerId }
       const { data, error } = await supabase
         .from('septic_inspection_templates')
         .select('id, name')
-        .eq('is_published', true)
+        
         .order('name');
       if (error) throw error;
       return data || [];
