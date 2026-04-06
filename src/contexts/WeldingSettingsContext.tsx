@@ -100,9 +100,17 @@ export const useWeldingSettings = () => useContext(WeldingSettingsContext);
 export const WeldingSettingsProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<WeldingSettings>(defaults);
   const [loading, setLoading] = useState(true);
-  const { shopId } = useAuthUser();
+  const { userId, isAuthenticated } = useAuthUser();
 
-  const load = async () => {
+  const load = useCallback(async () => {
+    if (!userId || !isAuthenticated) { setLoading(false); return; }
+    // Get shop_id from profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("shop_id")
+      .or(`id.eq.${userId},user_id.eq.${userId}`)
+      .maybeSingle();
+    const shopId = profile?.shop_id;
     if (!shopId) { setLoading(false); return; }
     const { data } = await supabase
       .from("welding_company_settings" as any)
