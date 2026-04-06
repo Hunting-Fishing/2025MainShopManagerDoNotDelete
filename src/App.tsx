@@ -1799,7 +1799,35 @@ function App() {
         <Route path="/pt-portal/register" element={<PTPortalRegister />} />
         <Route path="/pt-portal/dashboard" element={<PTPortalDashboard />} />
 
-        {/* Septic Services Module */}
+        {/* Welding Module */}
+        <Route
+          path="/welding/*"
+          element={
+            <AuthGate>
+              <AuthenticatedProviders>
+              <WeldingSettingsProvider>
+                <Routes>
+                  <Route path="/" element={<WeldingAdminOverview />} />
+                  <Route path="/quotes" element={<WeldingAdminQuotes />} />
+                  <Route path="/invoices" element={<WeldingAdminInvoices />} />
+                  <Route path="/inventory" element={<WeldingAdminInventory />} />
+                  <Route path="/customers" element={<WeldingAdminCustomers />} />
+                  <Route path="/payments-due" element={<WeldingAdminPaymentsDue />} />
+                  <Route path="/accounts-payable" element={<WeldingAdminAccountsPayable />} />
+                  <Route path="/purchase-orders" element={<WeldingAdminPurchaseOrders />} />
+                  <Route path="/messages" element={<WeldingAdminMessages />} />
+                  <Route path="/calendar" element={<WeldingAdminCalendar />} />
+                  <Route path="/sales" element={<WeldingAdminSales />} />
+                  <Route path="/links" element={<WeldingAdminLinks />} />
+                  <Route path="/gallery" element={<WeldingAdminGallery />} />
+                  <Route path="/settings" element={<WeldingAdminSettings />} />
+                </Routes>
+              </WeldingSettingsProvider>
+              </AuthenticatedProviders>
+            </AuthGate>
+          }
+        />
+
         <Route
           path="/septic/*"
           element={
