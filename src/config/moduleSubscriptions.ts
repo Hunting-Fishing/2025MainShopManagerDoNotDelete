@@ -207,6 +207,26 @@ export const MODULE_CONFIGS: Record<string, ModuleConfig> = {
       },
     },
   },
+  game_development: {
+    slug: 'game_development',
+    name: 'Game Development',
+    description: 'Complete game design planning and production management',
+    icon: 'Gamepad2',
+    tiers: {
+      starter: {
+        productId: 'prod_game_dev_starter',
+        priceId: 'price_game_dev_starter',
+      },
+      pro: {
+        productId: 'prod_game_dev_pro',
+        priceId: 'price_game_dev_pro',
+      },
+      business: {
+        productId: 'prod_game_dev_business',
+        priceId: 'price_game_dev_business',
+      },
+    },
+  },
 };
 
 // Multi-module discount: 20% off each additional module
