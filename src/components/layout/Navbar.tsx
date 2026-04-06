@@ -156,6 +156,17 @@ const navigationCategories = [
     ]
   },
   {
+    title: 'Welding',
+    items: [
+      { name: 'Dashboard', href: '/welding', requiredPath: '/welding' },
+      { name: 'Quotes', href: '/welding/quotes', requiredPath: '/welding/quotes' },
+      { name: 'Invoices', href: '/welding/invoices', requiredPath: '/welding/invoices' },
+      { name: 'Inventory', href: '/welding/inventory', requiredPath: '/welding/inventory' },
+      { name: 'Customers', href: '/welding/customers', requiredPath: '/welding/customers' },
+      { name: 'Calendar', href: '/welding/calendar', requiredPath: '/welding/calendar' },
+    ]
+  },
+  {
     title: 'Reports',
     items: [
       { name: 'Reports', href: '/reports', requiredPath: '/reports' },

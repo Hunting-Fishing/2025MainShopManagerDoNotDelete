@@ -499,6 +499,23 @@ const PersonalTrainerSupplements = lazy(() => import('@/pages/personal-trainer/P
 const PersonalTrainerAbout = lazy(() => import('@/pages/personal-trainer/PersonalTrainerAbout'));
 import { PersonalTrainerLayout } from '@/components/personal-trainer';
 
+// Welding Module
+const WeldingAdminOverview = lazy(() => import('@/pages/welding/WeldingAdminOverview'));
+const WeldingAdminQuotes = lazy(() => import('@/pages/welding/WeldingAdminQuotes'));
+const WeldingAdminInvoices = lazy(() => import('@/pages/welding/WeldingAdminInvoices'));
+const WeldingAdminInventory = lazy(() => import('@/pages/welding/WeldingAdminInventory'));
+const WeldingAdminCustomers = lazy(() => import('@/pages/welding/WeldingAdminCustomers'));
+const WeldingAdminPaymentsDue = lazy(() => import('@/pages/welding/WeldingAdminPaymentsDue'));
+const WeldingAdminAccountsPayable = lazy(() => import('@/pages/welding/WeldingAdminAccountsPayable'));
+const WeldingAdminPurchaseOrders = lazy(() => import('@/pages/welding/WeldingAdminPurchaseOrders'));
+const WeldingAdminMessages = lazy(() => import('@/pages/welding/WeldingAdminMessages'));
+const WeldingAdminCalendar = lazy(() => import('@/pages/welding/WeldingAdminCalendar'));
+const WeldingAdminSales = lazy(() => import('@/pages/welding/WeldingAdminSales'));
+const WeldingAdminLinks = lazy(() => import('@/pages/welding/WeldingAdminLinks'));
+const WeldingAdminGallery = lazy(() => import('@/pages/welding/WeldingAdminGallery'));
+const WeldingAdminSettings = lazy(() => import('@/pages/welding/WeldingAdminSettings'));
+import { WeldingSettingsProvider } from '@/contexts/WeldingSettingsContext';
+
 // Personal Trainer Portal
 const PTPortalLanding = lazy(() => import('@/pages/pt-portal/PTPortalLanding'));
 const PTPortalLogin = lazy(() => import('@/pages/pt-portal/PTPortalLogin'));
@@ -1782,7 +1799,35 @@ function App() {
         <Route path="/pt-portal/register" element={<PTPortalRegister />} />
         <Route path="/pt-portal/dashboard" element={<PTPortalDashboard />} />
 
-        {/* Septic Services Module */}
+        {/* Welding Module */}
+        <Route
+          path="/welding/*"
+          element={
+            <AuthGate>
+              <AuthenticatedProviders>
+              <WeldingSettingsProvider>
+                <Routes>
+                  <Route path="/" element={<WeldingAdminOverview />} />
+                  <Route path="/quotes" element={<WeldingAdminQuotes />} />
+                  <Route path="/invoices" element={<WeldingAdminInvoices />} />
+                  <Route path="/inventory" element={<WeldingAdminInventory />} />
+                  <Route path="/customers" element={<WeldingAdminCustomers />} />
+                  <Route path="/payments-due" element={<WeldingAdminPaymentsDue />} />
+                  <Route path="/accounts-payable" element={<WeldingAdminAccountsPayable />} />
+                  <Route path="/purchase-orders" element={<WeldingAdminPurchaseOrders />} />
+                  <Route path="/messages" element={<WeldingAdminMessages />} />
+                  <Route path="/calendar" element={<WeldingAdminCalendar />} />
+                  <Route path="/sales" element={<WeldingAdminSales />} />
+                  <Route path="/links" element={<WeldingAdminLinks />} />
+                  <Route path="/gallery" element={<WeldingAdminGallery />} />
+                  <Route path="/settings" element={<WeldingAdminSettings />} />
+                </Routes>
+              </WeldingSettingsProvider>
+              </AuthenticatedProviders>
+            </AuthGate>
+          }
+        />
+
         <Route
           path="/septic/*"
           element={
