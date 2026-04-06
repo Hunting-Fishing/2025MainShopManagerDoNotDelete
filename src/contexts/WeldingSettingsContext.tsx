@@ -126,9 +126,9 @@ export const WeldingSettingsProvider = ({ children }: { children: ReactNode }) =
       });
     }
     setLoading(false);
-  };
+  }, [userId, isAuthenticated]);
 
-  useEffect(() => { if (shopId) load(); }, [shopId]);
+  useEffect(() => { if (userId && isAuthenticated) load(); }, [userId, isAuthenticated, load]);
 
   const formatCurrency = (amount: number) => `${settings.currency_symbol}${amount.toFixed(2)}`;
 
