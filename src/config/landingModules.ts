@@ -709,6 +709,105 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       { src: '/screenshots/welding-dashboard.png', alt: 'Welding Dashboard - Quotes, invoices, inventory, gallery' },
     ],
   },
+  {
+    slug: 'game-development',
+    name: 'Game Development',
+    description: 'Complete game design planning, narrative tools, economy simulation, and production pipeline',
+    icon: Sword,
+    color: 'bg-purple-600',
+    price: 'From $9/mo',
+    available: true,
+    tagline: 'Plan, design, and ship your game — all in one place',
+    longDescription: `GameForge is an all-in-one game development planning platform designed for indie studios, solo developers, and creative teams. From initial concept through production, manage every aspect of your game's design with interconnected visual tools.
+
+Plan your game on infinite canvas boards, write branching dialogue trees, design item databases with economy balancing, track quests and raid encounters, build a living wiki of your game's lore, and generate AI art assets — all linked together in a unified workspace.
+
+Whether you're building a mobile RPG or a AAA-scale MMO, GameForge scales with your ambition and keeps your entire team aligned.`,
+    idealFor: [
+      'Indie game studios',
+      'Solo game developers',
+      'Game design students',
+      'Tabletop RPG designers',
+      'Narrative designers & writers',
+      'Game jam teams',
+    ],
+    coreFeatures: [
+      'Visual canvas planning boards',
+      'Character & story design tools',
+      'Item database & economy simulation',
+      'Quest & raid encounter designer',
+    ],
+    extraFeatures: [
+      'AI asset generation',
+      'Dialogue tree editor',
+      'Game design document builder',
+      'Playtest journal & feedback tracking',
+    ],
+    stats: [
+      { value: 'Unlimited', label: 'Game Projects' },
+      { value: '20+', label: 'Design Tools' },
+      { value: 'AI', label: 'Asset Generation' },
+      { value: 'Real-time', label: 'Collaboration' },
+    ],
+    benefits: [
+      {
+        title: 'Everything Connected',
+        description: 'Characters link to quests, items link to loot tables, story beats link to dialogue — your entire game design is an interconnected web.',
+        stat: 'Unified workspace',
+        icon: Target,
+      },
+      {
+        title: 'AI-Powered Creation',
+        description: 'Generate concept art, item icons, and character portraits with built-in AI art tools. Iterate faster than ever.',
+        stat: 'Built-in AI tools',
+        icon: Sparkles,
+      },
+      {
+        title: 'From Concept to Ship',
+        description: 'Roadmap planning, milestone tracking, playtest journals, and GDD builder — manage your entire production pipeline.',
+        stat: 'Full pipeline',
+        icon: Briefcase,
+      },
+    ],
+    pricingTiers: [
+      {
+        name: 'Starter',
+        price: '$9',
+        period: '/month',
+        features: [
+          'Up to 3 game projects',
+          'Canvas planner & database',
+          'Character & story tools',
+          'Basic item database',
+        ],
+      },
+      {
+        name: 'Pro',
+        price: '$29',
+        period: '/month',
+        highlighted: true,
+        features: [
+          'Unlimited projects',
+          'All design tools',
+          'AI asset generation',
+          'Economy simulation',
+          'Dialogue tree editor',
+        ],
+      },
+      {
+        name: 'Business',
+        price: '$49',
+        period: '/month',
+        features: [
+          'Everything in Pro',
+          'Team collaboration',
+          'API & webhooks',
+          'Priority support',
+          'Custom integrations',
+        ],
+      },
+    ],
+  },
 ];
 
 export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [

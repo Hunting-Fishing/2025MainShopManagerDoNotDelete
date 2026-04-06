@@ -42,7 +42,7 @@ export function MobileNavigation() {
   const { slug: activeModuleSlug, config: activeModuleConfig, isInModule } = useActiveModuleNavigation();
 
   // Auto-detect module from current path
-  const getDefaultModule = (): 'gunsmith' | 'power_washing' | 'automotive' | 'marine' | 'fuel_delivery' | 'export_company' | 'personal_trainer' | 'welding' | 'general' => {
+  const getDefaultModule = (): 'gunsmith' | 'power_washing' | 'automotive' | 'marine' | 'fuel_delivery' | 'export_company' | 'personal_trainer' | 'welding' | 'game_development' | 'general' => {
     const path = location.pathname;
     if (path.startsWith('/gunsmith')) return 'gunsmith';
     if (path.startsWith('/power-washing')) return 'power_washing';
@@ -52,6 +52,7 @@ export function MobileNavigation() {
     if (path.startsWith('/export')) return 'export_company';
     if (path.startsWith('/personal-trainer')) return 'personal_trainer';
     if (path.startsWith('/welding')) return 'welding';
+    if (path.startsWith('/game-development')) return 'game_development';
     return 'general';
   };
 

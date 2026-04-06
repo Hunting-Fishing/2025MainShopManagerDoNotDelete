@@ -135,6 +135,9 @@ export const routePermissions: RoutePermission[] = [
   
   // Personal Trainer Module
   { path: '/personal-trainer', allowedRoles: ['admin', 'manager', 'technician', 'service_advisor', 'owner'] },
+  
+  // Game Development Module
+  { path: '/game-development', allowedRoles: ['admin', 'manager', 'technician', 'service_advisor', 'owner'] },
 ];
 
 export function hasRoutePermission(path: string, userRoles: string[]): boolean {
