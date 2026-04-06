@@ -19,99 +19,41 @@ Deno.serve(async (req) => {
 
     const botEmail = "lovable-bot@allbusiness365.com";
     const botPassword = "LovableBot2026!Secure";
+    const userId = "53554c45-e23a-46b1-a84d-28aa3328eebb";
+    const shopId = "b8dcc902-ccc3-4843-929a-c6cf84dc8e35";
 
-    // Check if user already exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingBot = existingUsers?.users?.find(
-      (u) => u.email === botEmail
-    );
-
-    let userId: string;
-
-    if (existingBot) {
-      userId = existingBot.id;
-      console.log("Bot user already exists:", userId);
-    } else {
-      // Create the bot user
-      const { data: newUser, error: createError } =
-        await supabaseAdmin.auth.admin.createUser({
-          email: botEmail,
-          password: botPassword,
-          email_confirm: true,
-          user_metadata: { full_name: "Lovable Bot", is_bot: true },
-        });
-
-      if (createError) throw createError;
-      userId = newUser.user.id;
-      console.log("Created bot user:", userId);
-    }
-
-    // Get a shop_id to assign
-    const { data: shops } = await supabaseAdmin
-      .from("shops")
-      .select("id, name")
-      .limit(1)
-      .single();
-
-    if (!shops) throw new Error("No shops found");
-
-    const shopId = shops.id;
-
-    // Upsert profile with shop_id
+    // Mark onboarding complete by setting has_completed_onboarding
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
-      .upsert(
-        {
-          id: userId,
-          email: botEmail,
-          full_name: "Lovable Bot",
-          shop_id: shopId,
-          role: "owner",
-        },
-        { onConflict: "id" }
-      );
+      .update({
+        has_completed_onboarding: true,
+        onboarding_step: 'complete',
+      })
+      .eq("id", userId);
 
-    if (profileError) console.error("Profile upsert error:", profileError);
+    if (profileError) console.error("Profile update error:", profileError);
 
-    // Add as platform developer
-    const { error: devError } = await supabaseAdmin
-      .from("platform_developers")
-      .upsert(
-        {
-          user_id: userId,
-          email: botEmail,
-          display_name: "Lovable Bot",
-          is_active: true,
-          notes: "Auto-created bot account for screenshot capture",
-        },
-        { onConflict: "user_id" }
-      );
+    // Subscribe to all modules
+    const moduleNames = [
+      'automotive', 'power-washing', 'gunsmith', 'marine-services',
+      'fuel-delivery', 'water-delivery', 'septic', 'export',
+      'personal-trainer', 'welding'
+    ];
 
-    if (devError) console.error("Platform developer upsert error:", devError);
-
-    // Ensure user_roles entry
-    const { error: roleError } = await supabaseAdmin
-      .from("user_roles")
-      .upsert(
-        {
-          user_id: userId,
-          role: "owner",
-          shop_id: shopId,
-        },
-        { onConflict: "user_id,role" }
-      );
-
-    if (roleError) console.error("Role upsert error:", roleError);
+    for (const mod of moduleNames) {
+      const { error } = await supabaseAdmin
+        .from("shop_modules")
+        .upsert(
+          { shop_id: shopId, module_slug: mod, is_active: true },
+          { onConflict: "shop_id,module_slug" }
+        );
+      if (error) console.error(`Module ${mod} error:`, error);
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Bot account ready",
-        email: botEmail,
-        password: botPassword,
-        userId,
-        shopId,
-        shopName: shops.name,
+        message: "Onboarding completed and all modules activated",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
