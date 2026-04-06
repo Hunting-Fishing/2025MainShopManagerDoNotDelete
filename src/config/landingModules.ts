@@ -567,6 +567,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Warranty and inspection tracking',
       'Service checklists for crews',
     ],
+    screenshots: [
+      { src: '/screenshots/marine-services-dashboard.png', alt: 'Marine Services Dashboard - Vessels, dock scheduling, inspections' },
+    ],
   },
   {
     slug: 'water-delivery',
@@ -586,6 +589,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Customer portal for orders',
       'Inventory and purchase tracking',
       'Invoice and payment management',
+    ],
+    screenshots: [
+      { src: '/screenshots/water-delivery-dashboard.png', alt: 'Water Delivery Dashboard - Orders, tanks, routes, fleet' },
     ],
   },
   {
@@ -607,6 +613,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Tidy tank service management',
       'Quotes and invoicing',
     ],
+    screenshots: [
+      { src: '/screenshots/fuel-delivery-dashboard.png', alt: 'Fuel Delivery Dashboard - Orders, deliveries, routes, fleet' },
+    ],
   },
   {
     slug: 'septic',
@@ -626,6 +635,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'System component tracking',
       'Quotes and invoicing',
       'Equipment management',
+    ],
+    screenshots: [
+      { src: '/screenshots/septic-dashboard.png', alt: 'Septic Services Dashboard - Service orders, systems, routes' },
     ],
   },
   {
@@ -647,6 +659,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Quotes and invoicing',
       'Equipment tracking',
     ],
+    screenshots: [
+      { src: '/screenshots/export-dashboard.png', alt: 'Export Company Dashboard - Orders, logistics, compliance' },
+    ],
   },
   {
     slug: 'personal-trainer',
@@ -666,6 +681,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'ICD-10 medical condition tracking',
       'Client portal with self-service',
       'Package & billing management',
+    ],
+    screenshots: [
+      { src: '/screenshots/personal-trainer-dashboard.png', alt: 'Personal Trainer Dashboard - Clients, sessions, programs, metrics' },
     ],
   },
   {
