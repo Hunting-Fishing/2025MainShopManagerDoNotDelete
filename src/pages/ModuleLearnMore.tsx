@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle, Users, Zap, X, Check, Shield, Eye } from 'lucide-react';
 import { LANDING_MODULES } from '@/config/landingModules';
+import { ScreenshotGallery } from '@/components/landing/ScreenshotGallery';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -137,6 +138,11 @@ export default function ModuleLearnMore() {
           </div>
         </div>
       </section>
+
+      {/* Screenshot Gallery */}
+      {module.screenshots && module.screenshots.length > 0 && (
+        <ScreenshotGallery screenshots={module.screenshots} moduleName={module.name} />
+      )}
 
       {/* Who It's For */}
       {module.idealFor && module.idealFor.length > 0 && (
