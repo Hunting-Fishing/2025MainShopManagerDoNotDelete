@@ -1793,6 +1793,28 @@ function App() {
           }
         />
 
+        {/* Game Development Module */}
+        <Route
+          path="/game-development/*"
+          element={
+            <AuthGate>
+              <AuthenticatedProviders>
+              <GameDevLayout>
+                <Routes>
+                  <Route path="/" element={<GameDevDashboard />} />
+                  <Route path="/projects" element={<GameDevProjects />} />
+                  <Route path="/canvas" element={<GameDevCanvas />} />
+                  <Route path="/canvas-overview" element={<GameDevCanvasOverview />} />
+                  <Route path="/database" element={<GameDevDatabase />} />
+                  <Route path="/gdd" element={<GameDevGDD />} />
+                  <Route path="/roadmap" element={<GameDevRoadmap />} />
+                </Routes>
+              </GameDevLayout>
+              </AuthenticatedProviders>
+            </AuthGate>
+          }
+        />
+
         {/* Personal Trainer Portal - Public routes */}
         <Route path="/pt-portal" element={<PTPortalLanding />} />
         <Route path="/pt-portal/login" element={<PTPortalLogin />} />
