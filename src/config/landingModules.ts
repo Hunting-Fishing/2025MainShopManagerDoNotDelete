@@ -653,6 +653,26 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Package & billing management',
     ],
   },
+  {
+    slug: 'welding',
+    name: 'Welding & Fabrication',
+    description: 'Complete welding and fabrication business management with quoting, invoicing, inventory tracking, purchase orders, customer CRM, and project gallery.',
+    icon: Flame,
+    color: 'bg-orange-600',
+    price: 'From $9/mo',
+    available: true,
+    coreFeatures: [
+      'Quote & invoice management',
+      'Inventory & purchase orders',
+      'Customer CRM & scheduling',
+      'Project gallery & portfolio',
+    ],
+    extraFeatures: [
+      'Accounts payable tracking',
+      'Sales pipeline management',
+      'Labour rate configuration',
+    ],
+  },
 ];
 
 export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
