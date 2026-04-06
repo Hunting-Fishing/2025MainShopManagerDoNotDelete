@@ -521,6 +521,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Weather-aware scheduling',
       'Customer portal for approvals',
     ],
+    screenshots: [
+      { src: '/screenshots/power-washing-dashboard.png', alt: 'Power Washing Dashboard - Jobs, quotes, equipment, routes' },
+    ],
   },
   {
     slug: 'gunsmith',
