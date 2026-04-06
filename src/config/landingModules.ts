@@ -710,7 +710,7 @@ export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
     category: 'Skilled Trades',
     description: 'Specialized craftsmanship and technical services',
     modules: [
-      { name: 'Welding & Fabrication', description: 'Metal fabrication, repairs, and certification tracking', icon: Flame },
+      
       { name: 'Locksmith', description: 'Emergency dispatch, key cutting logs, and mobile service', icon: KeyRound },
       { name: 'Appliance Repair', description: 'In-home service with parts tracking and warranty management', icon: Refrigerator },
       { name: 'Upholstery', description: 'Furniture and vehicle upholstery repair and restoration', icon: Sofa },
