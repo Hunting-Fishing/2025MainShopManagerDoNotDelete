@@ -499,6 +499,16 @@ const PersonalTrainerSupplements = lazy(() => import('@/pages/personal-trainer/P
 const PersonalTrainerAbout = lazy(() => import('@/pages/personal-trainer/PersonalTrainerAbout'));
 import { PersonalTrainerLayout } from '@/components/personal-trainer';
 
+// Game Development Module
+const GameDevDashboard = lazy(() => import('@/pages/game-development/GameDevDashboard'));
+const GameDevProjects = lazy(() => import('@/pages/game-development/GameDevProjects'));
+const GameDevCanvas = lazy(() => import('@/pages/game-development/GameDevCanvas'));
+const GameDevCanvasOverview = lazy(() => import('@/pages/game-development/GameDevCanvasOverview'));
+const GameDevDatabase = lazy(() => import('@/pages/game-development/GameDevDatabase'));
+const GameDevGDD = lazy(() => import('@/pages/game-development/GameDevGDD'));
+const GameDevRoadmap = lazy(() => import('@/pages/game-development/GameDevRoadmap'));
+import { GameDevLayout } from '@/components/game-development';
+
 // Welding Module
 const WeldingAdminOverview = lazy(() => import('@/pages/welding/WeldingAdminOverview'));
 const WeldingAdminQuotes = lazy(() => import('@/pages/welding/WeldingAdminQuotes'));
@@ -1788,6 +1798,28 @@ function App() {
                   <Route path="/about" element={<PersonalTrainerAbout />} />
                 </Routes>
               </PersonalTrainerLayout>
+              </AuthenticatedProviders>
+            </AuthGate>
+          }
+        />
+
+        {/* Game Development Module */}
+        <Route
+          path="/game-development/*"
+          element={
+            <AuthGate>
+              <AuthenticatedProviders>
+              <GameDevLayout>
+                <Routes>
+                  <Route path="/" element={<GameDevDashboard />} />
+                  <Route path="/projects" element={<GameDevProjects />} />
+                  <Route path="/canvas" element={<GameDevCanvas />} />
+                  <Route path="/canvas-overview" element={<GameDevCanvasOverview />} />
+                  <Route path="/database" element={<GameDevDatabase />} />
+                  <Route path="/gdd" element={<GameDevGDD />} />
+                  <Route path="/roadmap" element={<GameDevRoadmap />} />
+                </Routes>
+              </GameDevLayout>
               </AuthenticatedProviders>
             </AuthGate>
           }
