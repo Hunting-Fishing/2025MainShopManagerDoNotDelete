@@ -1886,7 +1886,6 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Settings', href: '/welding/settings', icon: Settings, description: 'Module settings' },
     ],
   },
-  },
   'game-development': {
     slug: 'game-development',
     name: 'Game Development',
