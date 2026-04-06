@@ -230,9 +230,9 @@ export default function ModuleHub() {
             <div className="flex items-center gap-2 mb-4">
               <LayoutGrid className="w-5 h-5 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">Your Modules</h2>
-              <span className="text-sm text-muted-foreground">
-                ({displayAccessible.length} {isSearching ? 'found' : 'active'})
-              </span>
+              <Badge variant="secondary" className="text-xs">
+                {displayAccessible.length} {isSearching ? 'found' : 'active'}
+              </Badge>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {displayAccessible.map(module => (
@@ -253,9 +253,9 @@ export default function ModuleHub() {
           <section className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <h2 className="text-xl font-semibold text-foreground">Available Modules</h2>
-              <span className="text-sm text-muted-foreground">
-                ({displayLocked.length} {isSearching ? 'found' : 'available'})
-              </span>
+              <Badge variant="outline" className="text-xs">
+                {displayLocked.length} {isSearching ? 'found' : 'available'}
+              </Badge>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {displayLocked.map(module => (
