@@ -13,6 +13,7 @@ const MODULE_ROUTES: Record<string, string> = {
   'septic': '/septic',
   'export-company': '/export',
   'personal-trainer': '/personal-trainer',
+  'welding': '/welding',
 };
 
 /**

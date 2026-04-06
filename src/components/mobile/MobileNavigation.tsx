@@ -51,6 +51,7 @@ export function MobileNavigation() {
     if (path.startsWith('/fuel-delivery')) return 'fuel_delivery';
     if (path.startsWith('/export')) return 'export_company';
     if (path.startsWith('/personal-trainer')) return 'personal_trainer';
+    if (path.startsWith('/welding')) return 'welding';
     return 'general';
   };
 
