@@ -163,6 +163,11 @@ export type TrustBadge = {
   icon: LucideIcon;
 };
 
+export type ModuleScreenshot = {
+  src: string;
+  alt: string;
+};
+
 export type LandingModule = {
   slug: string;
   name: string;
@@ -189,6 +194,7 @@ export type LandingModule = {
   testimonial?: Testimonial;
   pricingTiers?: PricingTier[];
   trustBadges?: TrustBadge[];
+  screenshots?: ModuleScreenshot[];
 };
 
 export type LandingComingSoonModule = {
@@ -492,6 +498,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
         answer: 'Yes! Every plan includes a 14-day free trial with full access to all features. No credit card required to start.',
       },
     ],
+    screenshots: [
+      { src: '/screenshots/repair-shop-dashboard.png', alt: 'Repair Shop Dashboard - Work orders, parts, invoices' },
+    ],
   },
   {
     slug: 'power-washing',
@@ -511,6 +520,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Chemical mix calculators',
       'Weather-aware scheduling',
       'Customer portal for approvals',
+    ],
+    screenshots: [
+      { src: '/screenshots/power-washing-dashboard.png', alt: 'Power Washing Dashboard - Jobs, quotes, equipment, routes' },
     ],
   },
   {
@@ -532,6 +544,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Consignment tracking',
       'Appointment scheduling',
     ],
+    screenshots: [
+      { src: '/screenshots/gunsmith-dashboard.png', alt: 'Gunsmith Dashboard - Jobs, firearms, compliance, transfers' },
+    ],
   },
   {
     slug: 'marine-services',
@@ -551,6 +566,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Seasonal maintenance reminders',
       'Warranty and inspection tracking',
       'Service checklists for crews',
+    ],
+    screenshots: [
+      { src: '/screenshots/marine-services-dashboard.png', alt: 'Marine Services Dashboard - Vessels, dock scheduling, inspections' },
     ],
   },
   {
@@ -572,6 +590,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Inventory and purchase tracking',
       'Invoice and payment management',
     ],
+    screenshots: [
+      { src: '/screenshots/water-delivery-dashboard.png', alt: 'Water Delivery Dashboard - Orders, tanks, routes, fleet' },
+    ],
   },
   {
     slug: 'fuel-delivery',
@@ -591,6 +612,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Equipment and filter tracking',
       'Tidy tank service management',
       'Quotes and invoicing',
+    ],
+    screenshots: [
+      { src: '/screenshots/fuel-delivery-dashboard.png', alt: 'Fuel Delivery Dashboard - Orders, deliveries, routes, fleet' },
     ],
   },
   {
@@ -612,6 +636,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Quotes and invoicing',
       'Equipment management',
     ],
+    screenshots: [
+      { src: '/screenshots/septic-dashboard.png', alt: 'Septic Services Dashboard - Service orders, systems, routes' },
+    ],
   },
   {
     slug: 'export-company',
@@ -631,6 +658,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Warehouse and inventory management',
       'Quotes and invoicing',
       'Equipment tracking',
+    ],
+    screenshots: [
+      { src: '/screenshots/export-dashboard.png', alt: 'Export Company Dashboard - Orders, logistics, compliance' },
     ],
   },
   {
@@ -652,6 +682,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Client portal with self-service',
       'Package & billing management',
     ],
+    screenshots: [
+      { src: '/screenshots/personal-trainer-dashboard.png', alt: 'Personal Trainer Dashboard - Clients, sessions, programs, metrics' },
+    ],
   },
   {
     slug: 'welding',
@@ -671,6 +704,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Accounts payable tracking',
       'Sales pipeline management',
       'Labour rate configuration',
+    ],
+    screenshots: [
+      { src: '/screenshots/welding-dashboard.png', alt: 'Welding Dashboard - Quotes, invoices, inventory, gallery' },
     ],
   },
 ];
