@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle, Users, Zap, X, Check, Shield, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Users, Zap, X, Check, Shield, Eye } from 'lucide-react';
 import { LANDING_MODULES } from '@/config/landingModules';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +42,19 @@ export default function ModuleLearnMore() {
 
   return (
     <div className="min-h-screen bg-background font-['Space_Grotesk',sans-serif]">
+      {/* Sticky Back Navigation */}
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur border-b border-border">
+        <div className="container mx-auto px-6 h-12 flex items-center gap-3">
+          <Button variant="ghost" size="sm" asChild className="gap-1.5 text-muted-foreground hover:text-foreground">
+            <Link to="/#modules">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Modules
+            </Link>
+          </Button>
+          <span className="text-sm font-medium text-foreground truncate">{module.name}</span>
+        </div>
+      </div>
+
       {/* Hero Section with Stats */}
       <section className="py-16 md:py-24 bg-gradient-to-b from-primary/10 via-primary/5 to-background">
         <div className="container mx-auto px-6">
