@@ -21492,6 +21492,2294 @@ export type Database = {
         }
         Relationships: []
       }
+      gd_api_keys: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          project_id: string
+          scopes: Json
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name?: string
+          project_id: string
+          scopes?: Json
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          project_id?: string
+          scopes?: Json
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_api_keys_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_asset_requirements: {
+        Row: {
+          asset_type: string
+          description: string | null
+          id: string
+          linked_feature: string | null
+          linked_milestone_id: string | null
+          name: string
+          priority: string
+          project_id: string
+          shop_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          asset_type: string
+          description?: string | null
+          id?: string
+          linked_feature?: string | null
+          linked_milestone_id?: string | null
+          name: string
+          priority?: string
+          project_id: string
+          shop_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          asset_type?: string
+          description?: string | null
+          id?: string
+          linked_feature?: string | null
+          linked_milestone_id?: string | null
+          name?: string
+          priority?: string
+          project_id?: string
+          shop_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_asset_requirements_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_board_edges: {
+        Row: {
+          board_id: string
+          edge_type: string
+          id: string
+          label: string | null
+          shop_id: string
+          source_node_id: string
+          target_node_id: string
+          user_id: string
+        }
+        Insert: {
+          board_id: string
+          edge_type?: string
+          id?: string
+          label?: string | null
+          shop_id: string
+          source_node_id: string
+          target_node_id: string
+          user_id: string
+        }
+        Update: {
+          board_id?: string
+          edge_type?: string
+          id?: string
+          label?: string | null
+          shop_id?: string
+          source_node_id?: string
+          target_node_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_board_edges_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "gd_boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_board_nodes: {
+        Row: {
+          board_id: string
+          color: string
+          height: number
+          id: string
+          metadata: Json | null
+          node_type: string
+          position_x: number
+          position_y: number
+          priority: string
+          shop_id: string
+          status: string
+          summary: string | null
+          tags: Json | null
+          title: string
+          user_id: string
+          width: number
+        }
+        Insert: {
+          board_id: string
+          color?: string
+          height?: number
+          id?: string
+          metadata?: Json | null
+          node_type?: string
+          position_x?: number
+          position_y?: number
+          priority?: string
+          shop_id: string
+          status?: string
+          summary?: string | null
+          tags?: Json | null
+          title: string
+          user_id: string
+          width?: number
+        }
+        Update: {
+          board_id?: string
+          color?: string
+          height?: number
+          id?: string
+          metadata?: Json | null
+          node_type?: string
+          position_x?: number
+          position_y?: number
+          priority?: string
+          shop_id?: string
+          status?: string
+          summary?: string | null
+          tags?: Json | null
+          title?: string
+          user_id?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_board_nodes_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "gd_boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_boards: {
+        Row: {
+          color: string | null
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_boards_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_character_arcs: {
+        Row: {
+          character_id: string
+          description: string | null
+          id: string
+          linked_beat_id: string | null
+          order_index: number
+          phase: string
+          shop_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          description?: string | null
+          id?: string
+          linked_beat_id?: string | null
+          order_index?: number
+          phase?: string
+          shop_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          description?: string | null
+          id?: string
+          linked_beat_id?: string | null
+          order_index?: number
+          phase?: string
+          shop_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_character_arcs_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "gd_characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_character_assemblies: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          project_id: string
+          shop_id: string
+          slots_data: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string
+          project_id: string
+          shop_id: string
+          slots_data?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          project_id?: string
+          shop_id?: string
+          slots_data?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_character_assemblies_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_character_relations: {
+        Row: {
+          description: string | null
+          id: string
+          project_id: string
+          relation_type: string
+          shop_id: string
+          source_character_id: string
+          target_character_id: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          project_id: string
+          relation_type?: string
+          shop_id: string
+          source_character_id: string
+          target_character_id: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          project_id?: string
+          relation_type?: string
+          shop_id?: string
+          source_character_id?: string
+          target_character_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_character_relations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_characters: {
+        Row: {
+          abilities: Json | null
+          age: string | null
+          backstory: string | null
+          bio: string | null
+          faction_id: string | null
+          fears: string | null
+          id: string
+          motivations: string | null
+          name: string
+          personality: string | null
+          position_x: number
+          position_y: number
+          project_id: string
+          role: string
+          shop_id: string
+          species: string | null
+          tags: Json | null
+          user_id: string
+          visual_notes: string | null
+          voice_notes: string | null
+        }
+        Insert: {
+          abilities?: Json | null
+          age?: string | null
+          backstory?: string | null
+          bio?: string | null
+          faction_id?: string | null
+          fears?: string | null
+          id?: string
+          motivations?: string | null
+          name: string
+          personality?: string | null
+          position_x?: number
+          position_y?: number
+          project_id: string
+          role?: string
+          shop_id: string
+          species?: string | null
+          tags?: Json | null
+          user_id: string
+          visual_notes?: string | null
+          voice_notes?: string | null
+        }
+        Update: {
+          abilities?: Json | null
+          age?: string | null
+          backstory?: string | null
+          bio?: string | null
+          faction_id?: string | null
+          fears?: string | null
+          id?: string
+          motivations?: string | null
+          name?: string
+          personality?: string | null
+          position_x?: number
+          position_y?: number
+          project_id?: string
+          role?: string
+          shop_id?: string
+          species?: string | null
+          tags?: Json | null
+          user_id?: string
+          visual_notes?: string | null
+          voice_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_characters_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_chat_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          shop_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          shop_id: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          shop_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_chat_conversations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_chat_import_files: {
+        Row: {
+          created_at: string
+          entity_count: number | null
+          extracted_entities: Json | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_count?: number | null
+          extracted_entities?: Json | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_count?: number | null
+          extracted_entities?: Json | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          project_id?: string
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_chat_import_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "gd_chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_comments: {
+        Row: {
+          content: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          mentions: Json | null
+          parent_id: string | null
+          project_id: string
+          resolved: boolean
+          shop_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          mentions?: Json | null
+          parent_id?: string | null
+          project_id: string
+          resolved?: boolean
+          shop_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          mentions?: Json | null
+          parent_id?: string | null
+          project_id?: string
+          resolved?: boolean
+          shop_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "gd_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gd_comments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_crafting_recipes: {
+        Row: {
+          crafting_time: number | null
+          description: string | null
+          id: string
+          ingredients: Json
+          name: string
+          output_item_id: string
+          output_quantity: number
+          project_id: string
+          shop_id: string
+          skill_requirements: Json | null
+          tags: Json | null
+          user_id: string
+        }
+        Insert: {
+          crafting_time?: number | null
+          description?: string | null
+          id?: string
+          ingredients?: Json
+          name: string
+          output_item_id?: string
+          output_quantity?: number
+          project_id: string
+          shop_id: string
+          skill_requirements?: Json | null
+          tags?: Json | null
+          user_id: string
+        }
+        Update: {
+          crafting_time?: number | null
+          description?: string | null
+          id?: string
+          ingredients?: Json
+          name?: string
+          output_item_id?: string
+          output_quantity?: number
+          project_id?: string
+          shop_id?: string
+          skill_requirements?: Json | null
+          tags?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_crafting_recipes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_cross_canvas_links: {
+        Row: {
+          id: string
+          label: string | null
+          project_id: string
+          shop_id: string
+          source_board_id: string
+          source_node_id: string
+          target_board_id: string
+          target_node_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          label?: string | null
+          project_id: string
+          shop_id: string
+          source_board_id: string
+          source_node_id: string
+          target_board_id: string
+          target_node_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          label?: string | null
+          project_id?: string
+          shop_id?: string
+          source_board_id?: string
+          source_node_id?: string
+          target_board_id?: string
+          target_node_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_cross_canvas_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_custom_db_fields: {
+        Row: {
+          id: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          project_id?: string
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_custom_db_fields_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_design_docs: {
+        Row: {
+          id: string
+          project_id: string
+          sections: Json
+          shop_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          sections?: Json
+          shop_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          sections?: Json
+          shop_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_design_docs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_dialogue_edges: {
+        Row: {
+          condition: string | null
+          id: string
+          label: string | null
+          shop_id: string
+          source_node_id: string
+          target_node_id: string
+          tree_id: string
+          user_id: string
+        }
+        Insert: {
+          condition?: string | null
+          id?: string
+          label?: string | null
+          shop_id: string
+          source_node_id: string
+          target_node_id: string
+          tree_id: string
+          user_id: string
+        }
+        Update: {
+          condition?: string | null
+          id?: string
+          label?: string | null
+          shop_id?: string
+          source_node_id?: string
+          target_node_id?: string
+          tree_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_dialogue_edges_tree_id_fkey"
+            columns: ["tree_id"]
+            isOneToOne: false
+            referencedRelation: "gd_dialogue_trees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_dialogue_nodes: {
+        Row: {
+          character_id: string | null
+          condition: string | null
+          id: string
+          node_type: string
+          position_x: number
+          position_y: number
+          project_id: string
+          shop_id: string
+          tags: Json | null
+          text: string
+          tree_id: string
+          user_id: string
+        }
+        Insert: {
+          character_id?: string | null
+          condition?: string | null
+          id?: string
+          node_type?: string
+          position_x?: number
+          position_y?: number
+          project_id: string
+          shop_id: string
+          tags?: Json | null
+          text?: string
+          tree_id: string
+          user_id: string
+        }
+        Update: {
+          character_id?: string | null
+          condition?: string | null
+          id?: string
+          node_type?: string
+          position_x?: number
+          position_y?: number
+          project_id?: string
+          shop_id?: string
+          tags?: Json | null
+          text?: string
+          tree_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_dialogue_nodes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gd_dialogue_nodes_tree_id_fkey"
+            columns: ["tree_id"]
+            isOneToOne: false
+            referencedRelation: "gd_dialogue_trees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_dialogue_trees: {
+        Row: {
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_dialogue_trees_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_dialogue_variables: {
+        Row: {
+          default_value: string
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+          var_type: string
+        }
+        Insert: {
+          default_value?: string
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+          var_type?: string
+        }
+        Update: {
+          default_value?: string
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          shop_id?: string
+          user_id?: string
+          var_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_dialogue_variables_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_economy_curves: {
+        Row: {
+          curve_type: string
+          data_points: Json
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          curve_type?: string
+          data_points?: Json
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          curve_type?: string
+          data_points?: Json
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_economy_curves_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_entity_snapshots: {
+        Row: {
+          branch_name: string
+          created_at: string | null
+          description: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          project_id: string
+          shop_id: string
+          snapshot_data: Json
+          user_id: string
+        }
+        Insert: {
+          branch_name?: string
+          created_at?: string | null
+          description?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          project_id: string
+          shop_id: string
+          snapshot_data: Json
+          user_id: string
+        }
+        Update: {
+          branch_name?: string
+          created_at?: string | null
+          description?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          project_id?: string
+          shop_id?: string
+          snapshot_data?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_entity_snapshots_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_events: {
+        Row: {
+          description: string | null
+          end_date: string | null
+          event_type: string
+          id: string
+          linked_milestone_id: string | null
+          linked_node_ids: Json | null
+          mechanics: Json | null
+          name: string
+          priority: string
+          project_id: string
+          recurrence: string
+          requirements: Json | null
+          rewards: Json | null
+          shop_id: string
+          start_date: string | null
+          status: string
+          tags: Json | null
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          end_date?: string | null
+          event_type?: string
+          id?: string
+          linked_milestone_id?: string | null
+          linked_node_ids?: Json | null
+          mechanics?: Json | null
+          name: string
+          priority?: string
+          project_id: string
+          recurrence?: string
+          requirements?: Json | null
+          rewards?: Json | null
+          shop_id: string
+          start_date?: string | null
+          status?: string
+          tags?: Json | null
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          end_date?: string | null
+          event_type?: string
+          id?: string
+          linked_milestone_id?: string | null
+          linked_node_ids?: Json | null
+          mechanics?: Json | null
+          name?: string
+          priority?: string
+          project_id?: string
+          recurrence?: string
+          requirements?: Json | null
+          rewards?: Json | null
+          shop_id?: string
+          start_date?: string | null
+          status?: string
+          tags?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_factions: {
+        Row: {
+          alignment: string | null
+          color: string
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          alignment?: string | null
+          color?: string
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          alignment?: string | null
+          color?: string
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_factions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_game_items: {
+        Row: {
+          category: string
+          custom_fields: Json | null
+          description: string | null
+          effect: string | null
+          equip_mode: string | null
+          equip_slot: string | null
+          era: string | null
+          icon_url: string | null
+          id: string
+          image_url: string | null
+          item_number: string | null
+          item_type: string | null
+          linked_node_ids: Json | null
+          lore: string | null
+          max_stack: number | null
+          name: string
+          origin: string | null
+          play_style: string | null
+          project_id: string
+          rarity: string
+          shop_id: string
+          stackable: boolean | null
+          stats: Json
+          status: string
+          tags: Json
+          user_id: string
+          value: number | null
+          visual_prompt: string | null
+        }
+        Insert: {
+          category?: string
+          custom_fields?: Json | null
+          description?: string | null
+          effect?: string | null
+          equip_mode?: string | null
+          equip_slot?: string | null
+          era?: string | null
+          icon_url?: string | null
+          id?: string
+          image_url?: string | null
+          item_number?: string | null
+          item_type?: string | null
+          linked_node_ids?: Json | null
+          lore?: string | null
+          max_stack?: number | null
+          name: string
+          origin?: string | null
+          play_style?: string | null
+          project_id: string
+          rarity?: string
+          shop_id: string
+          stackable?: boolean | null
+          stats?: Json
+          status?: string
+          tags?: Json
+          user_id: string
+          value?: number | null
+          visual_prompt?: string | null
+        }
+        Update: {
+          category?: string
+          custom_fields?: Json | null
+          description?: string | null
+          effect?: string | null
+          equip_mode?: string | null
+          equip_slot?: string | null
+          era?: string | null
+          icon_url?: string | null
+          id?: string
+          image_url?: string | null
+          item_number?: string | null
+          item_type?: string | null
+          linked_node_ids?: Json | null
+          lore?: string | null
+          max_stack?: number | null
+          name?: string
+          origin?: string | null
+          play_style?: string | null
+          project_id?: string
+          rarity?: string
+          shop_id?: string
+          stackable?: boolean | null
+          stats?: Json
+          status?: string
+          tags?: Json
+          user_id?: string
+          value?: number | null
+          visual_prompt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_game_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_generated_assets: {
+        Row: {
+          character_set_id: string | null
+          created_at: string
+          id: string
+          image_url: string
+          linked_entity_id: string | null
+          linked_entity_type: string | null
+          parent_image_id: string | null
+          project_id: string
+          prompt: string
+          shop_id: string
+          style_preset: string
+          user_id: string
+        }
+        Insert: {
+          character_set_id?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          linked_entity_id?: string | null
+          linked_entity_type?: string | null
+          parent_image_id?: string | null
+          project_id: string
+          prompt: string
+          shop_id: string
+          style_preset?: string
+          user_id: string
+        }
+        Update: {
+          character_set_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          linked_entity_id?: string | null
+          linked_entity_type?: string | null
+          parent_image_id?: string | null
+          project_id?: string
+          prompt?: string
+          shop_id?: string
+          style_preset?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_generated_assets_parent_image_id_fkey"
+            columns: ["parent_image_id"]
+            isOneToOne: false
+            referencedRelation: "gd_generated_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gd_generated_assets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_item_sets: {
+        Row: {
+          bonuses: Json
+          description: string | null
+          id: string
+          item_ids: Json
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          bonuses?: Json
+          description?: string | null
+          id?: string
+          item_ids?: Json
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          bonuses?: Json
+          description?: string | null
+          id?: string
+          item_ids?: Json
+          name?: string
+          project_id?: string
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_item_sets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_locale_strings: {
+        Row: {
+          context: string | null
+          id: string
+          locale: string
+          project_id: string
+          shop_id: string
+          string_key: string
+          user_id: string
+          value: string
+        }
+        Insert: {
+          context?: string | null
+          id?: string
+          locale?: string
+          project_id: string
+          shop_id: string
+          string_key: string
+          user_id: string
+          value?: string
+        }
+        Update: {
+          context?: string | null
+          id?: string
+          locale?: string
+          project_id?: string
+          shop_id?: string
+          string_key?: string
+          user_id?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_locale_strings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_loot_tables: {
+        Row: {
+          description: string | null
+          entries: Json
+          id: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          entries?: Json
+          id?: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          entries?: Json
+          id?: string
+          name?: string
+          project_id?: string
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_loot_tables_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_media_files: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gd_milestones: {
+        Row: {
+          description: string | null
+          due_date: string | null
+          id: string
+          order_index: number
+          phase: string
+          priority: string
+          project_id: string
+          roadmap_id: string | null
+          shop_id: string
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          order_index?: number
+          phase?: string
+          priority?: string
+          project_id: string
+          roadmap_id?: string | null
+          shop_id: string
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          order_index?: number
+          phase?: string
+          priority?: string
+          project_id?: string
+          roadmap_id?: string | null
+          shop_id?: string
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_plan_tasks: {
+        Row: {
+          content: string | null
+          created_at: string
+          dependency_ids: Json | null
+          description: string | null
+          due_date: string | null
+          id: string
+          linked_board_id: string | null
+          linked_milestone_id: string | null
+          linked_node_id: string | null
+          order_index: number
+          priority: string | null
+          project_id: string
+          roadmap_id: string | null
+          shop_id: string
+          start_date: string | null
+          status: string
+          tags: Json | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          dependency_ids?: Json | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_board_id?: string | null
+          linked_milestone_id?: string | null
+          linked_node_id?: string | null
+          order_index?: number
+          priority?: string | null
+          project_id: string
+          roadmap_id?: string | null
+          shop_id: string
+          start_date?: string | null
+          status?: string
+          tags?: Json | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          dependency_ids?: Json | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_board_id?: string | null
+          linked_milestone_id?: string | null
+          linked_node_id?: string | null
+          order_index?: number
+          priority?: string | null
+          project_id?: string
+          roadmap_id?: string | null
+          shop_id?: string
+          start_date?: string | null
+          status?: string
+          tags?: Json | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_plan_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_planning_records: {
+        Row: {
+          created_at: string
+          custom_fields: Json | null
+          due_date: string | null
+          id: string
+          linked_milestone_id: string | null
+          linked_node_id: string | null
+          notes: string | null
+          owner: string | null
+          priority: string
+          project_id: string
+          record_type: string
+          related_record_ids: Json | null
+          shop_id: string
+          status: string
+          summary: string | null
+          tags: Json | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_fields?: Json | null
+          due_date?: string | null
+          id?: string
+          linked_milestone_id?: string | null
+          linked_node_id?: string | null
+          notes?: string | null
+          owner?: string | null
+          priority?: string
+          project_id: string
+          record_type: string
+          related_record_ids?: Json | null
+          shop_id: string
+          status?: string
+          summary?: string | null
+          tags?: Json | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_fields?: Json | null
+          due_date?: string | null
+          id?: string
+          linked_milestone_id?: string | null
+          linked_node_id?: string | null
+          notes?: string | null
+          owner?: string | null
+          priority?: string
+          project_id?: string
+          record_type?: string
+          related_record_ids?: Json | null
+          shop_id?: string
+          status?: string
+          summary?: string | null
+          tags?: Json | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_planning_records_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_playtest_sessions: {
+        Row: {
+          action_items: Json
+          build_version: string | null
+          duration_minutes: number | null
+          feedback: Json
+          id: string
+          notes: string | null
+          project_id: string
+          session_date: string | null
+          shop_id: string
+          status: string
+          tags: Json
+          tester_name: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          action_items?: Json
+          build_version?: string | null
+          duration_minutes?: number | null
+          feedback?: Json
+          id?: string
+          notes?: string | null
+          project_id: string
+          session_date?: string | null
+          shop_id: string
+          status?: string
+          tags?: Json
+          tester_name?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          action_items?: Json
+          build_version?: string | null
+          duration_minutes?: number | null
+          feedback?: Json
+          id?: string
+          notes?: string | null
+          project_id?: string
+          session_date?: string | null
+          shop_id?: string
+          status?: string
+          tags?: Json
+          tester_name?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_playtest_sessions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_projects: {
+        Row: {
+          art_style: string
+          created_at: string
+          description: string | null
+          engine: string
+          genre: string
+          id: string
+          monetization_model: string
+          name: string
+          phase: string
+          platform_targets: Json
+          shop_id: string
+          status: string
+          target_audience: string
+          team_size: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          art_style?: string
+          created_at?: string
+          description?: string | null
+          engine?: string
+          genre?: string
+          id?: string
+          monetization_model?: string
+          name: string
+          phase?: string
+          platform_targets?: Json
+          shop_id: string
+          status?: string
+          target_audience?: string
+          team_size?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          art_style?: string
+          created_at?: string
+          description?: string | null
+          engine?: string
+          genre?: string
+          id?: string
+          monetization_model?: string
+          name?: string
+          phase?: string
+          platform_targets?: Json
+          shop_id?: string
+          status?: string
+          target_audience?: string
+          team_size?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gd_quests: {
+        Row: {
+          branch_label: string | null
+          chain_order: number
+          description: string | null
+          estimated_duration: string | null
+          id: string
+          linked_character_ids: Json
+          linked_milestone_id: string | null
+          linked_zone_id: string | null
+          name: string
+          objectives: Json
+          parent_quest_id: string | null
+          prerequisites: Json
+          priority: string
+          project_id: string
+          quest_type: string
+          rewards: Json
+          shop_id: string
+          status: string
+          tags: Json
+          user_id: string
+        }
+        Insert: {
+          branch_label?: string | null
+          chain_order?: number
+          description?: string | null
+          estimated_duration?: string | null
+          id?: string
+          linked_character_ids?: Json
+          linked_milestone_id?: string | null
+          linked_zone_id?: string | null
+          name: string
+          objectives?: Json
+          parent_quest_id?: string | null
+          prerequisites?: Json
+          priority?: string
+          project_id: string
+          quest_type?: string
+          rewards?: Json
+          shop_id: string
+          status?: string
+          tags?: Json
+          user_id: string
+        }
+        Update: {
+          branch_label?: string | null
+          chain_order?: number
+          description?: string | null
+          estimated_duration?: string | null
+          id?: string
+          linked_character_ids?: Json
+          linked_milestone_id?: string | null
+          linked_zone_id?: string | null
+          name?: string
+          objectives?: Json
+          parent_quest_id?: string | null
+          prerequisites?: Json
+          priority?: string
+          project_id?: string
+          quest_type?: string
+          rewards?: Json
+          shop_id?: string
+          status?: string
+          tags?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_quests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_raids: {
+        Row: {
+          boss_count: number
+          description: string | null
+          difficulty: string
+          estimated_duration: string | null
+          id: string
+          linked_milestone_id: string | null
+          linked_node_ids: Json | null
+          mechanics: Json | null
+          name: string
+          phases: Json | null
+          player_count_max: number
+          player_count_min: number
+          priority: string
+          project_id: string
+          rewards: Json | null
+          shop_id: string
+          status: string
+          tags: Json | null
+          user_id: string
+        }
+        Insert: {
+          boss_count?: number
+          description?: string | null
+          difficulty?: string
+          estimated_duration?: string | null
+          id?: string
+          linked_milestone_id?: string | null
+          linked_node_ids?: Json | null
+          mechanics?: Json | null
+          name: string
+          phases?: Json | null
+          player_count_max?: number
+          player_count_min?: number
+          priority?: string
+          project_id: string
+          rewards?: Json | null
+          shop_id: string
+          status?: string
+          tags?: Json | null
+          user_id: string
+        }
+        Update: {
+          boss_count?: number
+          description?: string | null
+          difficulty?: string
+          estimated_duration?: string | null
+          id?: string
+          linked_milestone_id?: string | null
+          linked_node_ids?: Json | null
+          mechanics?: Json | null
+          name?: string
+          phases?: Json | null
+          player_count_max?: number
+          player_count_min?: number
+          priority?: string
+          project_id?: string
+          rewards?: Json | null
+          shop_id?: string
+          status?: string
+          tags?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_raids_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_roadmap_boards: {
+        Row: {
+          color: string | null
+          description: string | null
+          emoji: string | null
+          id: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          name: string
+          project_id: string
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_roadmap_boards_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_story_beats: {
+        Row: {
+          beat_type: string
+          characters: Json | null
+          content: string | null
+          id: string
+          position_x: number
+          position_y: number
+          project_id: string
+          shop_id: string
+          summary: string | null
+          tags: Json | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          beat_type: string
+          characters?: Json | null
+          content?: string | null
+          id?: string
+          position_x?: number
+          position_y?: number
+          project_id: string
+          shop_id: string
+          summary?: string | null
+          tags?: Json | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          beat_type?: string
+          characters?: Json | null
+          content?: string | null
+          id?: string
+          position_x?: number
+          position_y?: number
+          project_id?: string
+          shop_id?: string
+          summary?: string | null
+          tags?: Json | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_story_beats_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_story_connections: {
+        Row: {
+          connection_type: string
+          id: string
+          project_id: string
+          shop_id: string
+          source_beat_id: string
+          target_beat_id: string
+          user_id: string
+        }
+        Insert: {
+          connection_type?: string
+          id?: string
+          project_id: string
+          shop_id: string
+          source_beat_id: string
+          target_beat_id: string
+          user_id: string
+        }
+        Update: {
+          connection_type?: string
+          id?: string
+          project_id?: string
+          shop_id?: string
+          source_beat_id?: string
+          target_beat_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_story_connections_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_webhook_logs: {
+        Row: {
+          delivered_at: string
+          event_type: string
+          id: string
+          payload: Json
+          response_body: string | null
+          response_status: number | null
+          webhook_id: string
+        }
+        Insert: {
+          delivered_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id: string
+        }
+        Update: {
+          delivered_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "gd_webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_webhooks: {
+        Row: {
+          created_at: string
+          events: Json
+          id: string
+          is_active: boolean
+          last_status: number | null
+          last_triggered_at: string | null
+          name: string
+          project_id: string
+          secret: string | null
+          shop_id: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          events?: Json
+          id?: string
+          is_active?: boolean
+          last_status?: number | null
+          last_triggered_at?: string | null
+          name?: string
+          project_id: string
+          secret?: string | null
+          shop_id: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          events?: Json
+          id?: string
+          is_active?: boolean
+          last_status?: number | null
+          last_triggered_at?: string | null
+          name?: string
+          project_id?: string
+          secret?: string | null
+          shop_id?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_webhooks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_wiki_articles: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          linked_article_ids: Json | null
+          linked_node_ids: Json | null
+          project_id: string
+          revisions: Json | null
+          shop_id: string
+          slug: string
+          tags: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          linked_article_ids?: Json | null
+          linked_node_ids?: Json | null
+          project_id: string
+          revisions?: Json | null
+          shop_id: string
+          slug: string
+          tags?: Json | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          linked_article_ids?: Json | null
+          linked_node_ids?: Json | null
+          project_id?: string
+          revisions?: Json | null
+          shop_id?: string
+          slug?: string
+          tags?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_wiki_articles_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gd_world_zones: {
+        Row: {
+          connected_zone_ids: Json
+          description: string | null
+          encounters: Json
+          grid_data: Json
+          id: string
+          name: string
+          priority: string
+          project_id: string
+          shop_id: string
+          status: string
+          tags: Json
+          user_id: string
+          zone_type: string
+        }
+        Insert: {
+          connected_zone_ids?: Json
+          description?: string | null
+          encounters?: Json
+          grid_data?: Json
+          id?: string
+          name: string
+          priority?: string
+          project_id: string
+          shop_id: string
+          status?: string
+          tags?: Json
+          user_id: string
+          zone_type?: string
+        }
+        Update: {
+          connected_zone_ids?: Json
+          description?: string | null
+          encounters?: Json
+          grid_data?: Json
+          id?: string
+          name?: string
+          priority?: string
+          project_id?: string
+          shop_id?: string
+          status?: string
+          tags?: Json
+          user_id?: string
+          zone_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gd_world_zones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "gd_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       governance_policies: {
         Row: {
           acknowledgment_tracking: Json | null
