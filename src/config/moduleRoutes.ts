@@ -1870,6 +1870,32 @@ export const MODULE_ROUTES: Record<string, ModuleRouteConfig> = {
       { title: 'Settings', href: '/personal-trainer/settings', icon: Settings, description: 'Module settings' },
     ],
   },
+  welding: {
+    slug: 'welding',
+    name: 'Welding & Fabrication',
+    description: 'Complete welding and fabrication business management',
+    icon: Flame,
+    dashboardRoute: '/welding',
+    color: 'hsl(var(--chart-4))',
+    gradientFrom: 'from-orange-600',
+    gradientTo: 'to-red-700',
+    sections: [
+      { title: 'Dashboard', href: '/welding', icon: BarChart3, description: 'Module overview', group: 'Dashboard' },
+      { title: 'Gallery', href: '/welding/gallery', icon: ImageIcon, description: 'Portfolio gallery', group: 'Services' },
+      { title: 'Quotes', href: '/welding/quotes', icon: FileText, description: 'Quote management', group: 'Services' },
+      { title: 'Invoices', href: '/welding/invoices', icon: Receipt, description: 'Invoice management', group: 'Billing' },
+      { title: 'Payments Due', href: '/welding/payments-due', icon: DollarSign, description: 'Outstanding payments', group: 'Billing' },
+      { title: 'Accounts Payable', href: '/welding/accounts-payable', icon: CreditCard, description: 'Bills & AP', group: 'Billing' },
+      { title: 'Inventory', href: '/welding/inventory', icon: Package, description: 'Materials stock', group: 'Inventory' },
+      { title: 'Purchase Orders', href: '/welding/purchase-orders', icon: ShoppingCart, description: 'PO tracking', group: 'Inventory' },
+      { title: 'Customers', href: '/welding/customers', icon: Users, description: 'Customer CRM', group: 'Customers' },
+      { title: 'Messages', href: '/welding/messages', icon: MessageSquare, description: 'Contact messages', group: 'Customers' },
+      { title: 'Calendar', href: '/welding/calendar', icon: Calendar, description: 'Scheduling', group: 'Resources' },
+      { title: 'Sales', href: '/welding/sales', icon: TrendingUp, description: 'Sales pipeline', group: 'Resources' },
+      { title: 'Links', href: '/welding/links', icon: Link, description: 'External links', group: 'Resources' },
+      { title: 'Settings', href: '/welding/settings', icon: Settings, description: 'Module settings' },
+    ],
+  },
 };
 
 export const getModuleRoute = (slug: string): ModuleRouteConfig | undefined => {
