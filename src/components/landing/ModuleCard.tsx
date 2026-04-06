@@ -27,7 +27,7 @@ export function ModuleCard({ slug, name, description, icon: Icon, color, price }
           <Icon className="h-3.5 w-3.5 md:h-7 md:w-7 text-white" />
         </div>
 
-        <h3 className="text-[11px] leading-4 md:text-xl font-semibold mb-0.5 md:mb-2 line-clamp-1">
+        <h3 className="text-[11px] leading-4 md:text-xl font-semibold mb-0.5 md:mb-2 line-clamp-2 min-h-[2rem] md:min-h-[3.5rem]">
           {name}
         </h3>
 
