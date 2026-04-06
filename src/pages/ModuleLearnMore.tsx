@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle, Users, Zap, X, Check, Shield, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Users, Zap, X, Check, Shield, Eye } from 'lucide-react';
 import { LANDING_MODULES } from '@/config/landingModules';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
