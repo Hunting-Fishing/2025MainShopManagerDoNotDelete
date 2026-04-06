@@ -2,8 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Clock, Sparkles } from 'lucide-react';
+import { Settings, Clock, Sparkles, Boxes, Zap } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
+import { getAllModuleRoutes, UPCOMING_MODULES } from '@/config/moduleRoutes';
 
 interface ModuleHubHeaderProps {
   userName?: string;
@@ -22,6 +23,10 @@ export function ModuleHubHeader({ userName, trialActive, trialEndsAt }: ModuleHu
   const daysRemaining = trialEndsAt 
     ? differenceInDays(new Date(trialEndsAt), new Date())
     : 0;
+
+  const totalBuilt = getAllModuleRoutes().length;
+  const totalUpcoming = UPCOMING_MODULES.length;
+  const totalPlatform = totalBuilt + totalUpcoming;
 
   return (
     <div className="mb-8">
@@ -69,6 +74,22 @@ export function ModuleHubHeader({ userName, trialActive, trialEndsAt }: ModuleHu
             Manage Modules
           </Link>
         </Button>
+      </div>
+
+      {/* Platform Stats Bar */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm font-medium border-primary/30 text-primary bg-primary/5">
+          <Zap className="w-3.5 h-3.5" />
+          {totalBuilt} Live Modules
+        </Badge>
+        <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm font-medium border-violet-500/30 text-violet-600 bg-violet-500/5 dark:text-violet-400">
+          <Sparkles className="w-3.5 h-3.5" />
+          {totalUpcoming} Coming Soon
+        </Badge>
+        <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm font-medium border-muted-foreground/30 text-muted-foreground">
+          <Boxes className="w-3.5 h-3.5" />
+          {totalPlatform} Total Platform Modules
+        </Badge>
       </div>
     </div>
   );
