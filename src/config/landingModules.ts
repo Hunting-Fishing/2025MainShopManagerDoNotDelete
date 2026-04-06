@@ -705,6 +705,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Sales pipeline management',
       'Labour rate configuration',
     ],
+    screenshots: [
+      { src: '/screenshots/welding-dashboard.png', alt: 'Welding Dashboard - Quotes, invoices, inventory, gallery' },
+    ],
   },
 ];
 
