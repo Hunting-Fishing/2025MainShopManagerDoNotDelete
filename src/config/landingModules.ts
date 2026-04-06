@@ -544,6 +544,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Consignment tracking',
       'Appointment scheduling',
     ],
+    screenshots: [
+      { src: '/screenshots/gunsmith-dashboard.png', alt: 'Gunsmith Dashboard - Jobs, firearms, compliance, transfers' },
+    ],
   },
   {
     slug: 'marine-services',
