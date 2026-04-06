@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useEnabledModules } from '@/hooks/useEnabledModules';
-import { MODULE_ROUTES } from '@/config/moduleRoutes';
+import { MODULE_ROUTES, getAllModuleRoutes } from '@/config/moduleRoutes';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { ChevronRight, AlertCircle, Rocket } from 'lucide-react';
+import { ChevronRight, AlertCircle, Rocket, Zap } from 'lucide-react';
 
 export function ModuleIndicator() {
   const { modules, hasShop, getEnabledModuleSlugs, isLoading } = useEnabledModules();
@@ -112,6 +112,15 @@ export function ModuleIndicator() {
           </Badge>
         </Link>
       )}
+
+      {/* Platform total */}
+      <Link
+        to="/module-hub"
+        className="flex items-center gap-1.5 px-3 py-1 text-[10px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+      >
+        <Zap className="h-3 w-3" />
+        <span>{getAllModuleRoutes().length} live modules on platform</span>
+      </Link>
     </div>
   );
 }
