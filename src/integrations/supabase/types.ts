@@ -58996,6 +58996,1196 @@ export type Database = {
           },
         ]
       }
+      welding_accounts_payable: {
+        Row: {
+          amount: number
+          amount_paid: number
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          shop_id: string
+          status: Database["public"]["Enums"]["welding_ap_status"]
+          updated_at: string
+          vendor_id: string | null
+          vendor_name: string | null
+        }
+        Insert: {
+          amount?: number
+          amount_paid?: number
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          shop_id: string
+          status?: Database["public"]["Enums"]["welding_ap_status"]
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          amount_paid?: number
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          shop_id?: string
+          status?: Database["public"]["Enums"]["welding_ap_status"]
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_accounts_payable_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "welding_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_company_settings: {
+        Row: {
+          address: string | null
+          business_hours: Json | null
+          company_name: string
+          created_at: string
+          currency: string
+          currency_symbol: string
+          default_invoice_terms: string | null
+          default_tax_rate: number
+          deposit_percentage: number
+          email: string | null
+          enable_customer_portal: boolean
+          enable_email_notifications: boolean
+          id: string
+          include_year: boolean
+          invoice_next_number: number
+          invoice_prefix: string
+          logo_url: string | null
+          mobile_quick_links: Json | null
+          number_padding: number
+          phone: string | null
+          po_next_number: number
+          po_prefix: string
+          quote_next_number: number
+          quote_prefix: string
+          require_deposit: boolean
+          shop_id: string
+          travel_rate_per_km: number
+          updated_at: string
+          year_format: string
+        }
+        Insert: {
+          address?: string | null
+          business_hours?: Json | null
+          company_name?: string
+          created_at?: string
+          currency?: string
+          currency_symbol?: string
+          default_invoice_terms?: string | null
+          default_tax_rate?: number
+          deposit_percentage?: number
+          email?: string | null
+          enable_customer_portal?: boolean
+          enable_email_notifications?: boolean
+          id?: string
+          include_year?: boolean
+          invoice_next_number?: number
+          invoice_prefix?: string
+          logo_url?: string | null
+          mobile_quick_links?: Json | null
+          number_padding?: number
+          phone?: string | null
+          po_next_number?: number
+          po_prefix?: string
+          quote_next_number?: number
+          quote_prefix?: string
+          require_deposit?: boolean
+          shop_id: string
+          travel_rate_per_km?: number
+          updated_at?: string
+          year_format?: string
+        }
+        Update: {
+          address?: string | null
+          business_hours?: Json | null
+          company_name?: string
+          created_at?: string
+          currency?: string
+          currency_symbol?: string
+          default_invoice_terms?: string | null
+          default_tax_rate?: number
+          deposit_percentage?: number
+          email?: string | null
+          enable_customer_portal?: boolean
+          enable_email_notifications?: boolean
+          id?: string
+          include_year?: boolean
+          invoice_next_number?: number
+          invoice_prefix?: string
+          logo_url?: string | null
+          mobile_quick_links?: Json | null
+          number_padding?: number
+          phone?: string | null
+          po_next_number?: number
+          po_prefix?: string
+          quote_next_number?: number
+          quote_prefix?: string
+          require_deposit?: boolean
+          shop_id?: string
+          travel_rate_per_km?: number
+          updated_at?: string
+          year_format?: string
+        }
+        Relationships: []
+      }
+      welding_contact_messages: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_read: boolean
+          message: string
+          name: string
+          phone: string | null
+          shop_id: string
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          name: string
+          phone?: string | null
+          shop_id: string
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          name?: string
+          phone?: string | null
+          shop_id?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
+      welding_customer_interactions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          description: string | null
+          id: string
+          interaction_date: string
+          interaction_type: Database["public"]["Enums"]["welding_customer_interaction_type"]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          description?: string | null
+          id?: string
+          interaction_date?: string
+          interaction_type?: Database["public"]["Enums"]["welding_customer_interaction_type"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          description?: string | null
+          id?: string
+          interaction_date?: string
+          interaction_type?: Database["public"]["Enums"]["welding_customer_interaction_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_customer_interactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "welding_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_customers: {
+        Row: {
+          address: string | null
+          area_code: string | null
+          city: string | null
+          company: string | null
+          created_at: string
+          deposit_date: string | null
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          province: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          area_code?: string | null
+          city?: string | null
+          company?: string | null
+          created_at?: string
+          deposit_date?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          area_code?: string | null
+          city?: string | null
+          company?: string | null
+          created_at?: string
+          deposit_date?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      welding_gallery_projects: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          image_url: string | null
+          is_featured: boolean
+          shop_id: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          shop_id: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          shop_id?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      welding_inventory: {
+        Row: {
+          category: string | null
+          cost_per_unit: number
+          created_at: string
+          id: string
+          location: string | null
+          min_quantity: number
+          name: string
+          quantity: number
+          sell_price: number
+          shop_id: string
+          specifications: string | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          location?: string | null
+          min_quantity?: number
+          name: string
+          quantity?: number
+          sell_price?: number
+          shop_id: string
+          specifications?: string | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          location?: string | null
+          min_quantity?: number
+          name?: string
+          quantity?: number
+          sell_price?: number
+          shop_id?: string
+          specifications?: string | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      welding_inventory_purchase_history: {
+        Row: {
+          created_at: string
+          id: string
+          inventory_item_id: string
+          notes: string | null
+          purchase_date: string
+          quantity: number
+          unit_price: number
+          vendor: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inventory_item_id: string
+          notes?: string | null
+          purchase_date?: string
+          quantity?: number
+          unit_price?: number
+          vendor?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inventory_item_id?: string
+          notes?: string | null
+          purchase_date?: string
+          quantity?: number
+          unit_price?: number
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_inventory_purchase_history_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "welding_inventory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_invoice_history: {
+        Row: {
+          change_type: string | null
+          changed_by: string | null
+          created_at: string
+          field_name: string | null
+          id: string
+          invoice_id: string
+          new_value: string | null
+          old_value: string | null
+        }
+        Insert: {
+          change_type?: string | null
+          changed_by?: string | null
+          created_at?: string
+          field_name?: string | null
+          id?: string
+          invoice_id: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          change_type?: string | null
+          changed_by?: string | null
+          created_at?: string
+          field_name?: string | null
+          id?: string
+          invoice_id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_invoice_history_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "welding_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_invoice_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number
+          sort_order: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id: string
+          quantity?: number
+          sort_order?: number
+          total?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          sort_order?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "welding_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_invoices: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          quote_id: string | null
+          shop_id: string
+          status: Database["public"]["Enums"]["welding_invoice_status"]
+          subtotal: number
+          tax: number
+          tax_rate: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          notes?: string | null
+          quote_id?: string | null
+          shop_id: string
+          status?: Database["public"]["Enums"]["welding_invoice_status"]
+          subtotal?: number
+          tax?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          quote_id?: string | null
+          shop_id?: string
+          status?: Database["public"]["Enums"]["welding_invoice_status"]
+          subtotal?: number
+          tax?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "welding_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welding_invoices_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "welding_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_labour_rates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          rate: number
+          shop_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          rate?: number
+          shop_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          rate?: number
+          shop_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      welding_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "welding_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_purchase_order_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          inventory_item_id: string | null
+          purchase_order_id: string
+          quantity: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          inventory_item_id?: string | null
+          purchase_order_id: string
+          quantity?: number
+          total?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          inventory_item_id?: string | null
+          purchase_order_id?: string
+          quantity?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_purchase_order_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "welding_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welding_purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "welding_purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_purchase_orders: {
+        Row: {
+          created_at: string
+          expected_date: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          po_number: string
+          shop_id: string
+          status: Database["public"]["Enums"]["welding_po_status"]
+          total: number
+          updated_at: string
+          vendor_id: string | null
+          vendor_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          expected_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          po_number: string
+          shop_id: string
+          status?: Database["public"]["Enums"]["welding_po_status"]
+          total?: number
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          expected_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          po_number?: string
+          shop_id?: string
+          status?: Database["public"]["Enums"]["welding_po_status"]
+          total?: number
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_purchase_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "welding_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_quick_links: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          shop_id: string
+          sort_order: number
+          title: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          shop_id: string
+          sort_order?: number
+          title: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          shop_id?: string
+          sort_order?: number
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      welding_quote_attachments: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_name: string
+          file_url: string
+          id: string
+          quote_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_name: string
+          file_url: string
+          id?: string
+          quote_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          quote_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_quote_attachments_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "welding_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_quote_history: {
+        Row: {
+          change_type: string | null
+          changed_by: string | null
+          created_at: string
+          field_name: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          quote_id: string
+        }
+        Insert: {
+          change_type?: string | null
+          changed_by?: string | null
+          created_at?: string
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          quote_id: string
+        }
+        Update: {
+          change_type?: string | null
+          changed_by?: string | null
+          created_at?: string
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          quote_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_quote_history_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "welding_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_quote_materials: {
+        Row: {
+          category: string | null
+          cost_price: number
+          created_at: string
+          id: string
+          inventory_item_id: string | null
+          measurements: string | null
+          name: string
+          notes: string | null
+          quantity: number
+          quote_id: string
+          sell_price: number
+          sort_order: number
+        }
+        Insert: {
+          category?: string | null
+          cost_price?: number
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          measurements?: string | null
+          name?: string
+          notes?: string | null
+          quantity?: number
+          quote_id: string
+          sell_price?: number
+          sort_order?: number
+        }
+        Update: {
+          category?: string | null
+          cost_price?: number
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          measurements?: string | null
+          name?: string
+          notes?: string | null
+          quantity?: number
+          quote_id?: string
+          sell_price?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_quote_materials_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "welding_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welding_quote_materials_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "welding_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_quotes: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          description: string | null
+          estimated_amount: number
+          id: string
+          labour_hours: number
+          labour_rate: number
+          notes: string | null
+          postal_code: string | null
+          project_type: string | null
+          province: string | null
+          quote_mode: string | null
+          quote_number: string | null
+          shop_id: string
+          status: Database["public"]["Enums"]["welding_quote_status"]
+          subtotal: number
+          tax: number
+          tax_rate: number
+          timeline: string | null
+          total: number
+          travel_cost: number
+          travel_distance: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          description?: string | null
+          estimated_amount?: number
+          id?: string
+          labour_hours?: number
+          labour_rate?: number
+          notes?: string | null
+          postal_code?: string | null
+          project_type?: string | null
+          province?: string | null
+          quote_mode?: string | null
+          quote_number?: string | null
+          shop_id: string
+          status?: Database["public"]["Enums"]["welding_quote_status"]
+          subtotal?: number
+          tax?: number
+          tax_rate?: number
+          timeline?: string | null
+          total?: number
+          travel_cost?: number
+          travel_distance?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          description?: string | null
+          estimated_amount?: number
+          id?: string
+          labour_hours?: number
+          labour_rate?: number
+          notes?: string | null
+          postal_code?: string | null
+          project_type?: string | null
+          province?: string | null
+          quote_mode?: string | null
+          quote_number?: string | null
+          shop_id?: string
+          status?: Database["public"]["Enums"]["welding_quote_status"]
+          subtotal?: number
+          tax?: number
+          tax_rate?: number
+          timeline?: string | null
+          total?: number
+          travel_cost?: number
+          travel_distance?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "welding_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_sales_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          follow_up_date: string | null
+          id: string
+          notes: string | null
+          quote_id: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_type?: string
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          quote_id?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          quote_id?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_sales_activities_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "welding_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welding_sales_activities_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "welding_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_schedule_entries: {
+        Row: {
+          color: string | null
+          created_at: string
+          customer_id: string | null
+          entry_date: string
+          entry_type: Database["public"]["Enums"]["welding_schedule_entry_type"]
+          id: string
+          notes: string | null
+          quote_id: string | null
+          shop_id: string
+          title: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          customer_id?: string | null
+          entry_date: string
+          entry_type?: Database["public"]["Enums"]["welding_schedule_entry_type"]
+          id?: string
+          notes?: string | null
+          quote_id?: string | null
+          shop_id: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          customer_id?: string | null
+          entry_date?: string
+          entry_type?: Database["public"]["Enums"]["welding_schedule_entry_type"]
+          id?: string
+          notes?: string | null
+          quote_id?: string | null
+          shop_id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_schedule_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "welding_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welding_schedule_entries_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "welding_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_vendors: {
+        Row: {
+          address: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wishlist_items: {
         Row: {
           created_at: string
@@ -61311,6 +62501,18 @@ export type Database = {
         Returns: string
       }
       generate_shop_slug: { Args: { shop_name: string }; Returns: string }
+      generate_welding_invoice_number: {
+        Args: { shop_uuid: string }
+        Returns: string
+      }
+      generate_welding_po_number: {
+        Args: { shop_uuid: string }
+        Returns: string
+      }
+      generate_welding_quote_number: {
+        Args: { shop_uuid: string }
+        Returns: string
+      }
       generate_work_order_number: {
         Args: { p_shop_id: string }
         Returns: string
@@ -62420,6 +63622,44 @@ export type Database = {
         | "broken"
         | "lost"
         | "retired"
+      welding_ap_status: "pending" | "partial" | "paid"
+      welding_customer_interaction_type:
+        | "email"
+        | "phone_call"
+        | "site_visit"
+        | "quote_request"
+        | "deposit"
+        | "payment"
+        | "follow_up"
+        | "conversation"
+        | "other"
+      welding_invoice_status:
+        | "draft"
+        | "sent"
+        | "unpaid"
+        | "partial"
+        | "paid"
+        | "overdue"
+      welding_po_status:
+        | "draft"
+        | "ordered"
+        | "shipped"
+        | "received"
+        | "cancelled"
+      welding_quote_status:
+        | "new"
+        | "reviewed"
+        | "quoted"
+        | "accepted"
+        | "declined"
+      welding_schedule_entry_type:
+        | "day_off"
+        | "vacation"
+        | "install_day"
+        | "on_site"
+        | "shop_day"
+        | "booking"
+        | "measurement"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -62693,6 +63933,49 @@ export const Constants = {
         "broken",
         "lost",
         "retired",
+      ],
+      welding_ap_status: ["pending", "partial", "paid"],
+      welding_customer_interaction_type: [
+        "email",
+        "phone_call",
+        "site_visit",
+        "quote_request",
+        "deposit",
+        "payment",
+        "follow_up",
+        "conversation",
+        "other",
+      ],
+      welding_invoice_status: [
+        "draft",
+        "sent",
+        "unpaid",
+        "partial",
+        "paid",
+        "overdue",
+      ],
+      welding_po_status: [
+        "draft",
+        "ordered",
+        "shipped",
+        "received",
+        "cancelled",
+      ],
+      welding_quote_status: [
+        "new",
+        "reviewed",
+        "quoted",
+        "accepted",
+        "declined",
+      ],
+      welding_schedule_entry_type: [
+        "day_off",
+        "vacation",
+        "install_day",
+        "on_site",
+        "shop_day",
+        "booking",
+        "measurement",
       ],
     },
   },
