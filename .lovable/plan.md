@@ -1,31 +1,19 @@
 
 
-# Add Missing `welding_line_item_categories` Table
+# Fix Module Card Name Truncation on Landing Page
 
-## Summary
+## Problem
+Module names like "Welding & Fabrication", "Personal Trainer", "Power Washing" get cut off because the card title uses `line-clamp-1`, and the grid packs 3-5 columns making cards very narrow.
 
-The database comparison found **23 of 24 tables match** between the Climax Welding Hub and this project. The only missing table is `welding_line_item_categories` — a lookup table used by `welding_quote_materials.category` to categorize line items (Labour, Travel Cost, Glass, Hardware, etc.).
+## Changes
 
-## What Will Be Created
+### 1. Update `src/components/landing/ModuleCard.tsx`
+- Change `line-clamp-1` to `line-clamp-2` on the h3 title so longer names wrap to a second line instead of being cut off
+- Add `min-h-[2rem] md:min-h-[3.5rem]` to the title to keep card heights consistent even when names are short
 
-**1 table**: `welding_line_item_categories`
-
-| Column | Type | Notes |
-|---|---|---|
-| id | UUID | Primary key |
-| shop_id | UUID | Multi-tenant isolation |
-| name | TEXT | Category name |
-| icon | TEXT | Icon identifier, default 'plus' |
-| sort_order | INTEGER | Display ordering |
-| is_active | BOOLEAN | Soft delete |
-| created_at | TIMESTAMPTZ | Auto-set |
-| updated_at | TIMESTAMPTZ | Auto-updated via trigger |
-
-**RLS**: Standard `shop_id = get_current_user_shop_id()` policy.
-
-**Trigger**: Reuses existing `update_updated_at_column()`.
+### 2. Update grid in `src/pages/Index.tsx`
+- Change from `grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5` to `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5` — on the smallest screens, 2 columns gives each card more room for the name
 
 ## Result
-
-After this, the welding database will be **24/24 tables complete** — a full match with the Climax Welding Hub project.
+All module names will be fully visible. Cards will have consistent heights. Mobile users see 2 columns (more readable), while desktop still shows up to 5.
 
