@@ -1,19 +1,24 @@
 
 
-# Fix Module Card Name Truncation on Landing Page
+# Add "Back to Modules" Button at Top of Module Detail Pages
 
 ## Problem
-Module names like "Welding & Fabrication", "Personal Trainer", "Power Washing" get cut off because the card title uses `line-clamp-1`, and the grid packs 3-5 columns making cards very narrow.
+When users click "View" on a module card from the landing page, they land on `/modules/:slug` (the ModuleLearnMore page). There is a "View All Modules" button in the hero area and an "Explore Other Modules" button at the very bottom, but no sticky/prominent back button at the top of the page. Users may feel trapped, especially on long pages.
 
 ## Changes
 
-### 1. Update `src/components/landing/ModuleCard.tsx`
-- Change `line-clamp-1` to `line-clamp-2` on the h3 title so longer names wrap to a second line instead of being cut off
-- Add `min-h-[2rem] md:min-h-[3.5rem]` to the title to keep card heights consistent even when names are short
+### `src/pages/ModuleLearnMore.tsx`
+Add a fixed top navigation bar with a back button, inserted at the very top of the page (before the hero section):
 
-### 2. Update grid in `src/pages/Index.tsx`
-- Change from `grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5` to `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5` — on the smallest screens, 2 columns gives each card more room for the name
+- A slim sticky header bar (`sticky top-0 z-50 bg-background/80 backdrop-blur border-b`) containing:
+  - A "Back to Modules" button (left-aligned) using `ArrowLeft` icon, linking to `/#modules`
+  - The module name displayed in the center for context
+- This gives users an always-visible escape route at the top of the page
 
-## Result
-All module names will be fully visible. Cards will have consistent heights. Mobile users see 2 columns (more readable), while desktop still shows up to 5.
+The existing "View All Modules" button in the hero and "Explore Other Modules" at the bottom remain unchanged.
+
+## Technical Details
+- Import `ArrowLeft` from `lucide-react`
+- The sticky bar sits inside the component's root div, above the hero `<section>`
+- Uses `backdrop-blur` for a modern frosted-glass look matching the app's style
 
