@@ -498,6 +498,9 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
         answer: 'Yes! Every plan includes a 14-day free trial with full access to all features. No credit card required to start.',
       },
     ],
+    screenshots: [
+      { src: '/screenshots/repair-shop-dashboard.png', alt: 'Repair Shop Dashboard - Work orders, parts, invoices' },
+    ],
   },
   {
     slug: 'power-washing',
