@@ -167,7 +167,6 @@ export const MODULE_CONFIGS: Record<string, ModuleConfig> = {
       },
     },
   },
-  },
   personal_trainer: {
     slug: 'personal_trainer',
     name: 'Personal Trainer & Gym',
