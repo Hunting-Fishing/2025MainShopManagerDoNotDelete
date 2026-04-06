@@ -163,6 +163,11 @@ export type TrustBadge = {
   icon: LucideIcon;
 };
 
+export type ModuleScreenshot = {
+  src: string;
+  alt: string;
+};
+
 export type LandingModule = {
   slug: string;
   name: string;
@@ -189,6 +194,7 @@ export type LandingModule = {
   testimonial?: Testimonial;
   pricingTiers?: PricingTier[];
   trustBadges?: TrustBadge[];
+  screenshots?: ModuleScreenshot[];
 };
 
 export type LandingComingSoonModule = {
