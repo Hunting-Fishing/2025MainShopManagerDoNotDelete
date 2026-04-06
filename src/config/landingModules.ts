@@ -653,6 +653,26 @@ Whether you're a solo mechanic or managing a team of technicians, you'll have th
       'Package & billing management',
     ],
   },
+  {
+    slug: 'welding',
+    name: 'Welding & Fabrication',
+    description: 'Complete welding and fabrication business management with quoting, invoicing, inventory tracking, purchase orders, customer CRM, and project gallery.',
+    icon: Flame,
+    color: 'bg-orange-600',
+    price: 'From $9/mo',
+    available: true,
+    coreFeatures: [
+      'Quote & invoice management',
+      'Inventory & purchase orders',
+      'Customer CRM & scheduling',
+      'Project gallery & portfolio',
+    ],
+    extraFeatures: [
+      'Accounts payable tracking',
+      'Sales pipeline management',
+      'Labour rate configuration',
+    ],
+  },
 ];
 
 export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
@@ -710,7 +730,7 @@ export const LANDING_COMING_SOON_CATEGORIES: LandingComingSoonCategory[] = [
     category: 'Skilled Trades',
     description: 'Specialized craftsmanship and technical services',
     modules: [
-      { name: 'Welding & Fabrication', description: 'Metal fabrication, repairs, and certification tracking', icon: Flame },
+      
       { name: 'Locksmith', description: 'Emergency dispatch, key cutting logs, and mobile service', icon: KeyRound },
       { name: 'Appliance Repair', description: 'In-home service with parts tracking and warranty management', icon: Refrigerator },
       { name: 'Upholstery', description: 'Furniture and vehicle upholstery repair and restoration', icon: Sofa },

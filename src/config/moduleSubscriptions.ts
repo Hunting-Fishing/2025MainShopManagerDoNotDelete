@@ -167,6 +167,46 @@ export const MODULE_CONFIGS: Record<string, ModuleConfig> = {
       },
     },
   },
+  personal_trainer: {
+    slug: 'personal_trainer',
+    name: 'Personal Trainer & Gym',
+    description: 'Client management, workout programming, and session scheduling',
+    icon: 'Dumbbell',
+    tiers: {
+      starter: {
+        productId: 'prod_UHsg77qIjpMHVZ',
+        priceId: 'price_1TJIvCGapOfsltWtzaQL2IJq',
+      },
+      pro: {
+        productId: 'prod_UHshmXoJxiK9SA',
+        priceId: 'price_1TJIvmGapOfsltWtuHGJIBAD',
+      },
+      business: {
+        productId: 'prod_UHshaenuZYMf27',
+        priceId: 'price_1TJIwKGapOfsltWtWFfu9XFl',
+      },
+    },
+  },
+  welding: {
+    slug: 'welding',
+    name: 'Welding & Fabrication',
+    description: 'Complete welding and fabrication business management',
+    icon: 'Flame',
+    tiers: {
+      starter: {
+        productId: 'prod_UHsiqNS71nOLwD',
+        priceId: 'price_1TJIwoGapOfsltWtTefAiclN',
+      },
+      pro: {
+        productId: 'prod_UHsiGDGDogmPpL',
+        priceId: 'price_1TJIxFGapOfsltWtoAoCR4ql',
+      },
+      business: {
+        productId: 'prod_UHsjyUgrCnhurI',
+        priceId: 'price_1TJIxeGapOfsltWtgnm3WZxT',
+      },
+    },
+  },
 };
 
 // Multi-module discount: 20% off each additional module

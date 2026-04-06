@@ -579,16 +579,6 @@ export const UPCOMING_MODULES: UpcomingModuleConfig[] = [
     expectedDate: 'Q4 2026',
     category: 'Construction & Trade',
   },
-  {
-    slug: 'welding',
-    name: 'Welding Services',
-    description: 'Metal fabrication and welding projects',
-    icon: Flame,
-    gradientFrom: 'from-orange-600',
-    gradientTo: 'to-red-700',
-    expectedDate: 'Q4 2026',
-    category: 'Construction & Trade',
-  },
 
   // Automotive & Transportation
   {
