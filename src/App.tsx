@@ -1824,6 +1824,12 @@ function App() {
                   <Route path="/database" element={<GameDevDatabase />} />
                   <Route path="/gdd" element={<GameDevGDD />} />
                   <Route path="/roadmap" element={<GameDevRoadmap />} />
+                  <Route path="/story" element={<GameDevStory />} />
+                  <Route path="/characters" element={<GameDevCharacters />} />
+                  <Route path="/dialogue" element={<GameDevDialogue />} />
+                  <Route path="/wiki" element={<GameDevWiki />} />
+                  <Route path="/quests" element={<GameDevQuests />} />
+                  <Route path="/raids" element={<GameDevRaids />} />
                 </Routes>
               </GameDevLayout>
               </AuthenticatedProviders>
