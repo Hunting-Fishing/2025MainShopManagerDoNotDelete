@@ -11,13 +11,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Search, Image, Music, Box, FileText, Filter } from 'lucide-react';
 import type { AssetType, PlanningStatus, Priority } from '@/types/game-development';
 
-const ASSET_TYPES: AssetType[] = ['sprite', 'texture', 'model-3d', 'tileset', 'background', 'ui-element', 'icon', 'portrait', 'animation', 'vfx', 'sfx', 'music', 'voice-line'];
-const ASSET_STATUSES: PlanningStatus[] = ['draft', 'in-progress', 'review', 'final', 'cut'];
-const PRIORITY_CONFIG: Record<Priority, { label: string; class: string }> = {
+const ASSET_TYPES: AssetType[] = ['concept-art', 'character', 'environment', 'prop', 'icon', 'sprite', 'model', 'texture', 'vfx', 'animation', 'sfx', 'music', 'voice-line'];
+const ASSET_STATUSES: PlanningStatus[] = ['idea', 'planned', 'in-progress', 'review', 'done', 'cut'];
+const PRIORITY_CONFIG: Partial<Record<Priority, { label: string; class: string }>> = {
   critical: { label: 'Critical', class: 'bg-destructive text-destructive-foreground' },
   high: { label: 'High', class: 'bg-orange-500/20 text-orange-400' },
   medium: { label: 'Medium', class: 'bg-primary/20 text-primary' },
   low: { label: 'Low', class: 'bg-muted text-muted-foreground' },
+  backlog: { label: 'Backlog', class: 'bg-muted text-muted-foreground' },
 };
 
 export default function GameDevAssets() {
@@ -40,7 +41,7 @@ export default function GameDevAssets() {
       asset_type: form.asset_type,
       priority: form.priority,
       description: form.description,
-      status: 'draft',
+      status: 'planned',
     });
     setForm({ name: '', asset_type: 'sprite', priority: 'medium', description: '' });
     setDialogOpen(false);

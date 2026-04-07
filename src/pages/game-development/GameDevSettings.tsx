@@ -11,7 +11,7 @@ import { Settings, Save, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Engine } from '@/types/game-development';
 
-const ENGINES: Engine[] = ['unity', 'unreal', 'godot', 'gamemaker', 'rpg-maker', 'custom', 'other'];
+const ENGINES: Engine[] = ['unity', 'unreal', 'godot', 'gamemaker', 'flutter', 'defold', 'cocos', 'custom'];
 const GENRES = ['RPG', 'Action', 'Adventure', 'Strategy', 'Simulation', 'Puzzle', 'Horror', 'Platformer', 'Shooter', 'Racing', 'Sports', 'Other'];
 
 export default function GameDevSettings() {
