@@ -46,7 +46,6 @@ export default function GameDevQuests() {
   const handleAdd = () => {
     if (!form.name.trim()) return;
     addQuest({
-      id: uuid(),
       project_id: activeProjectId,
       name: form.name,
       description: form.description || undefined,

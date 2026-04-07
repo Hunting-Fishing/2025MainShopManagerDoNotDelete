@@ -41,7 +41,6 @@ export default function GameDevCharacters() {
   const handleAdd = () => {
     if (!form.name.trim()) return;
     addCharacter({
-      id: uuid(),
       project_id: activeProjectId,
       name: form.name,
       role: form.role,

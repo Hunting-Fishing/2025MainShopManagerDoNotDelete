@@ -47,7 +47,6 @@ export default function GameDevDialogue() {
   const handleAddNode = () => {
     if (!nodeForm.text.trim() || !selectedTreeId) return;
     addDialogueNode({
-      id: uuid(),
       project_id: activeProjectId,
       tree_id: selectedTreeId,
       node_type: nodeForm.node_type,

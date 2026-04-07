@@ -42,7 +42,6 @@ export default function GameDevWiki() {
   const handleAdd = () => {
     if (!form.title.trim()) return;
     addWikiArticle({
-      id: uuid(),
       project_id: activeProjectId,
       title: form.title,
       slug: form.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),

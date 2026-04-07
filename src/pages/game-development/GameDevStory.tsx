@@ -74,7 +74,6 @@ export default function GameDevStory() {
   const handleAddBeat = () => {
     if (!newBeat.title.trim()) return;
     addStoryBeat({
-      id: uuid(),
       project_id: activeProjectId,
       beat_type: newBeat.beat_type,
       title: newBeat.title,
@@ -91,7 +90,6 @@ export default function GameDevStory() {
   const handleAddConnection = () => {
     if (!newConn.source_beat_id || !newConn.target_beat_id) return;
     addStoryConnection({
-      id: uuid(),
       project_id: activeProjectId,
       source_beat_id: newConn.source_beat_id,
       target_beat_id: newConn.target_beat_id,
