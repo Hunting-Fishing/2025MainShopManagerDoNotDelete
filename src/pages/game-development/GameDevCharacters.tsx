@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Users, Trash2, Search } from 'lucide-react';
 import { GameCharacter, CharacterRole, CHARACTER_ROLE_CONFIG } from '@/types/game-development';
-import { v4 as uuid } from 'uuid';
 
 const ROLES = Object.entries(CHARACTER_ROLE_CONFIG) as [CharacterRole, typeof CHARACTER_ROLE_CONFIG[CharacterRole]][];
 

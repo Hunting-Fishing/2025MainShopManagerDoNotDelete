@@ -15,7 +15,6 @@ import {
   RaidPlan, EventPlan, RaidDifficulty, EventType, EventRecurrence,
   PlanningStatus, Priority, RAID_DIFFICULTY_CONFIG, EVENT_TYPE_CONFIG, EVENT_RECURRENCE_CONFIG,
 } from '@/types/game-development';
-import { v4 as uuid } from 'uuid';
 
 const STATUSES: PlanningStatus[] = ['idea', 'planned', 'in-progress', 'review', 'done', 'blocked'];
 const PRIORITIES: Priority[] = ['critical', 'high', 'medium', 'low', 'backlog'];

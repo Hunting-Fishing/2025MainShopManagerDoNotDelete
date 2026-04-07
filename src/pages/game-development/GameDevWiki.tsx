@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, BookOpen, Trash2, Search, Eye } from 'lucide-react';
 import { WikiArticle, WikiCategory, WIKI_CATEGORY_CONFIG } from '@/types/game-development';
-import { v4 as uuid } from 'uuid';
 
 const CATEGORIES = Object.entries(WIKI_CATEGORY_CONFIG) as [WikiCategory, typeof WIKI_CATEGORY_CONFIG[WikiCategory]][];
 

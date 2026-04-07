@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Scroll, Trash2, Search, Target } from 'lucide-react';
 import { Quest, QuestType, PlanningStatus, Priority, QUEST_TYPE_CONFIG } from '@/types/game-development';
-import { v4 as uuid } from 'uuid';
 
 const STATUSES: PlanningStatus[] = ['idea', 'planned', 'in-progress', 'review', 'done', 'blocked', 'cut', 'backlog'];
 const PRIORITIES: Priority[] = ['critical', 'high', 'medium', 'low', 'backlog'];

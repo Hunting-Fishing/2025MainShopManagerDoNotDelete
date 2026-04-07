@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, BookOpen, Trash2, Link, Search } from 'lucide-react';
 import { StoryBeat, StoryBeatType, StoryConnection, StoryConnectionType } from '@/types/game-development';
-import { v4 as uuid } from 'uuid';
 
 const BEAT_TYPES: { value: StoryBeatType; label: string; emoji: string }[] = [
   { value: 'prologue', label: 'Prologue', emoji: '📖' },

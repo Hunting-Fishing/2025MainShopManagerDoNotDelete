@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, MessageSquare, Trash2, Search, GitBranch } from 'lucide-react';
 import { DialogueTree, DialogueNode, DialogueNodeType, DIALOGUE_NODE_CONFIG } from '@/types/game-development';
-import { v4 as uuid } from 'uuid';
 
 export default function GameDevDialogue() {
   const { activeProjectId, dialogueTrees, dialogueNodes, addDialogueTree, removeDialogueTree, addDialogueNode, removeDialogueNode } = useGameDevStore();
