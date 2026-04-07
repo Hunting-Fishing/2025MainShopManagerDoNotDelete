@@ -128,7 +128,7 @@ const WeldingAdminLayout = ({ children }: { children: React.ReactNode }) => {
       </div>
 
       <main className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="p-4 md:p-6 lg:p-8 pt-16 lg:pt-8 pb-20 lg:pb-8 max-w-full">{children}</div>
+        <div className="px-4 pt-16 pb-20 md:px-6 md:pt-16 md:pb-20 lg:px-8 lg:pt-8 lg:pb-8 max-w-full">{children}</div>
       </main>
     </div>
   );
