@@ -47,7 +47,7 @@ export default function GameDevItems() {
   const [itemEffect, setItemEffect] = useState('');
   const [itemLore, setItemLore] = useState('');
 
-  const projectItems = items.filter(i => i.project_id === activeProjectId);
+  const projectItems = gameItems.filter(i => i.project_id === activeProjectId);
   const projectLootTables = lootTables.filter(l => l.project_id === activeProjectId);
   const projectSets = itemSets.filter(s => s.project_id === activeProjectId);
   const projectRecipes = craftingRecipes.filter(r => r.project_id === activeProjectId);
@@ -72,9 +72,9 @@ export default function GameDevItems() {
       effect: itemEffect, lore: itemLore, stats: {}, tags: [], status: 'planned',
     };
     if (editingItem) {
-      updateItem(editingItem.id, data);
+      updateGameItem(editingItem.id, data);
     } else {
-      addItem({ ...data, project_id: activeProjectId } as Omit<GameItem, 'id'>);
+      addGameItem({ ...data, project_id: activeProjectId } as Omit<GameItem, 'id'>);
     }
     resetItemForm(); setShowAddItem(false); setEditingItem(null);
   };
@@ -157,7 +157,7 @@ export default function GameDevItems() {
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(item)}><Edit className="h-3 w-3" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeItem(item.id)}><Trash2 className="h-3 w-3" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeGameItem(item.id)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
                     </div>
                     <div className="flex gap-1 flex-wrap">
