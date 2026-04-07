@@ -1,108 +1,103 @@
 
 
-# Merge 138 Cosmos (GameForge) into Game Development Module
+# Fix All Welding Placeholder Pages — Full CRUD Implementation
 
-## Scope Assessment
+## Problem
+13 of 14 welding pages display "coming in next batch" placeholders, violating the project's production-first doctrine. All 24 database tables exist and are ready — only the frontend is missing.
 
-The **138 Cosmos** project ("GameForge") is a full-featured game development planning platform with:
-- **33 pages** (Dashboard, Canvas Planner, Story Tracker, Character Development, Items & Loot, Dialogue Trees, Economy Simulation, Level Editor, Quests, Raids & Events, Wiki, GDD Builder, Roadmap, and more)
-- **50+ components** (economy simulators, planning views, AI generators, entity graphs, etc.)
-- **30+ database tables** (projects, boards, board_nodes, characters, game_items, loot_tables, dialogue_trees, quests, raids, events, economy_curves, world_zones, etc.)
-- **14 Edge Functions** (AI chat, asset generator, balance advisor, story analyzer, entity generator, etc.)
-- **1,572-line Zustand store** with cloud sync, undo/redo, and real-time presence
-- **807-line type definitions** with comprehensive game design types
+## Architecture Pattern
+Each page will follow the existing project conventions:
+- `useShopId()` hook for multi-tenant shop_id
+- `useQuery` / `useMutation` from TanStack Query against Supabase
+- `as any` cast on table names (welding tables aren't in generated types)
+- `WeldingAdminLayout` wrapper
+- Mobile-first card layouts, search/filter, add/edit dialogs
+- `useWeldingSettings()` for currency formatting and document numbering
 
-## Why This Cannot Be Done in a Single Step
+## Implementation — 4 Batches
 
-This is the largest merge request possible -- essentially embedding an entire standalone application as a module. It must be broken into **multiple implementation phases** to avoid breaking the existing project. Each phase should be its own conversation turn.
+### Batch 1: Core Business (Quotes, Invoices, Customers, Inventory)
 
-## Phased Plan
+**WeldingAdminQuotes** — `welding_quotes` + `welding_quote_materials`
+- List with status badges (new/sent/accepted/rejected/completed), search by customer/quote number
+- Create/edit dialog: customer info, project type, labour hours/rate, travel, materials list, tax calc
+- Status transitions, validity date tracking
+- Materials sub-table CRUD inline
 
-### Phase 1: Database Migration (~30 tables)
-Create all GameForge tables in the current Supabase project, prefixed with `gd_` (game dev) to avoid naming conflicts with existing tables (e.g., `projects`, `events`, `comments` already exist in this project). Tables include:
-- `gd_projects`, `gd_boards`, `gd_board_nodes`, `gd_board_edges`
-- `gd_milestones`, `gd_roadmap_boards`, `gd_plan_tasks`, `gd_planning_records`
-- `gd_asset_requirements`, `gd_design_docs`
-- `gd_characters`, `gd_character_relations`, `gd_character_arcs`, `gd_factions`
-- `gd_story_beats`, `gd_story_connections`
-- `gd_wiki_articles`
-- `gd_game_items`, `gd_loot_tables`, `gd_item_sets`, `gd_crafting_recipes`
-- `gd_dialogue_trees`, `gd_dialogue_nodes`, `gd_dialogue_edges`, `gd_dialogue_variables`
-- `gd_raids`, `gd_events`, `gd_quests`
-- `gd_economy_curves`, `gd_world_zones`, `gd_playtest_sessions`
-- `gd_cross_canvas_links`, `gd_custom_db_fields`, `gd_entity_snapshots`
-- `gd_locale_strings`, `gd_comments`, `gd_api_keys`, `gd_webhooks`, `gd_webhook_logs`
-- `gd_chat_conversations`, `gd_chat_messages`, `gd_media_files`
-- `gd_generated_assets`, `gd_character_assemblies`, `gd_chat_import_files`
+**WeldingAdminInvoices** — `welding_invoices` + `welding_invoice_items` + `welding_payments`
+- List with status badges (draft/sent/paid/overdue/partial), search/filter
+- Create/edit: line items, tax, amount paid tracking
+- Record payment dialog
+- Link to quote if converted
 
-RLS policies will use `shop_id`-based isolation (matching this project's multi-tenant pattern) instead of the original `user_id`-based pattern.
+**WeldingAdminCustomers** — `welding_customers` + `welding_customer_interactions`
+- List with search, status filter (active/inactive/lead)
+- Create/edit dialog: name, company, contact, address fields
+- Interaction log (calls, emails, meetings) as expandable section
 
-### Phase 2: Module Registration & Navigation
-- Add `game-development` to `landingModules.ts` with description, features, pricing
-- Add `game-development` to `moduleRoutes.ts` with all ~25 sub-pages
-- Register in `navigation.ts`, `routeGuards.ts`, `Navbar.tsx`, `MobileNavigation.tsx`, `getPostLoginDestination.ts`, `SidebarContent.tsx`
-- Add to `business_modules` database seed
-- Add Stripe products via `moduleSubscriptions.ts`
+**WeldingAdminInventory** — `welding_inventory` + `welding_inventory_purchase_history`
+- List with low-stock highlighting, category filter, search
+- Create/edit: name, category, specs, quantity, unit, min qty, costs
+- Purchase history sub-list
 
-### Phase 3: Core Types, Store & Cloud DB Layer
-- Copy and adapt `game-planner.ts` types to `src/types/game-development.ts`
-- Create `src/stores/game-dev-store.ts` (adapted from the 1,572-line Zustand store)
-- Create `src/lib/game-dev-cloud-db.ts` (adapted cloud sync layer pointing to `gd_` prefixed tables)
+### Batch 2: Financial (Payments Due, Accounts Payable, Purchase Orders)
 
-### Phase 4: Copy & Adapt Pages (Batch 1 - Core)
-Under `src/pages/game-development/`:
-- `GameDevDashboard.tsx` (main dashboard)
-- `GameDevProjects.tsx` (project management)
-- `GameDevCanvas.tsx` and `GameDevCanvasOverview.tsx` (visual planning boards)
-- `GameDevDatabase.tsx` (planning database)
-- `GameDevGDD.tsx` (game design document builder)
-- `GameDevRoadmap.tsx` (roadmap planning)
+**WeldingAdminPaymentsDue** — filtered view of `welding_invoices` where status != paid
+- Outstanding balance cards, aging summary
+- Quick "record payment" action
 
-### Phase 5: Copy & Adapt Pages (Batch 2 - Narrative & Design)
-- `GameDevStory.tsx` (story tracker)
-- `GameDevCharacters.tsx` (character development)
-- `GameDevDialogue.tsx` (dialogue tree editor)
-- `GameDevWiki.tsx` (wiki/lore)
-- `GameDevQuests.tsx` (quest designer)
-- `GameDevRaids.tsx` (raids & events)
+**WeldingAdminAccountsPayable** — `welding_accounts_payable` + `welding_vendors`
+- List with status filter, vendor lookup
+- Create/edit: vendor, amount, due date, notes
+- Vendor management inline
 
-### Phase 6: Copy & Adapt Pages (Batch 3 - Systems & Tools)
-- `GameDevItems.tsx` (items & loot database)
-- `GameDevEconomy.tsx` (economy simulation)
-- `GameDevLevels.tsx` (level editor)
-- `GameDevPlaytest.tsx` (playtest journal)
-- `GameDevAssets.tsx` (asset requirements)
-- `GameDevAssetGenerator.tsx` (AI asset generation)
-- `GameDevActivity.tsx` (activity feed)
-- `GameDevRelationships.tsx` (entity graph)
+**WeldingAdminPurchaseOrders** — `welding_purchase_orders` + `welding_purchase_order_items`
+- List with status badges (draft/ordered/received/cancelled)
+- Create/edit with line items linked to inventory
+- Auto PO numbering from settings
 
-### Phase 7: Copy & Adapt Edge Functions
-Deploy adapted versions of the 14 edge functions:
-- `gd-ai-chat`, `gd-ai-entity-generator`, `gd-ai-item-editor`
-- `gd-ai-balance-advisor`, `gd-ai-story-analyzer`
-- `gd-ai-asset-generator`, `gd-ai-asset-generator-leonardo`
-- `gd-ai-chat-import`, `gd-excel-column-mapper`
-- `gd-project-api`, `gd-webhook-deliver`
+### Batch 3: Operations (Messages, Calendar, Sales, Gallery)
 
-### Phase 8: Landing Page & Screenshots
-- Take screenshots of the module dashboard
-- Add to the module card gallery
-- Create the module's "Learn More" content
+**WeldingAdminMessages** — `welding_contact_messages`
+- Inbox list with read/unread styling
+- Detail view, mark as read toggle
+- Delete capability
 
-## Key Technical Decisions
+**WeldingAdminCalendar** — `welding_schedule_entries`
+- Month/week view using date grid
+- Create/edit entries: date, type (job/meeting/deadline/reminder), title, notes, color
+- Link to customer/quote optionally
 
-1. **Table prefix `gd_`**: Prevents conflicts with existing `projects`, `events`, `comments` tables
-2. **Shop-scoped RLS**: All tables get `shop_id` column with standard `get_current_user_shop_id()` RLS instead of `user_id`-only
-3. **Route prefix `/game-development/*`**: All pages nested under this path
-4. **Zustand store**: Isolated store for game dev module state only
-5. **Edge function prefix `gd-`**: Avoids naming conflicts with existing functions
+**WeldingAdminSales** — `welding_sales_activities`
+- Pipeline list with status filter (new/contacted/quoted/won/lost)
+- Create/edit: activity type, customer, follow-up date, notes, linked quote
+- Follow-up date highlighting
 
-## Important Notes
+**WeldingAdminGallery** — `welding_gallery_projects`
+- Grid of project cards with images
+- Create/edit: title, description, category, image URL, featured toggle, tags
+- Drag-to-reorder via display_order
 
-- This is approximately **8 implementation phases**, each requiring a separate conversation turn
-- The total code to copy and adapt is roughly **15,000+ lines** across 80+ files
-- Each phase should be approved and verified before proceeding to the next
-- The demo/seed data from the original project will NOT be included (per project rules: no mock data)
+### Batch 4: Configuration (Links, Settings)
 
-Shall I begin with **Phase 1: Database Migration**?
+**WeldingAdminLinks** — `welding_quick_links`
+- Sortable list of external links
+- Create/edit: title, URL, description, icon
+
+**WeldingAdminSettings** — `welding_company_settings`
+- Full settings form: company info, tax rate, invoice terms, document numbering config
+- Mobile quick-link selector
+- Travel rate, deposit settings, currency config
+- Preview of next invoice/quote/PO numbers (already in context)
+
+## Technical Details
+- ~13 files rewritten in `src/pages/welding/`
+- No new DB tables or migrations needed — all 24 tables exist
+- Each page: 150-400 lines depending on complexity
+- All queries use `supabase.from("welding_*" as any)` pattern
+- Shop scoping via `useShopId()` on all queries
+- Toast notifications for all CRUD operations via `sonner`
+
+## Execution Order
+Batch 1 first (highest business value), then 2, 3, 4 sequentially. Each batch in one implementation turn.
 
