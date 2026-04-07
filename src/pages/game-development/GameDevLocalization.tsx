@@ -17,26 +17,26 @@ export default function GameDevLocalization() {
   const [search, setSearch] = useState('');
   const [localeFilter, setLocaleFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ key: '', locale: 'en', value: '', context: '' });
+  const [form, setForm] = useState({ string_key: '', locale: 'en', value: '', context: '' });
 
-  const projectStrings = localeStrings.filter(s => s.projectId === activeProjectId);
+  const projectStrings = localeStrings.filter(s => s.project_id === activeProjectId);
   const uniqueLocales = [...new Set(projectStrings.map(s => s.locale))];
-  const uniqueKeys = [...new Set(projectStrings.map(s => s.key))];
+  const uniqueKeys = [...new Set(projectStrings.map(s => s.string_key))];
 
   const filtered = projectStrings
     .filter(s => localeFilter === 'all' || s.locale === localeFilter)
-    .filter(s => !search || s.key.toLowerCase().includes(search.toLowerCase()) || s.value.toLowerCase().includes(search.toLowerCase()));
+    .filter(s => !search || s.string_key.toLowerCase().includes(search.toLowerCase()) || s.value.toLowerCase().includes(search.toLowerCase()));
 
   const handleAdd = () => {
-    if (!form.key.trim() || !form.value.trim() || !activeProjectId) return;
+    if (!form.string_key.trim() || !form.value.trim() || !activeProjectId) return;
     addLocaleString({
-      projectId: activeProjectId,
-      key: form.key,
+      project_id: activeProjectId,
+      string_key: form.string_key,
       locale: form.locale,
       value: form.value,
       context: form.context || undefined,
     });
-    setForm({ key: '', locale: form.locale, value: '', context: '' });
+    setForm({ string_key: '', locale: form.locale, value: '', context: '' });
     setDialogOpen(false);
   };
 
@@ -44,7 +44,7 @@ export default function GameDevLocalization() {
     const grouped: Record<string, Record<string, string>> = {};
     projectStrings.forEach(s => {
       if (!grouped[s.locale]) grouped[s.locale] = {};
-      grouped[s.locale][s.key] = s.value;
+      grouped[s.locale][s.string_key] = s.value;
     });
     const blob = new Blob([JSON.stringify(grouped, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -64,7 +64,6 @@ export default function GameDevLocalization() {
     );
   }
 
-  // Coverage: how many keys have translations per locale
   const coverage = uniqueLocales.map(locale => ({
     locale,
     count: projectStrings.filter(s => s.locale === locale).length,
@@ -86,7 +85,7 @@ export default function GameDevLocalization() {
             <DialogContent>
               <DialogHeader><DialogTitle>New Locale String</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <Input placeholder="Key (e.g. ui.menu.play)" value={form.key} onChange={e => setForm(f => ({ ...f, key: e.target.value }))} />
+                <Input placeholder="Key (e.g. ui.menu.play)" value={form.string_key} onChange={e => setForm(f => ({ ...f, string_key: e.target.value }))} />
                 <Select value={form.locale} onValueChange={v => setForm(f => ({ ...f, locale: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{COMMON_LOCALES.map(l => <SelectItem key={l} value={l}>{l.toUpperCase()}</SelectItem>)}</SelectContent>
@@ -100,7 +99,6 @@ export default function GameDevLocalization() {
         </div>
       </div>
 
-      {/* Coverage cards */}
       {coverage.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
           {coverage.map(c => (
@@ -115,7 +113,6 @@ export default function GameDevLocalization() {
         </div>
       )}
 
-      {/* Filters */}
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -130,7 +127,6 @@ export default function GameDevLocalization() {
         </Select>
       </div>
 
-      {/* Strings list */}
       <div className="space-y-1">
         {filtered.length === 0 ? (
           <Card><CardContent className="py-8 text-center text-muted-foreground">No strings found.</CardContent></Card>
@@ -138,7 +134,7 @@ export default function GameDevLocalization() {
           <Card key={s.id} className="hover:bg-accent/30 transition-colors">
             <CardContent className="p-2 flex items-center gap-3">
               <Badge variant="outline" className="text-xs font-mono">{s.locale.toUpperCase()}</Badge>
-              <code className="text-xs text-muted-foreground flex-shrink-0 max-w-[200px] truncate">{s.key}</code>
+              <code className="text-xs text-muted-foreground flex-shrink-0 max-w-[200px] truncate">{s.string_key}</code>
               <p className="text-sm flex-1 truncate">{s.value}</p>
               {s.context && <span className="text-xs text-muted-foreground italic hidden md:block">{s.context}</span>}
               <Button variant="ghost" size="sm" className="text-destructive h-6 w-6 p-0" onClick={() => removeLocaleString(s.id)}>×</Button>

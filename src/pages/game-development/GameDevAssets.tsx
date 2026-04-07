@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { useGameDevStore } from '@/stores/game-dev-store';
 import { GameDevProjectSelector } from '@/components/game-development/GameDevProjectSelector';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Search, Image, Music, Box, FileText, Filter } from 'lucide-react';
+import type { AssetType, PlanningStatus, Priority } from '@/types/game-development';
 
-const ASSET_TYPES = ['sprite', 'texture', 'model', 'audio', 'animation', 'ui', 'shader', 'script', 'other'] as const;
-const ASSET_STATUSES = ['needed', 'in_progress', 'review', 'approved', 'integrated'] as const;
-const PRIORITY_CONFIG: Record<string, { label: string; class: string }> = {
+const ASSET_TYPES: AssetType[] = ['sprite', 'texture', 'model-3d', 'tileset', 'background', 'ui-element', 'icon', 'portrait', 'animation', 'vfx', 'sfx', 'music', 'voice-line'];
+const ASSET_STATUSES: PlanningStatus[] = ['draft', 'in-progress', 'review', 'final', 'cut'];
+const PRIORITY_CONFIG: Record<Priority, { label: string; class: string }> = {
   critical: { label: 'Critical', class: 'bg-destructive text-destructive-foreground' },
   high: { label: 'High', class: 'bg-orange-500/20 text-orange-400' },
   medium: { label: 'Medium', class: 'bg-primary/20 text-primary' },
@@ -25,35 +25,32 @@ export default function GameDevAssets() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', type: 'sprite' as string, priority: 'medium', description: '', assignedTo: '' });
+  const [form, setForm] = useState({ name: '', asset_type: 'sprite' as AssetType, priority: 'medium' as Priority, description: '', });
 
-  const projectAssets = assetRequirements.filter(a => a.projectId === activeProjectId);
+  const projectAssets = assetRequirements.filter(a => a.project_id === activeProjectId);
   const filtered = projectAssets
-    .filter(a => typeFilter === 'all' || a.type === typeFilter)
+    .filter(a => typeFilter === 'all' || a.asset_type === typeFilter)
     .filter(a => !search || a.name.toLowerCase().includes(search.toLowerCase()));
 
   const handleAdd = () => {
     if (!form.name.trim() || !activeProjectId) return;
     addAssetRequirement({
-      projectId: activeProjectId,
+      project_id: activeProjectId,
       name: form.name,
-      type: form.type as any,
-      priority: form.priority as any,
+      asset_type: form.asset_type,
+      priority: form.priority,
       description: form.description,
-      assignedTo: form.assignedTo || undefined,
-      status: 'needed',
+      status: 'draft',
     });
-    setForm({ name: '', type: 'sprite', priority: 'medium', description: '', assignedTo: '' });
+    setForm({ name: '', asset_type: 'sprite', priority: 'medium', description: '' });
     setDialogOpen(false);
   };
 
   const typeIcon = (type: string) => {
-    switch (type) {
-      case 'sprite': case 'texture': case 'ui': return <Image className="h-4 w-4" />;
-      case 'audio': return <Music className="h-4 w-4" />;
-      case 'model': case 'animation': return <Box className="h-4 w-4" />;
-      default: return <FileText className="h-4 w-4" />;
-    }
+    if (['sprite', 'texture', 'ui-element', 'icon', 'portrait', 'tileset', 'background'].includes(type)) return <Image className="h-4 w-4" />;
+    if (['sfx', 'music', 'voice-line'].includes(type)) return <Music className="h-4 w-4" />;
+    if (['model-3d', 'animation', 'vfx'].includes(type)) return <Box className="h-4 w-4" />;
+    return <FileText className="h-4 w-4" />;
   };
 
   if (!activeProjectId) {
@@ -88,16 +85,15 @@ export default function GameDevAssets() {
               <div className="space-y-3">
                 <Input placeholder="Asset name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
                 <div className="grid grid-cols-2 gap-2">
-                  <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
+                  <Select value={form.asset_type} onValueChange={v => setForm(f => ({ ...f, asset_type: v as AssetType }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{ASSET_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
-                  <Select value={form.priority} onValueChange={v => setForm(f => ({ ...f, priority: v }))}>
+                  <Select value={form.priority} onValueChange={v => setForm(f => ({ ...f, priority: v as Priority }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{Object.entries(PRIORITY_CONFIG).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <Input placeholder="Assigned to (optional)" value={form.assignedTo} onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))} />
                 <Textarea placeholder="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
                 <Button onClick={handleAdd} className="w-full">Create Asset</Button>
               </div>
@@ -106,17 +102,15 @@ export default function GameDevAssets() {
         </div>
       </div>
 
-      {/* Status summary */}
       <div className="grid grid-cols-5 gap-2">
         {ASSET_STATUSES.map(s => (
           <Card key={s} className="text-center p-2">
-            <p className="text-xs text-muted-foreground capitalize">{s.replace('_', ' ')}</p>
+            <p className="text-xs text-muted-foreground capitalize">{s.replace('-', ' ')}</p>
             <p className="text-lg font-bold">{statusCounts[s] || 0}</p>
           </Card>
         ))}
       </div>
 
-      {/* Filters */}
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -131,23 +125,22 @@ export default function GameDevAssets() {
         </Select>
       </div>
 
-      {/* Asset list */}
       <div className="space-y-2">
         {filtered.length === 0 ? (
           <Card><CardContent className="py-8 text-center text-muted-foreground">No assets found. Add your first asset requirement.</CardContent></Card>
         ) : filtered.map(asset => (
           <Card key={asset.id} className="hover:bg-accent/30 transition-colors">
             <CardContent className="p-3 flex items-center gap-3">
-              <div className="text-muted-foreground">{typeIcon(asset.type)}</div>
+              <div className="text-muted-foreground">{typeIcon(asset.asset_type)}</div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{asset.name}</p>
                 {asset.description && <p className="text-xs text-muted-foreground truncate">{asset.description}</p>}
               </div>
-              <Badge variant="outline" className="text-xs capitalize">{asset.type}</Badge>
+              <Badge variant="outline" className="text-xs capitalize">{asset.asset_type}</Badge>
               <Badge className={`text-xs ${PRIORITY_CONFIG[asset.priority]?.class || ''}`}>{asset.priority}</Badge>
-              <Select value={asset.status} onValueChange={v => updateAssetRequirement(asset.id, { status: v as any })}>
+              <Select value={asset.status} onValueChange={v => updateAssetRequirement(asset.id, { status: v as PlanningStatus })}>
                 <SelectTrigger className="h-7 w-[110px] text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>{ASSET_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>)}</SelectContent>
+                <SelectContent>{ASSET_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace('-', ' ')}</SelectItem>)}</SelectContent>
               </Select>
               <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeAssetRequirement(asset.id)}>×</Button>
             </CardContent>

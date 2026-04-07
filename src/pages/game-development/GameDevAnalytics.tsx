@@ -19,16 +19,19 @@ export default function GameDevAnalytics() {
     );
   }
 
-  const pf = (arr: any[]) => arr.filter((i: any) => i.projectId === activeProjectId);
+  const pf = (arr: { project_id?: string }[]) => arr.filter(i => i.project_id === activeProjectId);
 
   const tasks = pf(planTasks);
-  const tasksDone = tasks.filter(t => t.status === 'done').length;
+  const tasksDone = tasks.filter((t: any) => t.status === 'done').length;
   const tasksTotal = tasks.length;
 
   const ms = pf(milestones);
-  const msDone = ms.filter(m => m.status === 'completed').length;
+  const msDone = ms.filter((m: any) => m.status === 'completed').length;
 
-  const nodes = pf(boardNodes);
+  const nodes = boardNodes.filter(n => {
+    const board = useGameDevStore.getState().boards.find(b => b.id === n.board_id);
+    return board?.project_id === activeProjectId;
+  });
   const stories = pf(storyBeats);
   const chars = pf(characters);
   const items = pf(gameItems);
@@ -37,31 +40,30 @@ export default function GameDevAnalytics() {
   const eventsList = pf(events);
   const zones = pf(worldZones);
   const assets = pf(assetRequirements);
-  const assetsReady = assets.filter(a => a.status === 'approved' || a.status === 'integrated').length;
+  const assetsReady = assets.filter((a: any) => a.status === 'final').length;
   const tests = pf(playtestSessions);
   const wiki = pf(wikiArticles);
   const l10n = pf(localeStrings);
 
   const stats = [
-    { label: 'Tasks', value: tasksTotal, sub: `${tasksDone} done`, icon: CheckCircle, color: 'text-green-500' },
+    { label: 'Tasks', value: tasksTotal, sub: `${tasksDone} done`, icon: CheckCircle, color: 'text-primary' },
     { label: 'Milestones', value: ms.length, sub: `${msDone} completed`, icon: TrendingUp, color: 'text-primary' },
-    { label: 'Canvas Nodes', value: nodes.length, sub: '', icon: Layers, color: 'text-blue-500' },
-    { label: 'Story Beats', value: stories.length, sub: '', icon: BookOpen, color: 'text-purple-500' },
-    { label: 'Characters', value: chars.length, sub: '', icon: Swords, color: 'text-orange-500' },
-    { label: 'Items', value: items.length, sub: '', icon: Package, color: 'text-yellow-500' },
-    { label: 'Quests', value: questsList.length, sub: '', icon: Swords, color: 'text-red-500' },
-    { label: 'Raids / Events', value: raidsList.length + eventsList.length, sub: `${raidsList.length}R / ${eventsList.length}E`, icon: AlertTriangle, color: 'text-pink-500' },
-    { label: 'World Zones', value: zones.length, sub: '', icon: Layers, color: 'text-teal-500' },
-    { label: 'Assets', value: assets.length, sub: `${assetsReady} ready`, icon: Package, color: 'text-emerald-500' },
-    { label: 'Playtests', value: tests.length, sub: '', icon: BarChart3, color: 'text-indigo-500' },
-    { label: 'Wiki Articles', value: wiki.length, sub: '', icon: BookOpen, color: 'text-cyan-500' },
-    { label: 'Locale Strings', value: l10n.length, sub: '', icon: BookOpen, color: 'text-lime-500' },
+    { label: 'Canvas Nodes', value: nodes.length, sub: '', icon: Layers, color: 'text-primary' },
+    { label: 'Story Beats', value: stories.length, sub: '', icon: BookOpen, color: 'text-primary' },
+    { label: 'Characters', value: chars.length, sub: '', icon: Swords, color: 'text-primary' },
+    { label: 'Items', value: items.length, sub: '', icon: Package, color: 'text-primary' },
+    { label: 'Quests', value: questsList.length, sub: '', icon: Swords, color: 'text-primary' },
+    { label: 'Raids / Events', value: raidsList.length + eventsList.length, sub: `${raidsList.length}R / ${eventsList.length}E`, icon: AlertTriangle, color: 'text-primary' },
+    { label: 'World Zones', value: zones.length, sub: '', icon: Layers, color: 'text-primary' },
+    { label: 'Assets', value: assets.length, sub: `${assetsReady} ready`, icon: Package, color: 'text-primary' },
+    { label: 'Playtests', value: tests.length, sub: '', icon: BarChart3, color: 'text-primary' },
+    { label: 'Wiki Articles', value: wiki.length, sub: '', icon: BookOpen, color: 'text-primary' },
+    { label: 'Locale Strings', value: l10n.length, sub: '', icon: BookOpen, color: 'text-primary' },
   ];
 
-  // Task status breakdown
-  const statusBreakdown = ['todo', 'in-progress', 'done', 'blocked'].map(s => ({
+  const statusBreakdown = (['draft', 'active', 'ready', 'done'] as const).map(s => ({
     status: s,
-    count: tasks.filter(t => t.status === s).length,
+    count: tasks.filter((t: any) => t.status === s).length,
   }));
   const maxCount = Math.max(...statusBreakdown.map(s => s.count), 1);
 
@@ -75,7 +77,6 @@ export default function GameDevAnalytics() {
         <GameDevProjectSelector />
       </div>
 
-      {/* KPI grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {stats.map(s => (
           <Card key={s.label}>
@@ -91,7 +92,6 @@ export default function GameDevAnalytics() {
         ))}
       </div>
 
-      {/* Task breakdown bar chart */}
       <Card>
         <CardHeader><CardTitle className="text-sm">Task Status Breakdown</CardTitle></CardHeader>
         <CardContent className="space-y-2">
@@ -99,10 +99,7 @@ export default function GameDevAnalytics() {
             <div key={s.status} className="flex items-center gap-2">
               <span className="text-xs w-20 capitalize text-muted-foreground">{s.status}</span>
               <div className="flex-1 h-5 bg-muted rounded overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded transition-all"
-                  style={{ width: `${(s.count / maxCount) * 100}%` }}
-                />
+                <div className="h-full bg-primary rounded transition-all" style={{ width: `${(s.count / maxCount) * 100}%` }} />
               </div>
               <span className="text-xs font-medium w-8 text-right">{s.count}</span>
             </div>
@@ -110,7 +107,6 @@ export default function GameDevAnalytics() {
         </CardContent>
       </Card>
 
-      {/* Completion gauge */}
       <Card>
         <CardHeader><CardTitle className="text-sm">Overall Progress</CardTitle></CardHeader>
         <CardContent>
@@ -130,7 +126,7 @@ export default function GameDevAnalytics() {
                 <span className="font-medium">{assets.length > 0 ? Math.round((assetsReady / assets.length) * 100) : 0}%</span>
               </div>
               <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${assets.length > 0 ? (assetsReady / assets.length) * 100 : 0}%` }} />
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${assets.length > 0 ? (assetsReady / assets.length) * 100 : 0}%` }} />
               </div>
             </div>
           </div>

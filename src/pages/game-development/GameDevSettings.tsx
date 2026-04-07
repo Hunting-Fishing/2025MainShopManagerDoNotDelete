@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameDevStore } from '@/stores/game-dev-store';
 import { GameDevProjectSelector } from '@/components/game-development/GameDevProjectSelector';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,8 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Settings, Save, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import type { Engine } from '@/types/game-development';
 
-const ENGINES = ['Unity', 'Unreal Engine', 'Godot', 'Custom', 'RPG Maker', 'GameMaker', 'Other'];
+const ENGINES: Engine[] = ['unity', 'unreal', 'godot', 'gamemaker', 'rpg-maker', 'custom', 'other'];
 const GENRES = ['RPG', 'Action', 'Adventure', 'Strategy', 'Simulation', 'Puzzle', 'Horror', 'Platformer', 'Shooter', 'Racing', 'Sports', 'Other'];
 
 export default function GameDevSettings() {
@@ -19,25 +20,24 @@ export default function GameDevSettings() {
   const project = projects.find(p => p.id === activeProjectId);
 
   const [form, setForm] = useState({
-    name: project?.name || '',
-    engine: project?.engine || '',
-    genre: project?.genre || '',
-    description: project?.description || '',
-    targetPlatforms: project?.targetPlatforms?.join(', ') || '',
+    name: '',
+    engine: '' as Engine | '',
+    genre: '',
+    description: '',
+    platform_targets: '',
   });
 
-  // Sync form when project changes
-  useState(() => {
+  useEffect(() => {
     if (project) {
       setForm({
         name: project.name,
         engine: project.engine || '',
         genre: project.genre || '',
         description: project.description || '',
-        targetPlatforms: project.targetPlatforms?.join(', ') || '',
+        platform_targets: project.platform_targets?.join(', ') || '',
       });
     }
-  });
+  }, [project]);
 
   if (!activeProjectId || !project) {
     return (
@@ -51,10 +51,10 @@ export default function GameDevSettings() {
   const handleSave = () => {
     updateProject(activeProjectId, {
       name: form.name,
-      engine: form.engine || undefined,
+      engine: (form.engine || undefined) as Engine | undefined,
       genre: form.genre || undefined,
       description: form.description || undefined,
-      targetPlatforms: form.targetPlatforms ? form.targetPlatforms.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+      platform_targets: form.platform_targets ? form.platform_targets.split(',').map(s => s.trim()).filter(Boolean) : undefined,
     });
     toast({ title: 'Settings saved', description: 'Project settings have been updated.' });
   };
@@ -89,7 +89,7 @@ export default function GameDevSettings() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Engine</Label>
-              <Select value={form.engine} onValueChange={v => setForm(f => ({ ...f, engine: v }))}>
+              <Select value={form.engine} onValueChange={v => setForm(f => ({ ...f, engine: v as Engine }))}>
                 <SelectTrigger><SelectValue placeholder="Select engine" /></SelectTrigger>
                 <SelectContent>{ENGINES.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
               </Select>
@@ -104,7 +104,7 @@ export default function GameDevSettings() {
           </div>
           <div>
             <Label>Target Platforms (comma separated)</Label>
-            <Input placeholder="PC, Console, Mobile" value={form.targetPlatforms} onChange={e => setForm(f => ({ ...f, targetPlatforms: e.target.value }))} />
+            <Input placeholder="PC, Console, Mobile" value={form.platform_targets} onChange={e => setForm(f => ({ ...f, platform_targets: e.target.value }))} />
           </div>
           <div>
             <Label>Description</Label>

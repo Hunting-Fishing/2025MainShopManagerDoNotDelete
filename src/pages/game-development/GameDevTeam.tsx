@@ -2,17 +2,11 @@ import { useState } from 'react';
 import { useGameDevStore } from '@/stores/game-dev-store';
 import { GameDevProjectSelector } from '@/components/game-development/GameDevProjectSelector';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Users, Search, UserPlus } from 'lucide-react';
 
-/**
- * Team page — displays task assignments and workload from existing store data.
- * No separate "team members" table; derives contributors from planTasks.assignedTo,
- * assetRequirements.assignedTo, etc.
- */
 export default function GameDevTeam() {
   const { planTasks, assetRequirements, activeProjectId } = useGameDevStore();
   const [search, setSearch] = useState('');
@@ -26,19 +20,23 @@ export default function GameDevTeam() {
     );
   }
 
-  // Aggregate contributors from tasks and assets
-  const tasksByPerson: Record<string, { tasks: number; done: number; inProgress: number; assets: number }> = {};
-  planTasks.filter(t => t.projectId === activeProjectId).forEach(t => {
-    const name = t.assignedTo || 'Unassigned';
-    if (!tasksByPerson[name]) tasksByPerson[name] = { tasks: 0, done: 0, inProgress: 0, assets: 0 };
-    tasksByPerson[name].tasks++;
-    if (t.status === 'done') tasksByPerson[name].done++;
-    if (t.status === 'in-progress') tasksByPerson[name].inProgress++;
-  });
-  assetRequirements.filter(a => a.projectId === activeProjectId && a.assignedTo).forEach(a => {
-    const name = a.assignedTo!;
-    if (!tasksByPerson[name]) tasksByPerson[name] = { tasks: 0, done: 0, inProgress: 0, assets: 0 };
+  // Aggregate contributors from tasks (using tags as a proxy for assignment since PlanTask has no assignedTo)
+  const tasksByPerson: Record<string, { tasks: number; done: number; active: number; assets: number }> = {};
+
+  // Asset requirements have linked_feature which can indicate assignment
+  assetRequirements.filter(a => a.project_id === activeProjectId && a.linked_feature).forEach(a => {
+    const name = a.linked_feature!;
+    if (!tasksByPerson[name]) tasksByPerson[name] = { tasks: 0, done: 0, active: 0, assets: 0 };
     tasksByPerson[name].assets++;
+  });
+
+  // Group tasks by tags
+  planTasks.filter(t => t.project_id === activeProjectId).forEach(t => {
+    const tag = t.tags?.[0] || 'Unassigned';
+    if (!tasksByPerson[tag]) tasksByPerson[tag] = { tasks: 0, done: 0, active: 0, assets: 0 };
+    tasksByPerson[tag].tasks++;
+    if (t.status === 'done') tasksByPerson[tag].done++;
+    if (t.status === 'active') tasksByPerson[tag].active++;
   });
 
   const people = Object.entries(tasksByPerson)
@@ -63,7 +61,7 @@ export default function GameDevTeam() {
       {people.length === 0 ? (
         <Card><CardContent className="py-12 text-center text-muted-foreground">
           <UserPlus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-          No team assignments yet. Assign tasks in Roadmap or assets in Asset Pipeline.
+          No team assignments yet. Tag tasks in Roadmap or link assets in the Asset Pipeline.
         </CardContent></Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -80,7 +78,7 @@ export default function GameDevTeam() {
                     <p className="font-medium truncate">{name}</p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       <Badge variant="outline" className="text-xs">{data.tasks} tasks</Badge>
-                      {data.inProgress > 0 && <Badge className="text-xs bg-primary/20 text-primary">{data.inProgress} active</Badge>}
+                      {data.active > 0 && <Badge className="text-xs bg-primary/20 text-primary">{data.active} active</Badge>}
                       {data.assets > 0 && <Badge variant="secondary" className="text-xs">{data.assets} assets</Badge>}
                     </div>
                     {data.tasks > 0 && (
