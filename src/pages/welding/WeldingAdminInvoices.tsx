@@ -57,9 +57,9 @@ const WeldingAdminInvoices = () => {
   const { data: customers = [] } = useQuery({
     queryKey: ["welding-customers-list", shopId],
     queryFn: async () => {
-      if (!shopId) return [];
+      if (!shopId) return [] as any[];
       const { data } = await supabase.from("welding_customers" as any).select("id, first_name, last_name, email, company").eq("shop_id", shopId).order("first_name");
-      return data || [];
+      return (data || []) as any[];
     },
     enabled: !!shopId,
   });
