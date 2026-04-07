@@ -300,15 +300,13 @@ const WeldingAdminSettings = () => {
                 <Select value={f.currency || "CAD"} onValueChange={(v) => set("currency", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CAD">CAD — Canadian Dollar</SelectItem>
-                    <SelectItem value="USD">USD — US Dollar</SelectItem>
-                    <SelectItem value="EUR">EUR — Euro</SelectItem>
-                    <SelectItem value="GBP">GBP — British Pound</SelectItem>
+                    {Object.entries(CURRENCY_MAP).map(([code, { label }]) => (
+                      <SelectItem key={code} value={code}>{label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Currency Symbol</Label><Input value={f.currency_symbol || "$"} onChange={(e) => set("currency_symbol", e.target.value)} /></div>
-              <div><Label>Travel Rate ($/km)</Label><Input type="number" step="0.01" value={f.travel_rate_per_km ?? 0} onChange={(e) => set("travel_rate_per_km", Number(e.target.value))} /></div>
+              <div><Label>Travel Rate ({f.currency_symbol || "$"}/km)</Label><Input type="number" step="0.01" value={f.travel_rate_per_km ?? 0} onChange={(e) => set("travel_rate_per_km", Number(e.target.value))} /></div>
             </CardContent>
           </Card>
 
