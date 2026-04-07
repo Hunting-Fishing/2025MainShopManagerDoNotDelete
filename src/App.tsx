@@ -517,6 +517,11 @@ const GameDevItems = lazy(() => import('@/pages/game-development/GameDevItems'))
 const GameDevEconomy = lazy(() => import('@/pages/game-development/GameDevEconomy'));
 const GameDevLevels = lazy(() => import('@/pages/game-development/GameDevLevels'));
 const GameDevPlaytesting = lazy(() => import('@/pages/game-development/GameDevPlaytesting'));
+const GameDevAssets = lazy(() => import('@/pages/game-development/GameDevAssets'));
+const GameDevLocalization = lazy(() => import('@/pages/game-development/GameDevLocalization'));
+const GameDevTeam = lazy(() => import('@/pages/game-development/GameDevTeam'));
+const GameDevAnalytics = lazy(() => import('@/pages/game-development/GameDevAnalytics'));
+const GameDevSettings = lazy(() => import('@/pages/game-development/GameDevSettings'));
 import { GameDevLayout } from '@/components/game-development';
 
 // Welding Module
@@ -1838,6 +1843,11 @@ function App() {
                   <Route path="/economy" element={<GameDevEconomy />} />
                   <Route path="/levels" element={<GameDevLevels />} />
                   <Route path="/playtesting" element={<GameDevPlaytesting />} />
+                  <Route path="/assets" element={<GameDevAssets />} />
+                  <Route path="/localization" element={<GameDevLocalization />} />
+                  <Route path="/team" element={<GameDevTeam />} />
+                  <Route path="/analytics" element={<GameDevAnalytics />} />
+                  <Route path="/settings" element={<GameDevSettings />} />
                 </Routes>
               </GameDevLayout>
               </AuthenticatedProviders>
