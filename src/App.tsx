@@ -507,6 +507,12 @@ const GameDevCanvasOverview = lazy(() => import('@/pages/game-development/GameDe
 const GameDevDatabase = lazy(() => import('@/pages/game-development/GameDevDatabase'));
 const GameDevGDD = lazy(() => import('@/pages/game-development/GameDevGDD'));
 const GameDevRoadmap = lazy(() => import('@/pages/game-development/GameDevRoadmap'));
+const GameDevStory = lazy(() => import('@/pages/game-development/GameDevStory'));
+const GameDevCharacters = lazy(() => import('@/pages/game-development/GameDevCharacters'));
+const GameDevDialogue = lazy(() => import('@/pages/game-development/GameDevDialogue'));
+const GameDevWiki = lazy(() => import('@/pages/game-development/GameDevWiki'));
+const GameDevQuests = lazy(() => import('@/pages/game-development/GameDevQuests'));
+const GameDevRaids = lazy(() => import('@/pages/game-development/GameDevRaids'));
 import { GameDevLayout } from '@/components/game-development';
 
 // Welding Module
@@ -1818,6 +1824,12 @@ function App() {
                   <Route path="/database" element={<GameDevDatabase />} />
                   <Route path="/gdd" element={<GameDevGDD />} />
                   <Route path="/roadmap" element={<GameDevRoadmap />} />
+                  <Route path="/story" element={<GameDevStory />} />
+                  <Route path="/characters" element={<GameDevCharacters />} />
+                  <Route path="/dialogue" element={<GameDevDialogue />} />
+                  <Route path="/wiki" element={<GameDevWiki />} />
+                  <Route path="/quests" element={<GameDevQuests />} />
+                  <Route path="/raids" element={<GameDevRaids />} />
                 </Routes>
               </GameDevLayout>
               </AuthenticatedProviders>
