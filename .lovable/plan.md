@@ -1,103 +1,61 @@
 
 
-# Fix All Welding Placeholder Pages — Full CRUD Implementation
+# Completion Audit & Remediation Plan
 
-## Problem
-13 of 14 welding pages display "coming in next batch" placeholders, violating the project's production-first doctrine. All 24 database tables exist and are ready — only the frontend is missing.
+## Findings Summary
 
-## Architecture Pattern
-Each page will follow the existing project conventions:
-- `useShopId()` hook for multi-tenant shop_id
-- `useQuery` / `useMutation` from TanStack Query against Supabase
-- `as any` cast on table names (welding tables aren't in generated types)
-- `WeldingAdminLayout` wrapper
-- Mobile-first card layouts, search/filter, add/edit dialogs
-- `useWeldingSettings()` for currency formatting and document numbering
+### 1. Placeholder Pages (2 orphan stubs)
+- **`src/pages/InvoiceEdit.tsx`** — placeholder text, not routed in App.tsx
+- **`src/pages/CustomerVehicleDetails.tsx`** — placeholder text, not routed in App.tsx
 
-## Implementation — 4 Batches
+**Action**: Delete both files. They are dead code with no routes pointing to them.
 
-### Batch 1: Core Business (Quotes, Invoices, Customers, Inventory)
+### 2. Game Dev Module — Missing UPDATE Policies (2 tables)
+- `gd_chat_messages` — has SELECT, INSERT, DELETE but no UPDATE policy
+- `gd_webhook_logs` — has SELECT, INSERT, DELETE but no UPDATE policy
 
-**WeldingAdminQuotes** — `welding_quotes` + `welding_quote_materials`
-- List with status badges (new/sent/accepted/rejected/completed), search by customer/quote number
-- Create/edit dialog: customer info, project type, labour hours/rate, travel, materials list, tax calc
-- Status transitions, validity date tracking
-- Materials sub-table CRUD inline
+**Action**: Migration to add shop-scoped UPDATE policies for both tables.
 
-**WeldingAdminInvoices** — `welding_invoices` + `welding_invoice_items` + `welding_payments`
-- List with status badges (draft/sent/paid/overdue/partial), search/filter
-- Create/edit: line items, tax, amount paid tracking
-- Record payment dialog
-- Link to quote if converted
+### 3. Welding Module — Status: 100% Complete
+- All 13 pages have full CRUD (zero placeholders remain)
+- All 24 `welding_*` tables have RLS enabled with proper `shop_id = get_current_user_shop_id()` policies
+- One intentional permissive policy: `welding_contact_messages_public_insert` (public contact form)
 
-**WeldingAdminCustomers** — `welding_customers` + `welding_customer_interactions`
-- List with search, status filter (active/inactive/lead)
-- Create/edit dialog: name, company, contact, address fields
-- Interaction log (calls, emails, meetings) as expandable section
+### 4. Overly Permissive RLS Policies (102 tables)
+102 tables across the broader platform have `USING(true)` or `WITH CHECK(true)` on non-SELECT operations. This is a known pre-existing issue from the security audit backlog. Fixing all 102 tables is a separate large-scale security hardening initiative.
 
-**WeldingAdminInventory** — `welding_inventory` + `welding_inventory_purchase_history`
-- List with low-stock highlighting, category filter, search
-- Create/edit: name, category, specs, quantity, unit, min qty, costs
-- Purchase history sub-list
+**Action for this scope**: Flag but do not remediate all 102 — focus on the welding and game dev modules which are the current work items. Both are already properly locked down with `get_current_user_shop_id()`.
 
-### Batch 2: Financial (Payments Due, Accounts Payable, Purchase Orders)
+## Implementation Steps
 
-**WeldingAdminPaymentsDue** — filtered view of `welding_invoices` where status != paid
-- Outstanding balance cards, aging summary
-- Quick "record payment" action
+### Step 1: Delete orphan placeholder files
+- Remove `src/pages/InvoiceEdit.tsx`
+- Remove `src/pages/CustomerVehicleDetails.tsx`
 
-**WeldingAdminAccountsPayable** — `welding_accounts_payable` + `welding_vendors`
-- List with status filter, vendor lookup
-- Create/edit: vendor, amount, due date, notes
-- Vendor management inline
+### Step 2: Migration — Add missing UPDATE policies
+```sql
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'gd_chat_messages' AND policyname = 'Shop isolation update on gd_chat_messages') THEN
+    CREATE POLICY "Shop isolation update on gd_chat_messages"
+      ON public.gd_chat_messages FOR UPDATE TO authenticated
+      USING (shop_id = get_current_user_shop_id());
+  END IF;
 
-**WeldingAdminPurchaseOrders** — `welding_purchase_orders` + `welding_purchase_order_items`
-- List with status badges (draft/ordered/received/cancelled)
-- Create/edit with line items linked to inventory
-- Auto PO numbering from settings
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'gd_webhook_logs' AND policyname = 'Shop isolation update on gd_webhook_logs') THEN
+    CREATE POLICY "Shop isolation update on gd_webhook_logs"
+      ON public.gd_webhook_logs FOR UPDATE TO authenticated
+      USING (shop_id = get_current_user_shop_id());
+  END IF;
+END $$;
+```
 
-### Batch 3: Operations (Messages, Calendar, Sales, Gallery)
-
-**WeldingAdminMessages** — `welding_contact_messages`
-- Inbox list with read/unread styling
-- Detail view, mark as read toggle
-- Delete capability
-
-**WeldingAdminCalendar** — `welding_schedule_entries`
-- Month/week view using date grid
-- Create/edit entries: date, type (job/meeting/deadline/reminder), title, notes, color
-- Link to customer/quote optionally
-
-**WeldingAdminSales** — `welding_sales_activities`
-- Pipeline list with status filter (new/contacted/quoted/won/lost)
-- Create/edit: activity type, customer, follow-up date, notes, linked quote
-- Follow-up date highlighting
-
-**WeldingAdminGallery** — `welding_gallery_projects`
-- Grid of project cards with images
-- Create/edit: title, description, category, image URL, featured toggle, tags
-- Drag-to-reorder via display_order
-
-### Batch 4: Configuration (Links, Settings)
-
-**WeldingAdminLinks** — `welding_quick_links`
-- Sortable list of external links
-- Create/edit: title, URL, description, icon
-
-**WeldingAdminSettings** — `welding_company_settings`
-- Full settings form: company info, tax rate, invoice terms, document numbering config
-- Mobile quick-link selector
-- Travel rate, deposit settings, currency config
-- Preview of next invoice/quote/PO numbers (already in context)
+### Step 3: Verify completion
+- Welding module: 14/14 pages live CRUD, 24/24 tables with RLS — COMPLETE
+- Game Dev module: 22/22 pages live CRUD, 45/45 tables with RLS (after migration) — COMPLETE
+- Zero placeholder pages remaining in either module
 
 ## Technical Details
-- ~13 files rewritten in `src/pages/welding/`
-- No new DB tables or migrations needed — all 24 tables exist
-- Each page: 150-400 lines depending on complexity
-- All queries use `supabase.from("welding_*" as any)` pattern
-- Shop scoping via `useShopId()` on all queries
-- Toast notifications for all CRUD operations via `sonner`
-
-## Execution Order
-Batch 1 first (highest business value), then 2, 3, 4 sequentially. Each batch in one implementation turn.
+- 2 files deleted (dead code cleanup)
+- 1 migration (2 UPDATE policies added)
+- No frontend code changes needed — all pages are already functional
 
