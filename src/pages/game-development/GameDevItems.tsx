@@ -20,8 +20,8 @@ import {
 
 export default function GameDevItems() {
   const {
-    activeProjectId, items, lootTables, itemSets, craftingRecipes,
-    addItem, updateItem, removeItem,
+    activeProjectId, gameItems, lootTables, itemSets, craftingRecipes,
+    addGameItem, updateGameItem, removeGameItem,
     addLootTable, updateLootTable, removeLootTable,
     addItemSet, updateItemSet, removeItemSet,
     addCraftingRecipe, updateCraftingRecipe, removeCraftingRecipe,
