@@ -37,8 +37,7 @@ export default function GameDevDialogue() {
 
   const handleAddTree = () => {
     if (!treeForm.name.trim()) return;
-    const id = uuid();
-    addDialogueTree({ id, project_id: activeProjectId, name: treeForm.name, description: treeForm.description || undefined });
+    const id = addDialogueTree({ project_id: activeProjectId, name: treeForm.name, description: treeForm.description || undefined });
     setSelectedTreeId(id);
     setTreeForm({ name: '', description: '' });
     setShowAddTree(false);

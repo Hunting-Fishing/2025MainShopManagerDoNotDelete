@@ -48,8 +48,6 @@ export default function GameDevWiki() {
       content: form.content,
       category: form.category,
       tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     });
     setForm({ title: '', category: 'lore', content: '', tags: '' });
     setShowAdd(false);

@@ -53,7 +53,7 @@ export default function GameDevRaids() {
   const handleAddRaid = () => {
     if (!raidForm.name.trim()) return;
     addRaid({
-      id: uuid(), project_id: activeProjectId, name: raidForm.name,
+      project_id: activeProjectId, name: raidForm.name,
       description: raidForm.description || undefined, difficulty: raidForm.difficulty,
       player_count_min: raidForm.player_count_min, player_count_max: raidForm.player_count_max,
       boss_count: raidForm.boss_count, status: raidForm.status, priority: raidForm.priority,
@@ -66,7 +66,7 @@ export default function GameDevRaids() {
   const handleAddEvent = () => {
     if (!eventForm.name.trim()) return;
     addEvent({
-      id: uuid(), project_id: activeProjectId, name: eventForm.name,
+      project_id: activeProjectId, name: eventForm.name,
       description: eventForm.description || undefined, event_type: eventForm.event_type,
       recurrence: eventForm.recurrence, status: eventForm.status, priority: eventForm.priority,
       tags: [],
