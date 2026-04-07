@@ -61341,7 +61341,9 @@ export type Database = {
         Row: {
           address: string | null
           business_hours: Json | null
+          city: string | null
           company_name: string
+          country: string | null
           created_at: string
           currency: string
           currency_symbol: string
@@ -61361,18 +61363,24 @@ export type Database = {
           phone: string | null
           po_next_number: number
           po_prefix: string
+          postal_code: string | null
+          province: string | null
           quote_next_number: number
           quote_prefix: string
           require_deposit: boolean
           shop_id: string
+          street_address: string | null
           travel_rate_per_km: number
+          unit_or_po_box: string | null
           updated_at: string
           year_format: string
         }
         Insert: {
           address?: string | null
           business_hours?: Json | null
+          city?: string | null
           company_name?: string
+          country?: string | null
           created_at?: string
           currency?: string
           currency_symbol?: string
@@ -61392,18 +61400,24 @@ export type Database = {
           phone?: string | null
           po_next_number?: number
           po_prefix?: string
+          postal_code?: string | null
+          province?: string | null
           quote_next_number?: number
           quote_prefix?: string
           require_deposit?: boolean
           shop_id: string
+          street_address?: string | null
           travel_rate_per_km?: number
+          unit_or_po_box?: string | null
           updated_at?: string
           year_format?: string
         }
         Update: {
           address?: string | null
           business_hours?: Json | null
+          city?: string | null
           company_name?: string
+          country?: string | null
           created_at?: string
           currency?: string
           currency_symbol?: string
@@ -61423,11 +61437,15 @@ export type Database = {
           phone?: string | null
           po_next_number?: number
           po_prefix?: string
+          postal_code?: string | null
+          province?: string | null
           quote_next_number?: number
           quote_prefix?: string
           require_deposit?: boolean
           shop_id?: string
+          street_address?: string | null
           travel_rate_per_km?: number
+          unit_or_po_box?: string | null
           updated_at?: string
           year_format?: string
         }
