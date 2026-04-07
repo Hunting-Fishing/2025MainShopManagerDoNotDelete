@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,10 +17,10 @@ import { toast } from "sonner";
 
 const STATUS_COLORS: Record<string, string> = {
   new: "bg-blue-100 text-blue-800",
-  sent: "bg-amber-100 text-amber-800",
+  reviewed: "bg-amber-100 text-amber-800",
+  quoted: "bg-cyan-100 text-cyan-800",
   accepted: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
-  completed: "bg-purple-100 text-purple-800",
+  declined: "bg-red-100 text-red-800",
 };
 
 const emptyQuote = {
@@ -181,10 +181,10 @@ const WeldingAdminQuotes = () => {
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="new">New</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
+            <SelectItem value="reviewed">Reviewed</SelectItem>
+            <SelectItem value="quoted">Quoted</SelectItem>
             <SelectItem value="accepted">Accepted</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="declined">Declined</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -218,7 +218,7 @@ const WeldingAdminQuotes = () => {
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) closeDialog(); else setOpen(true); }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing ? "Edit Quote" : "New Quote"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? "Edit Quote" : "New Quote"}</DialogTitle><DialogDescription>Fill in the details below to {editing ? "update this" : "create a new"} quote.</DialogDescription></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="space-y-4">
             {/* Customer */}
             <div>
@@ -246,10 +246,10 @@ const WeldingAdminQuotes = () => {
               <div><Label>Status</Label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">New</SelectItem><SelectItem value="sent">Sent</SelectItem>
-                    <SelectItem value="accepted">Accepted</SelectItem><SelectItem value="rejected">Rejected</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
+                   <SelectContent>
+                    <SelectItem value="new">New</SelectItem><SelectItem value="reviewed">Reviewed</SelectItem>
+                    <SelectItem value="quoted">Quoted</SelectItem><SelectItem value="accepted">Accepted</SelectItem>
+                    <SelectItem value="declined">Declined</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
