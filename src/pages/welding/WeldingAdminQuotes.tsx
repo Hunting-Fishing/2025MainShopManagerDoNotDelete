@@ -17,10 +17,10 @@ import { toast } from "sonner";
 
 const STATUS_COLORS: Record<string, string> = {
   new: "bg-blue-100 text-blue-800",
-  sent: "bg-amber-100 text-amber-800",
+  reviewed: "bg-amber-100 text-amber-800",
+  quoted: "bg-cyan-100 text-cyan-800",
   accepted: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
-  completed: "bg-purple-100 text-purple-800",
+  declined: "bg-red-100 text-red-800",
 };
 
 const emptyQuote = {
