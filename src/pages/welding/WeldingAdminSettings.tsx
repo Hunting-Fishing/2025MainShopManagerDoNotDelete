@@ -108,7 +108,25 @@ const WeldingAdminSettings = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const set = (field: string, value: any) => setForm((f) => ({ ...f, [field]: value }));
+  const CURRENCY_MAP: Record<string, { symbol: string; label: string }> = {
+    CAD: { symbol: "$", label: "CAD — Canadian Dollar ($)" },
+    USD: { symbol: "$", label: "USD — US Dollar ($)" },
+    EUR: { symbol: "€", label: "EUR — Euro (€)" },
+    GBP: { symbol: "£", label: "GBP — British Pound (£)" },
+    AUD: { symbol: "$", label: "AUD — Australian Dollar ($)" },
+    MXN: { symbol: "$", label: "MXN — Mexican Peso ($)" },
+    JPY: { symbol: "¥", label: "JPY — Japanese Yen (¥)" },
+    INR: { symbol: "₹", label: "INR — Indian Rupee (₹)" },
+  };
+
+  const set = (field: string, value: any) => {
+    if (field === "currency") {
+      const sym = CURRENCY_MAP[value]?.symbol || "$";
+      setForm((f) => ({ ...f, currency: value, currency_symbol: sym }));
+    } else {
+      setForm((f) => ({ ...f, [field]: value }));
+    }
+  };
 
   const toggleQuickLink = (label: string) => {
     const current = (form.mobile_quick_links || []) as string[];
