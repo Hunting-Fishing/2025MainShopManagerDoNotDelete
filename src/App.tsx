@@ -513,6 +513,10 @@ const GameDevDialogue = lazy(() => import('@/pages/game-development/GameDevDialo
 const GameDevWiki = lazy(() => import('@/pages/game-development/GameDevWiki'));
 const GameDevQuests = lazy(() => import('@/pages/game-development/GameDevQuests'));
 const GameDevRaids = lazy(() => import('@/pages/game-development/GameDevRaids'));
+const GameDevItems = lazy(() => import('@/pages/game-development/GameDevItems'));
+const GameDevEconomy = lazy(() => import('@/pages/game-development/GameDevEconomy'));
+const GameDevLevels = lazy(() => import('@/pages/game-development/GameDevLevels'));
+const GameDevPlaytesting = lazy(() => import('@/pages/game-development/GameDevPlaytesting'));
 import { GameDevLayout } from '@/components/game-development';
 
 // Welding Module
@@ -1830,6 +1834,10 @@ function App() {
                   <Route path="/wiki" element={<GameDevWiki />} />
                   <Route path="/quests" element={<GameDevQuests />} />
                   <Route path="/raids" element={<GameDevRaids />} />
+                  <Route path="/items" element={<GameDevItems />} />
+                  <Route path="/economy" element={<GameDevEconomy />} />
+                  <Route path="/levels" element={<GameDevLevels />} />
+                  <Route path="/playtesting" element={<GameDevPlaytesting />} />
                 </Routes>
               </GameDevLayout>
               </AuthenticatedProviders>
