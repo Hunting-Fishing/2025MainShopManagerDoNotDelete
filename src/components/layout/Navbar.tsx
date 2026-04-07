@@ -167,6 +167,20 @@ const navigationCategories = [
     ]
   },
   {
+    title: 'Game Development',
+    items: [
+      { name: 'Dashboard', href: '/game-development', requiredPath: '/game-development' },
+      { name: 'Projects', href: '/game-development/projects', requiredPath: '/game-development/projects' },
+      { name: 'Canvas Planner', href: '/game-development/canvas', requiredPath: '/game-development/canvas' },
+      { name: 'GDD Builder', href: '/game-development/gdd', requiredPath: '/game-development/gdd' },
+      { name: 'Story Tracker', href: '/game-development/story', requiredPath: '/game-development/story' },
+      { name: 'Characters', href: '/game-development/characters', requiredPath: '/game-development/characters' },
+      { name: 'Items & Loot', href: '/game-development/items', requiredPath: '/game-development/items' },
+      { name: 'Quests', href: '/game-development/quests', requiredPath: '/game-development/quests' },
+      { name: 'Analytics', href: '/game-development/analytics', requiredPath: '/game-development/analytics' },
+    ]
+  },
+  {
     title: 'Reports',
     items: [
       { name: 'Reports', href: '/reports', requiredPath: '/reports' },
