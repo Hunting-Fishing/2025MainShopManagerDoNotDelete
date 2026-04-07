@@ -228,10 +228,18 @@ const WeldingAdminSettings = () => {
               <div><Label>Company Name</Label><Input value={f.company_name || ""} onChange={(e) => set("company_name", e.target.value)} /></div>
               <div><Label>Phone</Label><Input value={f.phone || ""} onChange={(e) => set("phone", e.target.value)} /></div>
               <div><Label>Email</Label><Input type="email" value={f.email || ""} onChange={(e) => set("email", e.target.value)} /></div>
-              <div className="sm:col-span-2">
-                <Label>Address</Label>
-                <Textarea value={f.address || ""} onChange={(e) => set("address", e.target.value)} rows={2} placeholder="123 Main Street, City, Province, Postal Code" />
-              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle>Address</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2"><Label>Street Address</Label><Input value={f.street_address || ""} onChange={(e) => set("street_address", e.target.value)} placeholder="123 Main Street" /></div>
+              <div><Label>Unit / Suite / PO Box</Label><Input value={f.unit_or_po_box || ""} onChange={(e) => set("unit_or_po_box", e.target.value)} placeholder="Suite 200 or PO Box 45" /></div>
+              <div><Label>City / Town</Label><Input value={f.city || ""} onChange={(e) => set("city", e.target.value)} placeholder="Toronto" /></div>
+              <div><Label>Province / State</Label><Input value={f.province || ""} onChange={(e) => set("province", e.target.value)} placeholder="Ontario" /></div>
+              <div><Label>Postal / Zip Code</Label><Input value={f.postal_code || ""} onChange={(e) => set("postal_code", e.target.value)} placeholder="A1B 2C3" /></div>
+              <div className="sm:col-span-2"><Label>Country</Label><Input value={f.country || "Canada"} onChange={(e) => set("country", e.target.value)} /></div>
             </CardContent>
           </Card>
 
