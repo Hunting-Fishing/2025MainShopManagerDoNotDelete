@@ -368,7 +368,15 @@ const WeldingAdminQuotes = () => {
 
             {/* Materials */}
             <div>
-              <div className="flex items-center justify-between mb-2"><Label className="text-base font-semibold">Materials</Label><Button type="button" variant="outline" size="sm" onClick={addMaterial}><Plus className="h-3 w-3 mr-1" />Add</Button></div>
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <Label className="text-base font-semibold">Materials</Label>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setPhotoOpen(true)}>
+                    <Sparkles className="h-3 w-3 mr-1" />AI Photo Measure
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={addMaterial}><Plus className="h-3 w-3 mr-1" />Add</Button>
+                </div>
+              </div>
               {materials.map((m, i) => (
                 <div key={i} className="grid grid-cols-12 gap-2 mb-2 items-end">
                   <div className="col-span-4"><Input placeholder="Name" value={m.name} onChange={(e) => updateMaterial(i, "name", e.target.value)} /></div>
