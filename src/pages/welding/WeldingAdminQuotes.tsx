@@ -317,15 +317,52 @@ const WeldingAdminQuotes = () => {
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                    <SelectContent>
-                    <SelectItem value="new">New</SelectItem><SelectItem value="reviewed">Reviewed</SelectItem>
-                    <SelectItem value="quoted">Quoted</SelectItem><SelectItem value="accepted">Accepted</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="reviewed">Reviewed</SelectItem>
+                    <SelectItem value="quoted">Quoted</SelectItem>
+                    <SelectItem value="accepted">Accepted</SelectItem>
                     <SelectItem value="declined">Declined</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div><Label>Valid Until</Label><Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} /></div>
             </div>
+            {form.status === "rejected" && (
+              <div><Label>Rejection Reason</Label><Textarea value={form.rejection_reason || ""} onChange={(e) => setForm({ ...form, rejection_reason: e.target.value })} rows={2} placeholder="Why was this quote rejected?" /></div>
+            )}
             <div><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
+
+            {editing && (
+              <div className="border-t pt-3">
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                  <Label className="text-base font-semibold">Approval Workflow</Label>
+                  <div className="flex gap-1 flex-wrap">
+                    <Button type="button" size="sm" variant="outline" onClick={() => statusMutation.mutate({ id: editing.id, status: "sent" })} disabled={form.status === "sent"}>
+                      <Send className="h-3 w-3 mr-1" />Send
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" className="text-green-700" onClick={() => statusMutation.mutate({ id: editing.id, status: "approved" })} disabled={form.status === "approved"}>
+                      <CheckCircle2 className="h-3 w-3 mr-1" />Approve
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" className="text-destructive" onClick={() => {
+                      const reason = window.prompt("Reason for rejection (optional):") || undefined;
+                      statusMutation.mutate({ id: editing.id, status: "rejected", reason });
+                    }} disabled={form.status === "rejected"}>
+                      <XCircle className="h-3 w-3 mr-1" />Reject
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground mb-2">
+                  <div>Sent: {editing.sent_at ? new Date(editing.sent_at).toLocaleString() : "—"}</div>
+                  <div>Approved: {editing.approved_at ? new Date(editing.approved_at).toLocaleString() : "—"}</div>
+                  <div>Rejected: {editing.rejected_at ? new Date(editing.rejected_at).toLocaleString() : "—"}</div>
+                </div>
+                <WeldingQuoteHistory history={history} showHistory={showHistory} onToggle={() => setShowHistory(!showHistory)} />
+              </div>
+            )}
 
             {/* Materials */}
             <div>
