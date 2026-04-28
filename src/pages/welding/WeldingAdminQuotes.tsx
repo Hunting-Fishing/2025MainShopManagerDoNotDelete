@@ -227,6 +227,10 @@ const WeldingAdminQuotes = () => {
           <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="sent">Sent</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
             <SelectItem value="new">New</SelectItem>
             <SelectItem value="reviewed">Reviewed</SelectItem>
             <SelectItem value="quoted">Quoted</SelectItem>
