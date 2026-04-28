@@ -141,11 +141,37 @@ const WeldingAdminQuotes = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, status, reason }: { id: string; status: string; reason?: string }) => {
+      const patch: any = { status };
+      if (status === "rejected" && reason) patch.rejection_reason = reason;
+      const { error } = await supabase.from("welding_quotes" as any).update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["welding-quotes"] });
+      toast.success(`Quote marked ${vars.status}`);
+      if (editing?.id === vars.id) loadHistory(vars.id);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const loadHistory = async (quoteId: string) => {
+    const { data } = await supabase
+      .from("welding_quote_history" as any)
+      .select("*")
+      .eq("quote_id", quoteId)
+      .order("created_at", { ascending: false });
+    setHistory((data as any[]) || []);
+  };
+
   const openEdit = async (quote: any) => {
     setEditing(quote);
     setForm({ ...emptyQuote, ...quote });
     const { data } = await supabase.from("welding_quote_materials" as any).select("*").eq("quote_id", quote.id).order("sort_order");
     setMaterials(data || []);
+    setShowHistory(false);
+    loadHistory(quote.id);
     setOpen(true);
   };
 
@@ -153,10 +179,22 @@ const WeldingAdminQuotes = () => {
     setEditing(null);
     setForm({ ...emptyQuote, tax_rate: settings.default_tax_rate || 0 });
     setMaterials([]);
+    setHistory([]);
+    setShowHistory(false);
     setOpen(true);
   };
 
-  const closeDialog = () => { setOpen(false); setEditing(null); setForm({ ...emptyQuote }); setMaterials([]); };
+  const closeDialog = () => { setOpen(false); setEditing(null); setForm({ ...emptyQuote }); setMaterials([]); setHistory([]); setShowHistory(false); };
+
+  const advanceStatus = (e: React.MouseEvent, quote: any, next: string) => {
+    e.stopPropagation();
+    if (next === "rejected") {
+      const reason = window.prompt("Reason for rejection (optional):") || undefined;
+      statusMutation.mutate({ id: quote.id, status: next, reason });
+    } else {
+      statusMutation.mutate({ id: quote.id, status: next });
+    }
+  };
 
   const selectCustomer = (custId: string) => {
     const c = customers.find((c: any) => c.id === custId);
