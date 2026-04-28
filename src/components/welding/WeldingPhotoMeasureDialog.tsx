@@ -65,7 +65,7 @@ async function fileToCompressedDataUrl(file: File): Promise<string> {
 }
 
 export default function WeldingPhotoMeasureDialog({ open, onOpenChange, onApply }: Props) {
-  const { settings } = useWeldingSettings();
+  const { formatCurrency } = useWeldingSettings();
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
