@@ -12,16 +12,23 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Trash2, FileText } from "lucide-react";
+import { Plus, Search, Trash2, FileText, Send, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import WeldingQuoteHistory from "@/components/welding/WeldingQuoteHistory";
 
 const STATUS_COLORS: Record<string, string> = {
+  draft: "bg-gray-100 text-gray-800",
   new: "bg-blue-100 text-blue-800",
   reviewed: "bg-amber-100 text-amber-800",
   quoted: "bg-cyan-100 text-cyan-800",
+  sent: "bg-indigo-100 text-indigo-800",
+  approved: "bg-green-100 text-green-800",
   accepted: "bg-green-100 text-green-800",
+  rejected: "bg-red-100 text-red-800",
   declined: "bg-red-100 text-red-800",
 };
+
+const APPROVAL_FLOW = ["draft", "sent", "approved", "rejected"] as const;
 
 const emptyQuote = {
   customer_name: "", customer_email: "", customer_phone: "",
