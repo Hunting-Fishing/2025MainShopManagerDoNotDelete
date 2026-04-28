@@ -61529,6 +61529,8 @@ export type Database = {
         Row: {
           address: string | null
           area_code: string | null
+          assigned_rep: string | null
+          category: string | null
           city: string | null
           company: string | null
           created_at: string
@@ -61543,11 +61545,14 @@ export type Database = {
           province: string | null
           shop_id: string
           status: string
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
           address?: string | null
           area_code?: string | null
+          assigned_rep?: string | null
+          category?: string | null
           city?: string | null
           company?: string | null
           created_at?: string
@@ -61562,11 +61567,14 @@ export type Database = {
           province?: string | null
           shop_id: string
           status?: string
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
           address?: string | null
           area_code?: string | null
+          assigned_rep?: string | null
+          category?: string | null
           city?: string | null
           company?: string | null
           created_at?: string
@@ -61581,9 +61589,80 @@ export type Database = {
           province?: string | null
           shop_id?: string
           status?: string
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: []
+      }
+      welding_deposits: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          payment_method: string | null
+          quote_id: string | null
+          received_date: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          quote_id?: string | null
+          received_date?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          quote_id?: string | null
+          received_date?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_deposits_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "welding_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welding_deposits_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "welding_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welding_deposits_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "welding_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       welding_gallery_projects: {
         Row: {
@@ -62363,14 +62442,18 @@ export type Database = {
       welding_sales_activities: {
         Row: {
           activity_type: string
+          category: string | null
+          completed_at: string | null
           created_at: string
           customer_email: string | null
           customer_id: string | null
           customer_name: string | null
           customer_phone: string | null
+          estimated_value: number | null
           follow_up_date: string | null
           id: string
           notes: string | null
+          pipeline_order: number | null
           quote_id: string | null
           shop_id: string
           status: string
@@ -62379,14 +62462,18 @@ export type Database = {
         }
         Insert: {
           activity_type?: string
+          category?: string | null
+          completed_at?: string | null
           created_at?: string
           customer_email?: string | null
           customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          estimated_value?: number | null
           follow_up_date?: string | null
           id?: string
           notes?: string | null
+          pipeline_order?: number | null
           quote_id?: string | null
           shop_id: string
           status?: string
@@ -62395,14 +62482,18 @@ export type Database = {
         }
         Update: {
           activity_type?: string
+          category?: string | null
+          completed_at?: string | null
           created_at?: string
           customer_email?: string | null
           customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          estimated_value?: number | null
           follow_up_date?: string | null
           id?: string
           notes?: string | null
+          pipeline_order?: number | null
           quote_id?: string | null
           shop_id?: string
           status?: string
@@ -62479,6 +62570,63 @@ export type Database = {
           },
           {
             foreignKeyName: "welding_schedule_entries_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "welding_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welding_time_entries: {
+        Row: {
+          billable: boolean
+          category: string
+          created_at: string
+          customer_id: string | null
+          entry_date: string
+          id: string
+          minutes: number
+          notes: string | null
+          quote_id: string | null
+          shop_id: string
+          user_id: string | null
+        }
+        Insert: {
+          billable?: boolean
+          category?: string
+          created_at?: string
+          customer_id?: string | null
+          entry_date?: string
+          id?: string
+          minutes?: number
+          notes?: string | null
+          quote_id?: string | null
+          shop_id: string
+          user_id?: string | null
+        }
+        Update: {
+          billable?: boolean
+          category?: string
+          created_at?: string
+          customer_id?: string | null
+          entry_date?: string
+          id?: string
+          minutes?: number
+          notes?: string | null
+          quote_id?: string | null
+          shop_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welding_time_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "welding_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welding_time_entries_quote_id_fkey"
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "welding_quotes"
