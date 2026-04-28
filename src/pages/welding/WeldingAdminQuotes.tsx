@@ -53,6 +53,7 @@ const WeldingAdminQuotes = () => {
   const [materials, setMaterials] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState(false);
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ["welding-quotes", shopId],
