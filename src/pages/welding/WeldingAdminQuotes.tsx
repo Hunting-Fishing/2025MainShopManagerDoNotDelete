@@ -35,7 +35,7 @@ const emptyQuote = {
   project_type: "", description: "", timeline: "",
   labour_hours: 0, labour_rate: 0, travel_distance: 0, travel_cost: 0,
   tax_rate: 0, address: "", city: "", province: "", postal_code: "", notes: "",
-  status: "new", valid_until: "",
+  status: "draft", valid_until: "",
 };
 
 const emptyMaterial = { name: "", category: "", quantity: 1, cost_price: 0, sell_price: 0, measurements: "", notes: "" };
@@ -50,6 +50,8 @@ const WeldingAdminQuotes = () => {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<any>({ ...emptyQuote });
   const [materials, setMaterials] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ["welding-quotes", shopId],
