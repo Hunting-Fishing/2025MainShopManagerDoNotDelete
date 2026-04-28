@@ -257,9 +257,28 @@ const WeldingAdminQuotes = () => {
                   <p className="text-sm text-muted-foreground truncate mt-0.5">{q.customer_name || "No customer"}</p>
                   {q.project_type && <p className="text-xs text-muted-foreground">{q.project_type}</p>}
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="font-bold">{formatCurrency(Number(q.total) || 0)}</p>
-                  <p className="text-xs text-muted-foreground">{q.created_at ? new Date(q.created_at).toLocaleDateString() : ""}</p>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    <p className="font-bold">{formatCurrency(Number(q.total) || 0)}</p>
+                    <p className="text-xs text-muted-foreground">{q.created_at ? new Date(q.created_at).toLocaleDateString() : ""}</p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {(q.status === "draft" || q.status === "new") && (
+                      <Button size="sm" variant="outline" className="h-7 px-2" onClick={(e) => advanceStatus(e, q, "sent")}>
+                        <Send className="h-3 w-3 mr-1" />Send
+                      </Button>
+                    )}
+                    {(q.status === "sent" || q.status === "quoted" || q.status === "reviewed") && (
+                      <>
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-green-700" onClick={(e) => advanceStatus(e, q, "approved")}>
+                          <CheckCircle2 className="h-3 w-3 mr-1" />Approve
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-destructive" onClick={(e) => advanceStatus(e, q, "rejected")}>
+                          <XCircle className="h-3 w-3 mr-1" />Reject
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
