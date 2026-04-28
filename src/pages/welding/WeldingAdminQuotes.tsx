@@ -12,9 +12,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Trash2, FileText, Send, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Search, Trash2, FileText, Send, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import WeldingQuoteHistory from "@/components/welding/WeldingQuoteHistory";
+import WeldingPhotoMeasureDialog from "@/components/welding/WeldingPhotoMeasureDialog";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
