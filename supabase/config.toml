@@ -81,3 +81,6 @@ verify_jwt = false
 
 [functions.fetch-product-meta]
 verify_jwt = false
+
+[functions.welding-photo-measure]
+verify_jwt = false

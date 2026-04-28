@@ -12,9 +12,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Trash2, FileText, Send, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Search, Trash2, FileText, Send, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import WeldingQuoteHistory from "@/components/welding/WeldingQuoteHistory";
+import WeldingPhotoMeasureDialog from "@/components/welding/WeldingPhotoMeasureDialog";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -52,6 +53,7 @@ const WeldingAdminQuotes = () => {
   const [materials, setMaterials] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState(false);
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ["welding-quotes", shopId],
@@ -366,7 +368,15 @@ const WeldingAdminQuotes = () => {
 
             {/* Materials */}
             <div>
-              <div className="flex items-center justify-between mb-2"><Label className="text-base font-semibold">Materials</Label><Button type="button" variant="outline" size="sm" onClick={addMaterial}><Plus className="h-3 w-3 mr-1" />Add</Button></div>
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <Label className="text-base font-semibold">Materials</Label>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setPhotoOpen(true)}>
+                    <Sparkles className="h-3 w-3 mr-1" />AI Photo Measure
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={addMaterial}><Plus className="h-3 w-3 mr-1" />Add</Button>
+                </div>
+              </div>
               {materials.map((m, i) => (
                 <div key={i} className="grid grid-cols-12 gap-2 mb-2 items-end">
                   <div className="col-span-4"><Input placeholder="Name" value={m.name} onChange={(e) => updateMaterial(i, "name", e.target.value)} /></div>
@@ -388,6 +398,20 @@ const WeldingAdminQuotes = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <WeldingPhotoMeasureDialog
+        open={photoOpen}
+        onOpenChange={setPhotoOpen}
+        onApply={({ materials: aiMats, description, labour_hours }) => {
+          setMaterials((prev) => [...prev, ...aiMats]);
+          setForm((f: any) => ({
+            ...f,
+            description: f.description ? f.description : (description || ""),
+            labour_hours: (Number(f.labour_hours) || 0) + (Number(labour_hours) || 0),
+          }));
+          toast.success(`Added ${aiMats.length} AI-proposed materials`);
+        }}
+      />
     </WeldingAdminLayout>
   );
 };
