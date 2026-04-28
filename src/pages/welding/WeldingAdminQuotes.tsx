@@ -12,23 +12,30 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Trash2, FileText } from "lucide-react";
+import { Plus, Search, Trash2, FileText, Send, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import WeldingQuoteHistory from "@/components/welding/WeldingQuoteHistory";
 
 const STATUS_COLORS: Record<string, string> = {
+  draft: "bg-gray-100 text-gray-800",
   new: "bg-blue-100 text-blue-800",
   reviewed: "bg-amber-100 text-amber-800",
   quoted: "bg-cyan-100 text-cyan-800",
+  sent: "bg-indigo-100 text-indigo-800",
+  approved: "bg-green-100 text-green-800",
   accepted: "bg-green-100 text-green-800",
+  rejected: "bg-red-100 text-red-800",
   declined: "bg-red-100 text-red-800",
 };
+
+const APPROVAL_FLOW = ["draft", "sent", "approved", "rejected"] as const;
 
 const emptyQuote = {
   customer_name: "", customer_email: "", customer_phone: "",
   project_type: "", description: "", timeline: "",
   labour_hours: 0, labour_rate: 0, travel_distance: 0, travel_cost: 0,
   tax_rate: 0, address: "", city: "", province: "", postal_code: "", notes: "",
-  status: "new", valid_until: "",
+  status: "draft", valid_until: "",
 };
 
 const emptyMaterial = { name: "", category: "", quantity: 1, cost_price: 0, sell_price: 0, measurements: "", notes: "" };
@@ -43,6 +50,8 @@ const WeldingAdminQuotes = () => {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<any>({ ...emptyQuote });
   const [materials, setMaterials] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ["welding-quotes", shopId],
@@ -132,11 +141,37 @@ const WeldingAdminQuotes = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, status, reason }: { id: string; status: string; reason?: string }) => {
+      const patch: any = { status };
+      if (status === "rejected" && reason) patch.rejection_reason = reason;
+      const { error } = await supabase.from("welding_quotes" as any).update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["welding-quotes"] });
+      toast.success(`Quote marked ${vars.status}`);
+      if (editing?.id === vars.id) loadHistory(vars.id);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const loadHistory = async (quoteId: string) => {
+    const { data } = await supabase
+      .from("welding_quote_history" as any)
+      .select("*")
+      .eq("quote_id", quoteId)
+      .order("created_at", { ascending: false });
+    setHistory((data as any[]) || []);
+  };
+
   const openEdit = async (quote: any) => {
     setEditing(quote);
     setForm({ ...emptyQuote, ...quote });
     const { data } = await supabase.from("welding_quote_materials" as any).select("*").eq("quote_id", quote.id).order("sort_order");
     setMaterials(data || []);
+    setShowHistory(false);
+    loadHistory(quote.id);
     setOpen(true);
   };
 
@@ -144,10 +179,22 @@ const WeldingAdminQuotes = () => {
     setEditing(null);
     setForm({ ...emptyQuote, tax_rate: settings.default_tax_rate || 0 });
     setMaterials([]);
+    setHistory([]);
+    setShowHistory(false);
     setOpen(true);
   };
 
-  const closeDialog = () => { setOpen(false); setEditing(null); setForm({ ...emptyQuote }); setMaterials([]); };
+  const closeDialog = () => { setOpen(false); setEditing(null); setForm({ ...emptyQuote }); setMaterials([]); setHistory([]); setShowHistory(false); };
+
+  const advanceStatus = (e: React.MouseEvent, quote: any, next: string) => {
+    e.stopPropagation();
+    if (next === "rejected") {
+      const reason = window.prompt("Reason for rejection (optional):") || undefined;
+      statusMutation.mutate({ id: quote.id, status: next, reason });
+    } else {
+      statusMutation.mutate({ id: quote.id, status: next });
+    }
+  };
 
   const selectCustomer = (custId: string) => {
     const c = customers.find((c: any) => c.id === custId);
@@ -180,6 +227,10 @@ const WeldingAdminQuotes = () => {
           <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="sent">Sent</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
             <SelectItem value="new">New</SelectItem>
             <SelectItem value="reviewed">Reviewed</SelectItem>
             <SelectItem value="quoted">Quoted</SelectItem>
@@ -206,9 +257,28 @@ const WeldingAdminQuotes = () => {
                   <p className="text-sm text-muted-foreground truncate mt-0.5">{q.customer_name || "No customer"}</p>
                   {q.project_type && <p className="text-xs text-muted-foreground">{q.project_type}</p>}
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="font-bold">{formatCurrency(Number(q.total) || 0)}</p>
-                  <p className="text-xs text-muted-foreground">{q.created_at ? new Date(q.created_at).toLocaleDateString() : ""}</p>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    <p className="font-bold">{formatCurrency(Number(q.total) || 0)}</p>
+                    <p className="text-xs text-muted-foreground">{q.created_at ? new Date(q.created_at).toLocaleDateString() : ""}</p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {(q.status === "draft" || q.status === "new") && (
+                      <Button size="sm" variant="outline" className="h-7 px-2" onClick={(e) => advanceStatus(e, q, "sent")}>
+                        <Send className="h-3 w-3 mr-1" />Send
+                      </Button>
+                    )}
+                    {(q.status === "sent" || q.status === "quoted" || q.status === "reviewed") && (
+                      <>
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-green-700" onClick={(e) => advanceStatus(e, q, "approved")}>
+                          <CheckCircle2 className="h-3 w-3 mr-1" />Approve
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-destructive" onClick={(e) => advanceStatus(e, q, "rejected")}>
+                          <XCircle className="h-3 w-3 mr-1" />Reject
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -247,15 +317,52 @@ const WeldingAdminQuotes = () => {
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                    <SelectContent>
-                    <SelectItem value="new">New</SelectItem><SelectItem value="reviewed">Reviewed</SelectItem>
-                    <SelectItem value="quoted">Quoted</SelectItem><SelectItem value="accepted">Accepted</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="reviewed">Reviewed</SelectItem>
+                    <SelectItem value="quoted">Quoted</SelectItem>
+                    <SelectItem value="accepted">Accepted</SelectItem>
                     <SelectItem value="declined">Declined</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div><Label>Valid Until</Label><Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} /></div>
             </div>
+            {form.status === "rejected" && (
+              <div><Label>Rejection Reason</Label><Textarea value={form.rejection_reason || ""} onChange={(e) => setForm({ ...form, rejection_reason: e.target.value })} rows={2} placeholder="Why was this quote rejected?" /></div>
+            )}
             <div><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
+
+            {editing && (
+              <div className="border-t pt-3">
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                  <Label className="text-base font-semibold">Approval Workflow</Label>
+                  <div className="flex gap-1 flex-wrap">
+                    <Button type="button" size="sm" variant="outline" onClick={() => statusMutation.mutate({ id: editing.id, status: "sent" })} disabled={form.status === "sent"}>
+                      <Send className="h-3 w-3 mr-1" />Send
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" className="text-green-700" onClick={() => statusMutation.mutate({ id: editing.id, status: "approved" })} disabled={form.status === "approved"}>
+                      <CheckCircle2 className="h-3 w-3 mr-1" />Approve
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" className="text-destructive" onClick={() => {
+                      const reason = window.prompt("Reason for rejection (optional):") || undefined;
+                      statusMutation.mutate({ id: editing.id, status: "rejected", reason });
+                    }} disabled={form.status === "rejected"}>
+                      <XCircle className="h-3 w-3 mr-1" />Reject
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground mb-2">
+                  <div>Sent: {editing.sent_at ? new Date(editing.sent_at).toLocaleString() : "—"}</div>
+                  <div>Approved: {editing.approved_at ? new Date(editing.approved_at).toLocaleString() : "—"}</div>
+                  <div>Rejected: {editing.rejected_at ? new Date(editing.rejected_at).toLocaleString() : "—"}</div>
+                </div>
+                <WeldingQuoteHistory history={history} showHistory={showHistory} onToggle={() => setShowHistory(!showHistory)} />
+              </div>
+            )}
 
             {/* Materials */}
             <div>

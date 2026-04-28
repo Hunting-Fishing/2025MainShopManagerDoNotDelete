@@ -62338,6 +62338,8 @@ export type Database = {
       welding_quotes: {
         Row: {
           address: string | null
+          approved_at: string | null
+          approved_by: string | null
           city: string | null
           created_at: string
           customer_email: string | null
@@ -62355,6 +62357,10 @@ export type Database = {
           province: string | null
           quote_mode: string | null
           quote_number: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          sent_at: string | null
           shop_id: string
           status: Database["public"]["Enums"]["welding_quote_status"]
           subtotal: number
@@ -62369,6 +62375,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           city?: string | null
           created_at?: string
           customer_email?: string | null
@@ -62386,6 +62394,10 @@ export type Database = {
           province?: string | null
           quote_mode?: string | null
           quote_number?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          sent_at?: string | null
           shop_id: string
           status?: Database["public"]["Enums"]["welding_quote_status"]
           subtotal?: number
@@ -62400,6 +62412,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           city?: string | null
           created_at?: string
           customer_email?: string | null
@@ -62417,6 +62431,10 @@ export type Database = {
           province?: string | null
           quote_mode?: string | null
           quote_number?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          sent_at?: string | null
           shop_id?: string
           status?: Database["public"]["Enums"]["welding_quote_status"]
           subtotal?: number
@@ -66139,6 +66157,10 @@ export type Database = {
         | "quoted"
         | "accepted"
         | "declined"
+        | "draft"
+        | "sent"
+        | "approved"
+        | "rejected"
       welding_schedule_entry_type:
         | "day_off"
         | "vacation"
@@ -66454,6 +66476,10 @@ export const Constants = {
         "quoted",
         "accepted",
         "declined",
+        "draft",
+        "sent",
+        "approved",
+        "rejected",
       ],
       welding_schedule_entry_type: [
         "day_off",
