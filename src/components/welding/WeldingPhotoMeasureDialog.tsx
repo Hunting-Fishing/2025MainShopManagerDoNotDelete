@@ -146,7 +146,7 @@ export default function WeldingPhotoMeasureDialog({ open, onOpenChange, onApply 
     reset();
   };
 
-  const fmt = settings?.formatCurrency ? settings.formatCurrency : (n: number) => `$${(n || 0).toFixed(2)}`;
+  const fmt = (n: number) => formatCurrency ? formatCurrency(n || 0) : `$${(n || 0).toFixed(2)}`;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
