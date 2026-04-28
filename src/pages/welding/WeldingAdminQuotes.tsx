@@ -398,6 +398,20 @@ const WeldingAdminQuotes = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <WeldingPhotoMeasureDialog
+        open={photoOpen}
+        onOpenChange={setPhotoOpen}
+        onApply={({ materials: aiMats, description, labour_hours }) => {
+          setMaterials((prev) => [...prev, ...aiMats]);
+          setForm((f: any) => ({
+            ...f,
+            description: f.description ? f.description : (description || ""),
+            labour_hours: (Number(f.labour_hours) || 0) + (Number(labour_hours) || 0),
+          }));
+          toast.success(`Added ${aiMats.length} AI-proposed materials`);
+        }}
+      />
     </WeldingAdminLayout>
   );
 };
