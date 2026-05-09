@@ -83,4 +83,4 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.welding-photo-measure]
-verify_jwt = false
+verify_jwt = true
