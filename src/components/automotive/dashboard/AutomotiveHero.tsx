@@ -37,7 +37,7 @@ export function AutomotiveHero({ openJobs, todayAppointments, revenueMTD, onNewW
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-orange-300/90">Active Module</p>
-            <h1 className="font-display text-3xl font-bold leading-tight tracking-tight md:text-4xl lg:text-5xl">
+            <h1 className="font-heading text-3xl font-bold leading-tight tracking-tight md:text-4xl lg:text-5xl">
               Automotive Repair
             </h1>
           </div>

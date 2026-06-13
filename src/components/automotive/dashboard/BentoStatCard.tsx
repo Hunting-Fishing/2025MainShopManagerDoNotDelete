@@ -35,7 +35,7 @@ export function BentoStatCard({ title, value, icon: Icon, gradient, featured, de
       <div className="relative flex items-start justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{title}</p>
-          <p className={cn('mt-2 font-display font-bold tabular-nums text-foreground', featured ? 'text-4xl md:text-5xl' : 'text-2xl md:text-3xl')}>
+          <p className={cn('mt-2 font-heading font-bold tabular-nums text-foreground', featured ? 'text-4xl md:text-5xl' : 'text-2xl md:text-3xl')}>
             {value}
           </p>
           {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
