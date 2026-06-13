@@ -63,28 +63,26 @@ const TableRow = React.forwardRef<
     colorIndex?: number;
   }
 >(({ className, colorIndex, ...props }, ref) => {
-  // Define an array of background color classes
   const rowColors = [
-    "hover:bg-blue-50/80 bg-blue-50/30",
-    "hover:bg-green-50/80 bg-green-50/30",
-    "hover:bg-purple-50/80 bg-purple-50/30",
-    "hover:bg-amber-50/80 bg-amber-50/30",
-    "hover:bg-pink-50/80 bg-pink-50/30",
-    "hover:bg-indigo-50/80 bg-indigo-50/30",
-    "hover:bg-sky-50/80 bg-sky-50/30",
-    "hover:bg-emerald-50/80 bg-emerald-50/30",
+    "hover:bg-primary/5",
+    "hover:bg-emerald-500/5",
+    "hover:bg-violet-500/5",
+    "hover:bg-amber-500/5",
+    "hover:bg-rose-500/5",
+    "hover:bg-indigo-500/5",
+    "hover:bg-sky-500/5",
+    "hover:bg-teal-500/5",
   ];
 
-  // If colorIndex is provided, use it to select a background color
-  const colorClass = colorIndex !== undefined 
+  const colorClass = colorIndex !== undefined
     ? rowColors[colorIndex % rowColors.length]
-    : "hover:bg-muted/50";
+    : "hover:bg-muted/40";
 
   return (
     <tr
       ref={ref}
       className={cn(
-        "border-b transition-colors data-[state=selected]:bg-muted mb-2", // Added mb-2 for spacing between rows
+        "border-b border-border/60 transition-colors data-[state=selected]:bg-muted",
         colorClass,
         className
       )}
