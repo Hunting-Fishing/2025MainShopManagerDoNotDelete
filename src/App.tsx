@@ -539,7 +539,7 @@ const WeldingAdminSales = lazy(() => import('@/pages/welding/WeldingAdminSales')
 const WeldingAdminLinks = lazy(() => import('@/pages/welding/WeldingAdminLinks'));
 const WeldingAdminGallery = lazy(() => import('@/pages/welding/WeldingAdminGallery'));
 const WeldingAdminSettings = lazy(() => import('@/pages/welding/WeldingAdminSettings'));
-import { WeldingSettingsProvider } from '@/contexts/WeldingSettingsContext';
+const WeldingSettingsProvider = lazy(() => import('@/contexts/WeldingSettingsContext').then(m => ({ default: m.WeldingSettingsProvider })));
 
 // Personal Trainer Portal
 const PTPortalLanding = lazy(() => import('@/pages/pt-portal/PTPortalLanding'));
