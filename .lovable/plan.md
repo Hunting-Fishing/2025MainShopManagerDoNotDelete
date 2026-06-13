@@ -1,86 +1,84 @@
-## Goal
-Bring the Automotive Dashboard up to a modern, premium product-app standard: stronger visual hierarchy, better color, layered depth, motion, and richer icon/illustration treatment — without changing any data, queries, or routes.
 
-Aesthetic direction (chosen defaults, since you skipped the questions):
-- Palette: **Charcoal & Ember** on a light surface — slate/zinc neutrals with an Ember (#e85d3a) + Indigo (#4f46e5) accent pair. Reads "performance garage," not generic SaaS.
-- Type: **Space Grotesk** (display/headings) + **DM Sans** (body). Loaded via the existing Google Fonts pipeline in `index.html`.
-- Motion: Framer Motion stagger on stat reveal, hover lift + sheen on category tiles, subtle gradient orbs in the hero.
+# App-Wide UI Modernization — Cloud White SaaS
 
-## Scope (locked)
-- `src/pages/automotive/AutomotiveDashboard.tsx` — restructure layout.
-- `src/components/module-dashboard/*` — extend (NOT break) primitives used here so other modules don't regress. Add optional `variant="premium"` props where needed; default behavior stays identical for septic/welding/etc.
-- New file: `src/components/automotive/dashboard/*` — hero banner, bento stat cards, premium category tile, gradient orbs background.
-- Add 1 generated hero illustration (compressed JPG, lazy-loaded) to `src/assets/automotive-hero.jpg` for the hero band.
-- No DB, no hook, no route, no business-logic changes.
+A full visual pass that re-skins the entire app around a Linear/Vercel-style "Cloud White SaaS" aesthetic, extends the bento dashboard pattern from Automotive to every module, and layers in free graphic upgrades (MagicUI effects, Framer Motion micro-interactions, Tabler icons, Undraw illustrations) plus a real light/dark toggle.
 
-Out of scope: the left sidebar in your screenshot (that's the shared `AppSidebar`), sub-pages (Quotes/Invoices/Diagnostics/etc.), and the other modules' dashboards. We can do those in follow-up passes.
+No business logic, data queries, RLS, routing, or module functionality changes — purely a presentation pass.
 
-## Layout plan
+## What you'll get
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  HERO BAND (gradient + orb mesh + car silhouette art)        │
-│  ─ Module crest (Car icon in gradient chip)                  │
-│  ─ "Automotive Repair" H1 (Space Grotesk, 40/48)             │
-│  ─ Live status pills: Today · Open Jobs · Revenue MTD        │
-│  ─ Primary CTAs: New Work Order (ember), New Quote (ghost)   │
-└──────────────────────────────────────────────────────────────┘
-┌─ Alerts row (only if any) ───────────────────────────────────┐
-│  Animated alert chips with severity color + icon             │
-└──────────────────────────────────────────────────────────────┘
-┌─ BENTO STATS (4 cols desktop / 2 mobile) ────────────────────┐
-│ ┌──Big──┐ ┌─sm─┐ ┌─sm─┐ ┌─sm─┐                                │
-│ │Revenue│ │Pend│ │InPr│ │Done│   gradient borders, sparkline │
-│ │ MTD   │ └────┘ └────┘ └────┘   on Revenue, ring on counts  │
-│ └───────┘ ┌─sm─┐ ┌─sm─┐ ┌─sm─┐                                │
-│           │Appt│ │Parts│ │Overd│                              │
-│           └────┘ └────┘ └────┘                                │
-└──────────────────────────────────────────────────────────────┘
-┌─ QUICK ACTIONS (horizontal pill rail) ───────────────────────┐
-│  Scrollable on mobile, hover sheen on desktop                │
-└──────────────────────────────────────────────────────────────┘
-┌─ CATEGORY BENTO ─────────────────────────────────────────────┐
-│  6-col responsive grid, premium tile:                        │
-│  - colored gradient icon chip (not flat bg)                  │
-│  - hover: tile lift + accent border + arrow slide            │
-│  - description always visible (md+), truncated on mobile     │
-└──────────────────────────────────────────────────────────────┘
-┌─ RECENT WORK ORDERS ─────┐ ┌─ UPCOMING APPOINTMENTS ────────┐
-│  card list, status badge │ │  timeline-style list with date │
-│  vehicle thumbnail glyph │ │  chips, customer + vehicle     │
-└──────────────────────────┘ └────────────────────────────────┘
-```
+- A crisp, modern light theme — soft off-white surfaces (`#fafbfc`), slate text, indigo `#3b82f6` accent, refined shadows and 14px radius — applied app-wide through design tokens (no per-component hex rewrites).
+- A working dark mode with a toggle in the header; remembers your choice.
+- A modernized app shell: sidebar, header, footer, breadcrumbs, page transitions.
+- Every module dashboard restructured into the bento layout pioneered on Automotive (hero band, stat tiles with gradient icon chips, category tiles, scrollable quick-action rail).
+- Polished list, detail, and form pages — consistent card styling, sticky toolbars, empty-state illustrations, skeleton loaders, smoother hovers.
+- Selected MagicUI flourishes used sparingly: Border Beam on hero/CTA cards, Shimmer Button for primary CTAs, Animated List for activity feeds, Particles only on the Module Hub landing.
+- Framer Motion micro-interactions: page fades, staggered card entrances, hover lift on tiles.
+- Replace generic icons with Tabler / refined Lucide where it sharpens meaning. Undraw illustrations on empty states and portal landing screens.
 
-## Visual upgrade specifics
-- Stat cards: replace flat colored tile with `bg-card` + 1px gradient border (`from-ember/40 to-indigo/40`) + soft glow shadow. Icon sits in a 40px gradient chip. Numbers use Space Grotesk 32/36 tabular-nums. Revenue card spans 2 cols and includes a tiny inline sparkline (CSS gradient bar, no chart lib needed).
-- Category tiles: gradient icon chip (`bg-gradient-to-br from-<color>-500 to-<color>-600`), subtle ring on hover, ChevronRight slides in on hover, premium shadow.
-- Hero band: `bg-gradient-to-br from-slate-900 via-slate-800 to-zinc-900` with two soft blurred orbs (ember + indigo) + an absolutely-positioned car silhouette illustration on the right (≤ 60 KB, lazy-loaded).
-- Iconography: keep lucide-react throughout (already imported), but wrap every primary icon in a gradient chip component for consistency.
-- Motion: import existing `framer-motion` if present; otherwise CSS-only stagger via `animation-delay` so we don't add deps.
+## Plan of work (phased)
 
-## Files to touch (technical)
-1. `src/pages/automotive/AutomotiveDashboard.tsx` — replace JSX with new composition; keep all hooks/queries identical.
-2. `src/components/automotive/dashboard/AutomotiveHero.tsx` — NEW.
-3. `src/components/automotive/dashboard/BentoStatCard.tsx` — NEW.
-4. `src/components/automotive/dashboard/CategoryTile.tsx` — NEW.
-5. `src/components/automotive/dashboard/GradientOrbs.tsx` — NEW (decorative).
-6. `src/assets/automotive-hero.jpg` — NEW (generated, ≤ 60 KB, `loading="lazy"`).
-7. `src/index.css` — add 2-3 utility classes (`.shadow-glow`, `.bento-border`) if not already present.
+### Phase 1 — Design system foundation
+- Rewrite light-mode HSL tokens in `src/index.css` to the Cloud White palette (background `#fafbfc`, surfaces `#ffffff` + `#e8ecf1` borders, slate text, primary `#3b82f6`, muted-foreground slate-500).
+- Tune dark-mode tokens to match (deep slate background, indigo-400 primary, slate-800 surfaces).
+- Refresh shadows (softer, slate-tinted), set `--radius: 0.875rem`, add `--shadow-soft` and `--ring-focus`.
+- Add typography tokens; keep existing Space Grotesk / Plus Jakarta Sans pairing already in `tailwind.config.ts`.
 
-## Asset packs / icon strategy
-- Lucide-react covers all current icons; no extra icon pack needed.
-- For the hero illustration we'll generate a single optimized JPG via the image gen pipeline — cheaper and lighter than a Figma UI-kit import, and avoids licensing/redistribution concerns. If you later want a Figma kit (e.g. "Untitled UI" or "Shadcn Dashboard Kit"), tell me which one and I'll port specific tokens.
+### Phase 2 — Theme toggle
+- Add a `ThemeProvider` using `next-themes` (or a lightweight in-house equivalent) and a Sun/Moon toggle button in `src/components/layout/Header.tsx`.
+- Persist preference in `localStorage`; respect `prefers-color-scheme` on first load.
+- Verify Tailwind `darkMode: ["class"]` (already set) and audit any hardcoded `bg-white`/`text-black` usages along the shell.
 
-## Verification
-- `/automotive` renders on desktop (1440), tablet (768), and mobile (375) without overflow.
-- Screenshot the new hero + bento + categories at each breakpoint.
-- Confirm no regressions on `/septic`, `/welding`, `/power-washing` dashboards (they share `module-dashboard` primitives — only additive props introduced).
-- Network: hero image < 60 KB, no new third-party fonts, no new JS deps.
+### Phase 3 — App shell
+- `Header.tsx`, `HeaderActions.tsx`, `AppFooter.tsx`: switch to token-driven surfaces, add subtle bottom border, command-K search affordance, theme toggle, refined avatar menu.
+- `AppSidebar.tsx` + `sidebar/SidebarContent.tsx`: keep the clean white look you approved, swap active-state to indigo-50/indigo-700 ring, add small Tabler section icons, subtle hover translate.
+- `Layout.tsx`: add Framer Motion `AnimatePresence` page fade wrapper (already have `AnimatedPage`; wire it in).
 
-## Out of scope (parking lot)
-- Sub-pages (Quotes / Invoices / Vehicle History / Diagnostics / Recalls / Labor Rates).
-- Sidebar / `AppSidebar` redesign.
-- Dark mode tuning beyond what existing tokens already provide.
-- Other modules' dashboards (Septic, Welding, etc.) — same treatment can be templated in a follow-up.
+### Phase 4 — Reusable upgraded UI primitives
+- Lift the Automotive `BentoStatCard`, `CategoryTile`, `AutomotiveHero`, `GradientOrbs` into module-agnostic versions under `src/components/module-dashboard/`:
+  - `BentoStatCard`, `CategoryTile`, `ModuleHero`, `QuickActionRail`, `ActivityFeedCard`, `EmptyStateIllustration`.
+- Add MagicUI components (manual install per their docs): `border-beam`, `shimmer-button`, `animated-list`, `particles`, `magic-card`. Files placed under `src/components/ui/magicui/`.
+- Add a small `<Illustration name="...">` wrapper that pulls Undraw SVGs (stored locally under `src/assets/illustrations/` as inline SVG, recolored via `currentColor` to follow the theme).
 
-Approve and I'll build it.
+### Phase 5 — Module Hub landing
+- Re-skin `/module-hub` with the new hero (Particles backdrop, Shimmer CTA), bento module grid using `CategoryTile`, animated stats row.
+
+### Phase 6 — Module dashboards
+Apply the bento pattern to each module dashboard, keeping live data queries unchanged:
+- Septic, Welding, Power Washing, Personal Trainer, Export Company, Game Development, Gunsmith, Fuel Delivery, Fleet, Equipment.
+- Each gets: `ModuleHero` with live KPI pills, 4-card bento stat grid, category tiles for sub-pages, activity feed using `AnimatedList`.
+
+### Phase 7 — List / detail / form pass
+- Standardize page chrome: sticky page header with breadcrumbs + primary action, consistent `Card` surfaces, refined `Table` row hover, refined `Input`/`Select`/`Button` focus rings.
+- Add `Skeleton` loading and `EmptyStateIllustration` to all data-driven lists.
+- Page-level Framer Motion fade-in.
+
+### Phase 8 — Customer portals
+- Apply Cloud White tokens, refreshed `CustomerPortalLayout` header/footer, hero illustration, dark mode support.
+
+### Phase 9 — QA pass
+- Walk the major routes at desktop + mobile viewports, light + dark, verify contrast, fix any leftover hardcoded color classes flagged by ripgrep (`bg-white|text-black|bg-slate-9` etc. inside components).
+
+## Technical notes
+
+- New deps: `next-themes` (theme toggle), `@tabler/icons-react` (icon vocabulary). MagicUI components are copy-pasted source (no npm dep). Framer Motion is already in the project.
+- All color decisions live in `src/index.css` tokens + `tailwind.config.ts` — components reference semantic classes (`bg-background`, `text-foreground`, `border-border`, `bg-card`, `text-primary`), never raw hex.
+- Bento primitives in `src/components/module-dashboard/` are pure presentation; they accept props for icon, gradient, value, onClick — no data fetching.
+- MagicUI installs follow https://magicui.design/docs manual install (component files dropped into `src/components/ui/magicui/`).
+- Undraw illustrations stored as local SVG components so they recolor with the theme.
+- No DB migrations, no edge functions, no auth/RLS changes.
+- Code-splitting and existing `React.lazy` route boundaries are preserved.
+
+## Out of scope
+
+- Adding/removing features or pages
+- Changing data models, queries, or RLS
+- Reworking auth flows
+- Rewriting business logic in any module
+
+## File impact (high level)
+
+- Edited: `src/index.css`, `tailwind.config.ts`, `src/components/layout/*`, `src/components/layout/sidebar/*`, `src/pages/ModuleHub.tsx`, every `src/pages/<module>/<Module>Dashboard.tsx`, `src/components/customer-portal/CustomerPortalLayout.tsx`, shared `src/components/ui/*` (button/card/table/input visual tweaks).
+- Created: `src/components/theme/ThemeProvider.tsx`, `src/components/theme/ThemeToggle.tsx`, `src/components/module-dashboard/{BentoStatCard,CategoryTile,ModuleHero,QuickActionRail,ActivityFeedCard,EmptyStateIllustration}.tsx`, `src/components/ui/magicui/{border-beam,shimmer-button,animated-list,particles,magic-card}.tsx`, `src/assets/illustrations/*.svg`.
+
+Approve to start with Phase 1–3 (foundation, theme toggle, shell) so you see the new look immediately, then proceed phase-by-phase.
