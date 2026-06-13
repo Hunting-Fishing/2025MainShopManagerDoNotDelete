@@ -2,41 +2,18 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
-  Car,
-  FileText,
-  Plus,
-  ClipboardList,
-  Package,
-  Receipt,
-  CreditCard,
-  CalendarDays,
-  Wrench,
-  History,
-  AlertTriangle,
-  Settings,
-  DollarSign,
-  Clock,
-  Calendar,
-  Users,
-  Truck,
-  FileSearch,
-  MessageSquare,
-  Megaphone,
-  Briefcase,
-  Shield,
-  Building2,
-  ShoppingCart,
-  Hammer,
+  Car, FileText, Plus, ClipboardList, Package, Receipt, CreditCard, CalendarDays,
+  Wrench, History, AlertTriangle, Settings, DollarSign, Clock, Calendar, Users,
+  Truck, FileSearch, MessageSquare, Megaphone, Briefcase, Shield, Building2,
+  ShoppingCart, Hammer, ChevronRight, AlertCircle, CheckCircle2, XCircle, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  ModuleDashboardHeader,
-  ModuleDashboardStats,
-  ModuleDashboardAlerts,
-  ModuleDashboardQuickActions,
-  ModuleDashboardRecentActivity,
-} from '@/components/module-dashboard';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useAutomotiveStats, useAutomotiveWorkOrders, useAutomotiveAppointments } from '@/hooks/useAutomotiveStats';
+import { AutomotiveHero } from '@/components/automotive/dashboard/AutomotiveHero';
+import { BentoStatCard } from '@/components/automotive/dashboard/BentoStatCard';
+import { CategoryTile } from '@/components/automotive/dashboard/CategoryTile';
 
 export default function AutomotiveDashboard() {
   const navigate = useNavigate();
@@ -44,208 +21,260 @@ export default function AutomotiveDashboard() {
   const { data: recentWorkOrders, isLoading: workOrdersLoading } = useAutomotiveWorkOrders();
   const { data: upcomingAppointments, isLoading: appointmentsLoading } = useAutomotiveAppointments();
 
+  const openJobs = (stats?.pendingJobs || 0) + (stats?.inProgressJobs || 0) + (stats?.awaitingPartsJobs || 0);
+
   const statCards = [
-    {
-      title: 'Pending Jobs',
-      value: stats?.pendingJobs || 0,
-      icon: ClipboardList,
-      color: 'text-amber-500',
-      bgColor: 'bg-amber-500/10',
-    },
-    {
-      title: 'In Progress',
-      value: stats?.inProgressJobs || 0,
-      icon: Wrench,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
-    },
-    {
-      title: 'Awaiting Parts',
-      value: stats?.awaitingPartsJobs || 0,
-      icon: Package,
-      color: 'text-yellow-500',
-      bgColor: 'bg-yellow-500/10',
-    },
-    {
-      title: 'Completed (MTD)',
-      value: stats?.completedJobs || 0,
-      icon: Calendar,
-      color: 'text-green-500',
-      bgColor: 'bg-green-500/10',
-    },
-    {
-      title: 'Revenue (MTD)',
-      value: `$${(stats?.revenue || 0).toLocaleString()}`,
-      icon: DollarSign,
-      color: 'text-emerald-500',
-      bgColor: 'bg-emerald-500/10',
-    },
-    {
-      title: "Today's Appointments",
-      value: stats?.todayAppointments || 0,
-      icon: Clock,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
-    },
-    {
-      title: 'Overdue Invoices',
-      value: stats?.overdueInvoices || 0,
-      icon: AlertTriangle,
-      color: 'text-red-500',
-      bgColor: 'bg-red-500/10',
-    },
-    {
-      title: 'Low Stock Parts',
-      value: stats?.lowStockParts || 0,
-      icon: Package,
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-500/10',
-    },
+    { title: 'Revenue (MTD)', value: `$${(stats?.revenue || 0).toLocaleString()}`, icon: DollarSign, gradient: 'from-emerald-500 to-teal-600', featured: true, hint: 'Month-to-date earnings' },
+    { title: 'Pending Jobs', value: stats?.pendingJobs ?? 0, icon: ClipboardList, gradient: 'from-amber-500 to-orange-600' },
+    { title: 'In Progress', value: stats?.inProgressJobs ?? 0, icon: Wrench, gradient: 'from-blue-500 to-indigo-600' },
+    { title: 'Awaiting Parts', value: stats?.awaitingPartsJobs ?? 0, icon: Package, gradient: 'from-yellow-500 to-amber-600' },
+    { title: 'Completed (MTD)', value: stats?.completedJobs ?? 0, icon: CheckCircle2, gradient: 'from-green-500 to-emerald-600' },
+    { title: "Today's Appts", value: stats?.todayAppointments ?? 0, icon: Clock, gradient: 'from-purple-500 to-fuchsia-600' },
+    { title: 'Overdue Invoices', value: stats?.overdueInvoices ?? 0, icon: AlertTriangle, gradient: 'from-red-500 to-rose-600' },
+    { title: 'Low Stock', value: stats?.lowStockParts ?? 0, icon: Package, gradient: 'from-orange-500 to-red-600' },
   ];
 
-  const alerts = [];
+  const alerts: Array<{ type: 'warning' | 'critical'; message: string; onClick: () => void }> = [];
   if (stats?.lowStockParts && stats.lowStockParts > 0) {
-    alerts.push({
-      type: 'warning' as const,
-      message: `${stats.lowStockParts} part(s) running low on stock`,
-      action: () => navigate('/inventory'),
-    });
+    alerts.push({ type: 'warning', message: `${stats.lowStockParts} part(s) running low on stock`, onClick: () => navigate('/inventory') });
   }
   if (stats?.overdueInvoices && stats.overdueInvoices > 0) {
-    alerts.push({
-      type: 'critical' as const,
-      message: `${stats.overdueInvoices} invoice(s) are overdue`,
-      action: () => navigate('/invoices'),
-    });
+    alerts.push({ type: 'critical', message: `${stats.overdueInvoices} invoice(s) are overdue`, onClick: () => navigate('/invoices') });
   }
 
   const quickActions = [
     { label: 'All Jobs', icon: ClipboardList, onClick: () => navigate('/work-orders') },
     { label: 'Vehicles', icon: Car, onClick: () => navigate('/vehicles') },
     { label: 'Parts', icon: Package, onClick: () => navigate('/inventory') },
-    { label: 'Quotes', icon: FileText, onClick: () => navigate('/quotes'), color: 'text-amber-500', borderColor: 'border-amber-500/30', hoverBg: 'hover:bg-amber-500/5' },
-    { label: 'Invoices', icon: Receipt, onClick: () => navigate('/invoices'), color: 'text-green-500', borderColor: 'border-green-500/30', hoverBg: 'hover:bg-green-500/5' },
-    { label: 'Payments', icon: CreditCard, onClick: () => navigate('/payments'), color: 'text-emerald-500', borderColor: 'border-emerald-500/30', hoverBg: 'hover:bg-emerald-500/5' },
-    { label: 'Appointments', icon: CalendarDays, onClick: () => navigate('/booking-management'), color: 'text-blue-500', borderColor: 'border-blue-500/30', hoverBg: 'hover:bg-blue-500/5' },
-    { label: 'History', icon: History, onClick: () => navigate('/automotive/vehicle-history'), color: 'text-purple-500', borderColor: 'border-purple-500/30', hoverBg: 'hover:bg-purple-500/5' },
-    { label: 'Diagnostics', icon: Settings, onClick: () => navigate('/automotive/diagnostics'), color: 'text-cyan-500', borderColor: 'border-cyan-500/30', hoverBg: 'hover:bg-cyan-500/5' },
-    { label: 'Labor Rates', icon: DollarSign, onClick: () => navigate('/automotive/labor-rates'), color: 'text-orange-500', borderColor: 'border-orange-500/30', hoverBg: 'hover:bg-orange-500/5' },
-    { label: 'TSB & Recalls', icon: FileSearch, onClick: () => navigate('/automotive/recalls'), color: 'text-red-500', borderColor: 'border-red-500/30', hoverBg: 'hover:bg-red-500/5' },
-    { label: 'Customers', icon: Users, onClick: () => navigate('/customers'), color: 'text-indigo-500', borderColor: 'border-indigo-500/30', hoverBg: 'hover:bg-indigo-500/5' },
+    { label: 'Quotes', icon: FileText, onClick: () => navigate('/quotes') },
+    { label: 'Invoices', icon: Receipt, onClick: () => navigate('/invoices') },
+    { label: 'Payments', icon: CreditCard, onClick: () => navigate('/payments') },
+    { label: 'Appointments', icon: CalendarDays, onClick: () => navigate('/booking-management') },
+    { label: 'History', icon: History, onClick: () => navigate('/automotive/vehicle-history') },
+    { label: 'Diagnostics', icon: Settings, onClick: () => navigate('/automotive/diagnostics') },
+    { label: 'Labor Rates', icon: DollarSign, onClick: () => navigate('/automotive/labor-rates') },
+    { label: 'TSB & Recalls', icon: FileSearch, onClick: () => navigate('/automotive/recalls') },
+    { label: 'Customers', icon: Users, onClick: () => navigate('/customers') },
   ];
 
-  // Category navigation tiles
   const categoryTiles = [
-    { label: 'Services', icon: Briefcase, href: '/work-orders', color: 'bg-blue-500', description: 'Jobs, quotes & invoices' },
-    { label: 'Customers', icon: Users, href: '/customers', color: 'bg-indigo-500', description: 'Customer management' },
-    { label: 'Inventory', icon: Package, href: '/inventory', color: 'bg-amber-500', description: 'Parts & stock' },
-    { label: 'Scheduling', icon: CalendarDays, href: '/booking-management', color: 'bg-purple-500', description: 'Appointments & calendar' },
-    { label: 'Communications', icon: MessageSquare, href: '/customer-comms', color: 'bg-cyan-500', description: 'Customer messaging' },
-    { label: 'Marketing', icon: Megaphone, href: '/email-campaigns', color: 'bg-pink-500', description: 'Campaigns & SMS' },
-    { label: 'Operations', icon: ClipboardList, href: '/daily-logs', color: 'bg-green-500', description: 'Daily logs & service board' },
-    { label: 'Equipment & Tools', icon: Hammer, href: '/equipment', color: 'bg-orange-500', description: 'Shop equipment' },
-    { label: 'Fleet Operations', icon: Truck, href: '/fleet-management', color: 'bg-teal-500', description: 'Fleet & vehicles' },
-    { label: 'Safety & Compliance', icon: Shield, href: '/safety', color: 'bg-red-500', description: 'Inspections & safety' },
-    { label: 'Company', icon: Building2, href: '/company-profile', color: 'bg-slate-500', description: 'Business settings' },
-    { label: 'Store', icon: ShoppingCart, href: '/shopping', color: 'bg-emerald-500', description: 'Shop & products' },
+    { label: 'Services', icon: Briefcase, href: '/work-orders', gradient: 'from-blue-500 to-indigo-600', description: 'Jobs, quotes & invoices' },
+    { label: 'Customers', icon: Users, href: '/customers', gradient: 'from-indigo-500 to-purple-600', description: 'Customer management' },
+    { label: 'Inventory', icon: Package, href: '/inventory', gradient: 'from-amber-500 to-orange-600', description: 'Parts & stock' },
+    { label: 'Scheduling', icon: CalendarDays, href: '/booking-management', gradient: 'from-purple-500 to-fuchsia-600', description: 'Appointments & calendar' },
+    { label: 'Communications', icon: MessageSquare, href: '/customer-comms', gradient: 'from-cyan-500 to-blue-600', description: 'Customer messaging' },
+    { label: 'Marketing', icon: Megaphone, href: '/email-campaigns', gradient: 'from-pink-500 to-rose-600', description: 'Campaigns & SMS' },
+    { label: 'Operations', icon: ClipboardList, href: '/daily-logs', gradient: 'from-green-500 to-emerald-600', description: 'Daily logs & service board' },
+    { label: 'Equipment & Tools', icon: Hammer, href: '/equipment', gradient: 'from-orange-500 to-red-600', description: 'Shop equipment' },
+    { label: 'Fleet Operations', icon: Truck, href: '/fleet-management', gradient: 'from-teal-500 to-cyan-600', description: 'Fleet & vehicles' },
+    { label: 'Safety & Compliance', icon: Shield, href: '/safety', gradient: 'from-red-500 to-rose-600', description: 'Inspections & safety' },
+    { label: 'Company', icon: Building2, href: '/company-profile', gradient: 'from-slate-500 to-zinc-700', description: 'Business settings' },
+    { label: 'Store', icon: ShoppingCart, href: '/shopping', gradient: 'from-emerald-500 to-green-600', description: 'Shop & products' },
   ];
-
-  const leftPanelItems = (recentWorkOrders || []).map((wo: any) => ({
-    id: wo.id,
-    title: wo.work_order_number || 'N/A',
-    subtitle: `${wo.customers?.first_name || ''} ${wo.customers?.last_name || ''} - ${wo.vehicles?.year || ''} ${wo.vehicles?.make || ''} ${wo.vehicles?.model || ''}`.trim(),
-    badge: {
-      text: wo.status?.replace('_', ' ') || 'pending',
-      variant: wo.status === 'completed' ? 'default' as const : wo.status === 'in_progress' ? 'secondary' as const : 'outline' as const,
-    },
-    onClick: () => navigate(`/work-orders/${wo.id}`),
-  }));
-
-  const rightPanelItems = (upcomingAppointments || []).map((appt: any) => ({
-    id: appt.id,
-    title: `${appt.customers?.first_name || ''} ${appt.customers?.last_name || ''}`.trim() || 'Unknown',
-    subtitle: `${appt.vehicles?.year || ''} ${appt.vehicles?.make || ''} ${appt.vehicles?.model || ''}`.trim() || 'No vehicle',
-    badge: {
-      text: appt.status?.replace('_', ' ') || 'scheduled',
-      variant: 'outline' as const,
-    },
-    meta: appt.date ? format(new Date(appt.date), 'MMM d, yyyy h:mm a') : '',
-    onClick: () => navigate('/calendar'),
-  }));
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <ModuleDashboardHeader
-        icon={Car}
-        iconColor="text-blue-600"
-        title="Automotive Repair"
-        description="Full-service auto repair shop management"
-        actions={[
-          { label: 'New Quote', icon: FileText, onClick: () => navigate('/quotes/new'), variant: 'outline' },
-          { label: 'New Work Order', icon: Plus, onClick: () => navigate('/work-orders/new') },
-        ]}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-zinc-950">
+      <div className="mx-auto max-w-7xl space-y-8 p-4 md:p-6 lg:p-8">
+        <AutomotiveHero
+          openJobs={openJobs}
+          todayAppointments={stats?.todayAppointments || 0}
+          revenueMTD={stats?.revenue || 0}
+          onNewWorkOrder={() => navigate('/work-orders/new')}
+          onNewQuote={() => navigate('/quotes/new')}
+        />
 
-      <ModuleDashboardAlerts alerts={alerts} />
-
-      <ModuleDashboardStats stats={statCards} isLoading={statsLoading} />
-
-      <ModuleDashboardQuickActions actions={quickActions} />
-
-      {/* Category Navigation Tiles */}
-      <div className="mt-8">
-        <h3 className="text-lg font-semibold mb-4">Categories</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {categoryTiles.map((category) => {
-            const IconComponent = category.icon;
-            return (
+        {/* Alerts */}
+        {alerts.length > 0 && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            {alerts.map((alert, i) => (
               <button
-                key={category.label}
-                onClick={() => navigate(category.href)}
+                key={i}
+                onClick={alert.onClick}
                 className={cn(
-                  "flex flex-col items-center justify-center p-4 rounded-xl border bg-card",
-                  "hover:shadow-lg hover:scale-105 transition-all duration-200",
-                  "group cursor-pointer"
+                  'group flex flex-1 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all hover:shadow-md',
+                  alert.type === 'critical'
+                    ? 'border-red-200 bg-red-50 text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200'
+                    : 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200',
                 )}
               >
-                <div className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center mb-3",
-                  category.color
-                )}>
-                  <IconComponent className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-sm font-medium text-center">{category.label}</span>
-                <span className="text-xs text-muted-foreground text-center mt-1 hidden sm:block">
-                  {category.description}
-                </span>
+                {alert.type === 'critical' ? <XCircle className="h-5 w-5 shrink-0" /> : <AlertCircle className="h-5 w-5 shrink-0" />}
+                <span className="flex-1 text-sm font-medium">{alert.message}</span>
+                <ChevronRight className="h-4 w-4 opacity-50 transition-transform group-hover:translate-x-0.5" />
               </button>
-            );
-          })}
+            ))}
+          </div>
+        )}
+
+        {/* Bento Stats */}
+        <section>
+          <SectionHeader title="At a Glance" subtitle="Live operational metrics" icon={Sparkles} />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+            {statsLoading
+              ? Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className={cn('h-32 animate-pulse rounded-2xl bg-muted', i === 0 && 'md:col-span-2')} />
+                ))
+              : statCards.map((s, i) => (
+                  <BentoStatCard key={s.title} {...s} delay={i * 40} />
+                ))}
+          </div>
+        </section>
+
+        {/* Quick Actions Rail */}
+        <section>
+          <SectionHeader title="Quick Actions" subtitle="One-tap shortcuts" icon={Wrench} />
+          <div className="flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <button
+                  key={action.label}
+                  onClick={action.onClick}
+                  className="group flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:shadow-md"
+                >
+                  <Icon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
+                  {action.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Category Bento */}
+        <section>
+          <SectionHeader title="Workspaces" subtitle="Jump into any area" icon={Briefcase} />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 md:gap-4">
+            {categoryTiles.map((c, i) => (
+              <CategoryTile
+                key={c.label}
+                label={c.label}
+                description={c.description}
+                icon={c.icon}
+                gradient={c.gradient}
+                onClick={() => navigate(c.href)}
+                delay={i * 30}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Activity */}
+        <section className="grid gap-4 lg:grid-cols-2">
+          <ActivityCard
+            title="Recent Work Orders"
+            icon={Wrench}
+            isLoading={workOrdersLoading}
+            emptyMessage="No work orders yet"
+            emptyAction={{ label: 'Create your first work order', onClick: () => navigate('/work-orders/new') }}
+            viewAll={() => navigate('/work-orders')}
+            items={(recentWorkOrders || []).map((wo: any) => ({
+              id: wo.id,
+              title: wo.work_order_number || 'N/A',
+              subtitle: `${wo.customers?.first_name || ''} ${wo.customers?.last_name || ''} · ${wo.vehicles?.year || ''} ${wo.vehicles?.make || ''} ${wo.vehicles?.model || ''}`.trim(),
+              badge: wo.status?.replace('_', ' ') || 'pending',
+              badgeVariant: wo.status === 'completed' ? 'default' as const : wo.status === 'in_progress' ? 'secondary' as const : 'outline' as const,
+              onClick: () => navigate(`/work-orders/${wo.id}`),
+            }))}
+          />
+          <ActivityCard
+            title="Upcoming Appointments"
+            icon={CalendarDays}
+            isLoading={appointmentsLoading}
+            emptyMessage="No upcoming appointments"
+            emptyAction={{ label: 'Schedule an appointment', onClick: () => navigate('/calendar') }}
+            viewAll={() => navigate('/calendar')}
+            items={(upcomingAppointments || []).map((appt: any) => ({
+              id: appt.id,
+              title: `${appt.customers?.first_name || ''} ${appt.customers?.last_name || ''}`.trim() || 'Unknown',
+              subtitle: `${appt.vehicles?.year || ''} ${appt.vehicles?.make || ''} ${appt.vehicles?.model || ''}`.trim() || 'No vehicle',
+              meta: appt.date ? format(new Date(appt.date), 'MMM d, h:mm a') : '',
+              badge: appt.status?.replace('_', ' ') || 'scheduled',
+              badgeVariant: 'outline' as const,
+              onClick: () => navigate('/calendar'),
+            }))}
+          />
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({ title, subtitle, icon: Icon }: { title: string; subtitle: string; icon: React.ComponentType<{ className?: string }> }) {
+  return (
+    <div className="mb-4 flex items-end justify-between gap-4">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 text-primary">
+          <Icon className="h-4 w-4" />
+        </div>
+        <div>
+          <h2 className="font-heading text-lg font-bold tracking-tight text-foreground">{title}</h2>
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
         </div>
       </div>
+    </div>
+  );
+}
 
-      <ModuleDashboardRecentActivity
-        leftPanel={{
-          title: 'Recent Work Orders',
-          items: leftPanelItems,
-          isLoading: workOrdersLoading,
-          emptyIcon: Wrench,
-          emptyMessage: 'No work orders yet',
-          emptyActionLabel: 'Create your first work order',
-          emptyActionOnClick: () => navigate('/work-orders/new'),
-          viewAllOnClick: () => navigate('/work-orders'),
-        }}
-        rightPanel={{
-          title: 'Upcoming Appointments',
-          items: rightPanelItems,
-          isLoading: appointmentsLoading,
-          emptyIcon: CalendarDays,
-          emptyMessage: 'No upcoming appointments',
-          emptyActionLabel: 'Schedule an appointment',
-          emptyActionOnClick: () => navigate('/calendar'),
-          viewAllOnClick: () => navigate('/calendar'),
-        }}
-      />
+interface ActivityItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  meta?: string;
+  badge: string;
+  badgeVariant: 'default' | 'secondary' | 'outline';
+  onClick: () => void;
+}
+
+function ActivityCard({
+  title, icon: Icon, items, isLoading, emptyMessage, emptyAction, viewAll,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: ActivityItem[];
+  isLoading: boolean;
+  emptyMessage: string;
+  emptyAction: { label: string; onClick: () => void };
+  viewAll: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+          <h3 className="font-heading text-base font-semibold">{title}</h3>
+        </div>
+        <Button size="sm" variant="ghost" onClick={viewAll} className="h-7 text-xs">
+          View all <ChevronRight className="ml-1 h-3 w-3" />
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-14 animate-pulse rounded-lg bg-muted" />)}</div>
+      ) : items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+          <Icon className="h-10 w-10 text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+          <Button size="sm" variant="outline" onClick={emptyAction.onClick}>{emptyAction.label}</Button>
+        </div>
+      ) : (
+        <ul className="space-y-1.5">
+          {items.map((item) => (
+            <li key={item.id}>
+              <button
+                onClick={item.onClick}
+                className="group flex w-full items-center gap-3 rounded-xl border border-transparent p-3 text-left transition-all hover:border-border hover:bg-muted/50"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">{item.subtitle}</p>
+                </div>
+                {item.meta && <span className="shrink-0 text-xs text-muted-foreground">{item.meta}</span>}
+                <Badge variant={item.badgeVariant} className="shrink-0 capitalize">{item.badge}</Badge>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
