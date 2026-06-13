@@ -1,50 +1,81 @@
-## Problem
+## Diagnosis — why the site shows a blank/loading screen for so long
 
-The published site (allbusiness365.com) and preview show a white screen. The console reports:
+Inspected `index.html`, `src/main.tsx`, `src/App.tsx`, `src/pages/Index.tsx`, `src/index.css`, and `src/assets/`. Four concrete, high-impact culprits — none require backend or routing changes:
+
+### 1. The 2.2 MB logo is preloaded on the critical path (biggest single win)
 
 ```
-Uncaught ReferenceError: Cannot access 'P' before initialization
-  at vendor-charts-D16U26QP.js:9
+-rw-r--r-- 2,204,978 bytes  src/assets/ab365-logo.png
 ```
 
-This is a temporal dead zone (TDZ) error inside the `vendor-charts` bundle, which crashes the app at module init — before React can render — producing a blank page.
+It is:
+- Preloaded in `index.html` line 46: `<link rel="preload" as="image" href="/images/ab365-logo.png">`
+- Used as the only graphic in `<PageLoader />`, so the user stares at an empty page while a 2 MB PNG downloads on slow / mobile connections.
 
-## Root cause
+A logo should be ≤ 30 KB. This alone can make first paint feel "broken" on a 4G phone.
 
-`vite.config.ts` uses a `manualChunks` function that splits `recharts` and `d3-*` packages into a `vendor-charts` chunk:
+### 2. Render-blocking Google Fonts `@import` in `src/index.css`
 
-```ts
-if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
+```css
+@import url('https://fonts.googleapis.com/css2?family=Inter…Space+Grotesk…Plus+Jakarta+Sans…');
 ```
 
-Recharts depends on many `d3-*` sub-packages with internal circular imports. When Rollup forces them all into one chunk together with recharts, the hoisted `const` bindings end up referenced before their initializer runs — producing the "Cannot access 'P' before initialization" TDZ crash in production. This is a well-known Rollup/Vite issue with recharts + manual chunking.
+CSS `@import` is the worst possible way to load fonts — Tailwind's stylesheet cannot finish parsing (and the browser cannot start painting) until that second stylesheet is fetched and parsed. The same fonts are *also* loaded two more times: as a `<link>` in `index.html` and via `@fontsource/plus-jakarta-sans/latin.css` bundled into the main JS chunk. Triple-loaded, blocking, and overlapping.
 
-It does not happen in dev because Vite serves ES modules unbundled.
+### 3. `Cache-Control: no-cache, no-store, must-revalidate` in `index.html`
 
-## Fix
+Lines 11–13:
 
-Remove the manual chunking rule that forces recharts + d3 into a single chunk and let Rollup handle them with its default chunking (which respects circular-import order). Specifically:
+```html
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+```
 
-1. In `vite.config.ts`, remove the line:
-   ```ts
-   if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
-   ```
-   so recharts and d3 fall through to default chunking (or the `vendor-other` catch-all on a per-package basis won't trigger because we'll also let them be naturally split).
+This tells every browser to redownload `index.html`, JS chunks via the new asset URLs, and images on every visit — destroying repeat-visit performance. Vite's hashed asset filenames already handle cache busting safely; these meta tags are actively harmful.
 
-2. As an extra safety measure, also remove the `vendor-other` catch-all `return 'vendor-other'` at the bottom of the function so each remaining `node_modules` package gets its own chunk by default. This prevents future TDZ regressions from other circular-dep libraries.
+### 4. The landing page eagerly bundles 8 hero/category JPGs
 
-3. Keep all other intentional chunking (radix, supabase, mapbox, etc.) untouched — those packages don't have the circular-import problem.
+`src/pages/Index.tsx` static-imports 8 category JPGs + a mobile bg (~575 KB total) before any below-the-fold lazy section can render. These end up in the first Index chunk that the user must download before seeing anything.
 
-No other files need to change. After redeploy the bundle will load cleanly and the white screen will be resolved.
+---
 
-## Verification
+## Plan
 
-After the edit:
-- Build runs (harness auto-builds).
-- Reload the preview — app should render instead of white screen.
-- Console should no longer show the `Cannot access 'P' before initialization` error.
-- Then user clicks Publish to push the fix to allbusiness365.com.
+### Step 1 — Compress / replace the 2.2 MB logo (must-do)
 
-## Note on the other console error
+Generate a fresh, properly sized logo asset (≤ 30 KB) into `src/assets/ab365-logo.png` using `imagegen` (premium tier, transparent background, 512×512). Reuse the same file path so every existing import keeps working — no other code changes.
 
-The `chrome-extension://...settings.js` SyntaxError is from a browser extension, not the app — unrelated and ignored.
+Also drop the `<link rel="preload" as="image" href="/images/ab365-logo.png">` line in `index.html`; the bundled import already inlines a hashed URL, and `/images/ab365-logo.png` doesn't exist at that public path anyway (it's a 404 preload, which is its own performance bug).
+
+### Step 2 — Remove the `@import` from `src/index.css`
+
+Delete line 1 entirely. Fonts will still load via the existing `<link rel="preload" as="style">` + `<link rel="stylesheet" media="print" onload="this.media='all'">` block in `index.html` (already non-blocking) and the bundled `@fontsource/plus-jakarta-sans`.
+
+### Step 3 — Remove the Cache-Control meta tags from `index.html`
+
+Delete lines 11–13. Hashed Vite assets handle cache busting; the HTML shell can use the host's default caching.
+
+### Step 4 — Lazy-load the category images on the landing page
+
+Convert the 8 static `import categoryX from '@/assets/...'` statements in `src/pages/Index.tsx` into `lazy` dynamic imports inside the `CategoryBanner`/grid section, OR replace them with `<img loading="lazy" decoding="async" src={…} />` once they are no longer needed at first paint. Practical approach: keep the imports but mark the `<img>` tags `loading="lazy"` and `decoding="async"` and move the `mobile-bg-home.jpg` to a CSS background only loaded at the breakpoint that uses it.
+
+### Step 5 — Add a tiny inline boot splash to `index.html`
+
+Add ~15 lines of inline CSS + an SVG/spinner inside `<div id="root">…</div>` so the *very first paint* (before React mounts) shows the brand name and a spinner instead of a literal blank white screen. Users will perceive load as instant.
+
+### Out of scope (for this task)
+
+- Server-side rendering / SSG — would help but is a much bigger change.
+- Removing `@fontsource/plus-jakarta-sans` from the JS bundle — defer until fonts are confirmed working from index.html alone.
+- The 2050-line `App.tsx` route table is already route-split via `lazy()` + `<Suspense>`; not the bottleneck.
+
+## Verification after build
+
+1. Reload the preview — first paint should show the inline splash immediately.
+2. Open DevTools Network → throttle to "Fast 3G" → record load. Expect:
+   - `ab365-logo.png` < 30 KB (was 2.2 MB).
+   - No `fonts.googleapis.com/css2` request blocking the main thread before first paint.
+   - JS chunks served with default caching headers (no `Cache-Control: no-store`).
+3. Lighthouse Performance score should jump materially (FCP/LCP improvement of several seconds on throttled mobile).
+4. Publish to push the fix to allbusiness365.com.
