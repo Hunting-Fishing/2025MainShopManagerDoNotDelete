@@ -127,94 +127,34 @@ export function SidebarContent() {
 
         {/* Developer Sections - Platform Developer only */}
         {isPlatformDeveloper && (
-          <div className="mb-3 space-y-1 pt-2 border-t border-gray-200">
-            <span className="px-4 text-xs font-semibold text-orange-600 uppercase tracking-wider">
+          <div className="mb-3 space-y-1 pt-3 mt-2 border-t border-white/10">
+            <span className="px-4 text-[10px] font-bold text-orange-400 uppercase tracking-[0.15em]">
               Developer
             </span>
-            <Link
-              to="/water-delivery/developer"
-              onClick={() => handleLinkClick('/water-delivery/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/water-delivery/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Water Delivery
-            </Link>
-            <Link
-              to="/automotive/developer"
-              onClick={() => handleLinkClick('/automotive/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/automotive/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Automotive
-            </Link>
-            <Link
-              to="/gunsmith/developer"
-              onClick={() => handleLinkClick('/gunsmith/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/gunsmith/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Gunsmith
-            </Link>
-            <Link
-              to="/marine-services/developer"
-              onClick={() => handleLinkClick('/marine-services/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/marine-services/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Marine Services
-            </Link>
-            <Link
-              to="/fuel-delivery/developer"
-              onClick={() => handleLinkClick('/fuel-delivery/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/fuel-delivery/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Fuel Delivery
-            </Link>
-            <Link
-              to="/power-washing/developer"
-              onClick={() => handleLinkClick('/power-washing/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/power-washing/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Power Washing
-            </Link>
-            <Link
-              to="/septic/developer"
-              onClick={() => handleLinkClick('/septic/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/septic/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Septic Services
-            </Link>
+            {[
+              { href: '/water-delivery/developer', label: 'Water Delivery' },
+              { href: '/automotive/developer', label: 'Automotive' },
+              { href: '/gunsmith/developer', label: 'Gunsmith' },
+              { href: '/marine-services/developer', label: 'Marine Services' },
+              { href: '/fuel-delivery/developer', label: 'Fuel Delivery' },
+              { href: '/power-washing/developer', label: 'Power Washing' },
+              { href: '/septic/developer', label: 'Septic Services' },
+            ].map((dev) => (
+              <Link
+                key={dev.href}
+                to={dev.href}
+                onClick={() => handleLinkClick(dev.href)}
+                className={cn(
+                  'group flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
+                  location.pathname === dev.href
+                    ? 'bg-orange-500/15 text-orange-300 ring-1 ring-orange-500/30'
+                    : 'text-slate-400 hover:bg-orange-500/10 hover:text-orange-300'
+                )}
+              >
+                <Code className="mr-3 h-4 w-4" />
+                {dev.label}
+              </Link>
+            ))}
           </div>
         )}
 
