@@ -86,127 +86,75 @@ export function SidebarContent() {
     .filter(section => section.items.length > 0);
 
   return (
-    <div className="flex h-full flex-col bg-white border-r border-gray-200">
+    <div className="flex h-full flex-col text-slate-100">
       {/* Logo */}
-      <div className="flex h-16 items-center justify-center px-6 bg-gradient-to-r from-indigo-600 to-indigo-700 border-b border-indigo-800">
-        <SidebarLogo />
+      <div className="relative flex h-16 items-center justify-center px-6 border-b border-white/10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600" />
+        <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-orange-500/30 blur-2xl" />
+        <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-indigo-400/30 blur-2xl" />
+        <div className="relative z-10">
+          <SidebarLogo />
+        </div>
       </div>
 
       {/* Active Module Indicator */}
-      <div className="py-3 border-b border-gray-100">
+      <div className="py-3 border-b border-white/5 bg-slate-900/40">
         <ModuleIndicator />
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-2 p-2 overflow-y-auto">
+      <nav className="flex-1 space-y-2 p-3 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
         {/* Module Hub Link */}
         <div className="mb-3 space-y-1">
           <Link
             to="/module-hub"
             onClick={() => handleLinkClick('/module-hub')}
             className={cn(
-              'flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-150',
-              'hover:bg-muted/50',
-              'text-muted-foreground hover:text-foreground',
-              location.pathname === '/module-hub' && 'bg-muted text-foreground'
+              'group relative flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
+              location.pathname === '/module-hub'
+                ? 'bg-gradient-to-r from-indigo-500/20 to-violet-500/10 text-white ring-1 ring-indigo-400/40 shadow-lg shadow-indigo-500/10'
+                : 'text-slate-300 hover:text-white hover:bg-white/5'
             )}
           >
-            <LayoutGrid className="mr-3 h-4 w-4" />
+            <LayoutGrid className={cn(
+              'mr-3 h-4 w-4 transition-colors',
+              location.pathname === '/module-hub' ? 'text-indigo-300' : 'text-slate-400 group-hover:text-indigo-300'
+            )} />
             All Modules
           </Link>
-          
+
         </div>
 
         {/* Developer Sections - Platform Developer only */}
         {isPlatformDeveloper && (
-          <div className="mb-3 space-y-1 pt-2 border-t border-gray-200">
-            <span className="px-4 text-xs font-semibold text-orange-600 uppercase tracking-wider">
+          <div className="mb-3 space-y-1 pt-3 mt-2 border-t border-white/10">
+            <span className="px-4 text-[10px] font-bold text-orange-400 uppercase tracking-[0.15em]">
               Developer
             </span>
-            <Link
-              to="/water-delivery/developer"
-              onClick={() => handleLinkClick('/water-delivery/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/water-delivery/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Water Delivery
-            </Link>
-            <Link
-              to="/automotive/developer"
-              onClick={() => handleLinkClick('/automotive/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/automotive/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Automotive
-            </Link>
-            <Link
-              to="/gunsmith/developer"
-              onClick={() => handleLinkClick('/gunsmith/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/gunsmith/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Gunsmith
-            </Link>
-            <Link
-              to="/marine-services/developer"
-              onClick={() => handleLinkClick('/marine-services/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/marine-services/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Marine Services
-            </Link>
-            <Link
-              to="/fuel-delivery/developer"
-              onClick={() => handleLinkClick('/fuel-delivery/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/fuel-delivery/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Fuel Delivery
-            </Link>
-            <Link
-              to="/power-washing/developer"
-              onClick={() => handleLinkClick('/power-washing/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/power-washing/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Power Washing
-            </Link>
-            <Link
-              to="/septic/developer"
-              onClick={() => handleLinkClick('/septic/developer')}
-              className={cn(
-                'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
-                'hover:bg-orange-50 text-orange-600 hover:text-orange-700',
-                location.pathname === '/septic/developer' && 'bg-orange-100 text-orange-700'
-              )}
-            >
-              <Code className="mr-3 h-4 w-4" />
-              Septic Services
-            </Link>
+            {[
+              { href: '/water-delivery/developer', label: 'Water Delivery' },
+              { href: '/automotive/developer', label: 'Automotive' },
+              { href: '/gunsmith/developer', label: 'Gunsmith' },
+              { href: '/marine-services/developer', label: 'Marine Services' },
+              { href: '/fuel-delivery/developer', label: 'Fuel Delivery' },
+              { href: '/power-washing/developer', label: 'Power Washing' },
+              { href: '/septic/developer', label: 'Septic Services' },
+            ].map((dev) => (
+              <Link
+                key={dev.href}
+                to={dev.href}
+                onClick={() => handleLinkClick(dev.href)}
+                className={cn(
+                  'group flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
+                  location.pathname === dev.href
+                    ? 'bg-orange-500/15 text-orange-300 ring-1 ring-orange-500/30'
+                    : 'text-slate-400 hover:bg-orange-500/10 hover:text-orange-300'
+                )}
+              >
+                <Code className="mr-3 h-4 w-4" />
+                {dev.label}
+              </Link>
+            ))}
           </div>
         )}
 
@@ -215,54 +163,52 @@ export function SidebarContent() {
 
         {filteredNavigation.map((section) => {
           const colorScheme = getSectionColorScheme(section.title);
-          
+
           return (
-            <div key={section.title} className={cn(
-              "mb-3 rounded-lg border transition-all duration-200",
-              colorScheme.background,
-              colorScheme.border
-            )}>
+            <div
+              key={section.title}
+              className="mb-3 rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-sm transition-all duration-200 hover:border-white/10"
+            >
               {/* Section Header */}
-              <div className={cn(
-                "px-3 py-2 rounded-t-lg border-b",
-                colorScheme.header,
-                colorScheme.border
-              )}>
+              <div className="px-3 py-2 border-b border-white/5">
                 <h3 className={cn(
-                  "text-xs font-semibold uppercase tracking-wider",
-                  colorScheme.headerText
+                  "text-[10px] font-bold uppercase tracking-[0.15em]",
+                  colorScheme.headerText?.replace('text-', 'text-') || 'text-slate-400'
                 )}>
                   {section.title}
                 </h3>
               </div>
-              
+
               {/* Section Items */}
-              <div className="p-2 space-y-1">
+              <div className="p-1.5 space-y-0.5">
                 {section.items.map((item) => {
-                  const isActive = location.pathname === item.href || 
+                  const isActive = location.pathname === item.href ||
                     (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
-                  
+
                   const IconComponent = item.icon;
-                  
+
                   return (
                     <Link
                       key={item.href}
                       to={item.href}
                       onClick={() => handleLinkClick(item.href)}
                       className={cn(
-                        'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-150',
+                        'group relative flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150',
                         isActive
-                          ? colorScheme.active + ' shadow-sm font-semibold'
-                          : colorScheme.text + ' ' + colorScheme.hover
+                          ? 'bg-gradient-to-r from-white/10 to-white/[0.03] text-white font-semibold shadow-inner ring-1 ring-white/10'
+                          : 'text-slate-300 hover:text-white hover:bg-white/5 hover:translate-x-0.5'
                       )}
                       title={item.description || item.title}
                     >
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r bg-indigo-400" />
+                      )}
                       <IconComponent
                         className={cn(
                           'mr-3 h-4 w-4 flex-shrink-0 transition-colors',
-                          isActive 
-                            ? colorScheme.icon.replace('text-', 'text-') + ' opacity-100'
-                            : colorScheme.icon + ' opacity-75 group-hover:opacity-100'
+                          isActive
+                            ? 'text-indigo-300'
+                            : 'text-slate-400 group-hover:text-indigo-300'
                         )}
                       />
                       {item.title}
