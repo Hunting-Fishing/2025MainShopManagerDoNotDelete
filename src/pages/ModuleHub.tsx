@@ -173,12 +173,14 @@ export default function ModuleHub() {
   const totalUpcoming = Object.values(displayUpcomingByCategory).reduce((acc, arr) => acc + arr.length, 0);
 
   return (
-    <Spotlight className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20" size={600}>
-      <div className="max-w-7xl mx-auto p-6 md:p-8">
+    <Spotlight className="relative min-h-screen bg-gradient-to-br from-background via-background to-muted/20" size={600}>
+      <Particles className="absolute inset-0 -z-10 opacity-60" quantity={70} />
+      <div className="relative max-w-7xl mx-auto p-6 md:p-8">
         <ModuleHubHeader 
           userName={user?.user_metadata?.first_name || user?.email?.split('@')[0]}
           trialActive={trialActive}
           trialEndsAt={trialEndsAt}
+          activeCount={accessibleModules.length}
         />
 
         {/* Search Bar */}
