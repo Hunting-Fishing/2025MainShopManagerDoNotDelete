@@ -400,7 +400,7 @@ const FuelDeliveryProfile = lazy(() => import('@/pages/fuel-delivery/FuelDeliver
 const FuelDeliverySettings = lazy(() => import('@/pages/fuel-delivery/FuelDeliverySettings'));
 const FuelDeliveryPurchases = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryPurchases'));
 const FuelDeliveryStore = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryStore'));
-import { FuelDeliveryLayout } from '@/components/fuel-delivery';
+const FuelDeliveryLayout = lazy(() => import('@/components/fuel-delivery').then(m => ({ default: m.FuelDeliveryLayout })));
 
 // Fuel Delivery Portal
 const FuelDeliveryPortalLanding = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalLanding'));
@@ -465,7 +465,7 @@ const WaterDeliveryPurchases = lazy(() => import('@/pages/water-delivery/WaterDe
 const WaterDeliveryStaff = lazy(() => import('@/pages/water-delivery/WaterDeliveryStaff'));
 const WaterDeliveryPartsInventory = lazy(() => import('@/pages/water-delivery/WaterDeliveryPartsInventory'));
 const WaterDeliveryStore = lazy(() => import('@/pages/water-delivery/WaterDeliveryStore'));
-import { WaterDeliveryLayout } from '@/components/water-delivery';
+const WaterDeliveryLayout = lazy(() => import('@/components/water-delivery').then(m => ({ default: m.WaterDeliveryLayout })));
 
 // Personal Trainer
 const PersonalTrainerDashboard = lazy(() => import('@/pages/personal-trainer/PersonalTrainerDashboard'));
@@ -497,7 +497,7 @@ const PersonalTrainerGymStaff = lazy(() => import('@/pages/personal-trainer/Pers
 const PersonalTrainerTimeTracking = lazy(() => import('@/pages/personal-trainer/PersonalTrainerTimeTracking'));
 const PersonalTrainerSupplements = lazy(() => import('@/pages/personal-trainer/PersonalTrainerSupplements'));
 const PersonalTrainerAbout = lazy(() => import('@/pages/personal-trainer/PersonalTrainerAbout'));
-import { PersonalTrainerLayout } from '@/components/personal-trainer';
+const PersonalTrainerLayout = lazy(() => import('@/components/personal-trainer').then(m => ({ default: m.PersonalTrainerLayout })));
 
 // Game Development Module
 const GameDevDashboard = lazy(() => import('@/pages/game-development/GameDevDashboard'));
@@ -522,7 +522,7 @@ const GameDevLocalization = lazy(() => import('@/pages/game-development/GameDevL
 const GameDevTeam = lazy(() => import('@/pages/game-development/GameDevTeam'));
 const GameDevAnalytics = lazy(() => import('@/pages/game-development/GameDevAnalytics'));
 const GameDevSettings = lazy(() => import('@/pages/game-development/GameDevSettings'));
-import { GameDevLayout } from '@/components/game-development';
+const GameDevLayout = lazy(() => import('@/components/game-development').then(m => ({ default: m.GameDevLayout })));
 
 // Welding Module
 const WeldingAdminOverview = lazy(() => import('@/pages/welding/WeldingAdminOverview'));
@@ -539,7 +539,7 @@ const WeldingAdminSales = lazy(() => import('@/pages/welding/WeldingAdminSales')
 const WeldingAdminLinks = lazy(() => import('@/pages/welding/WeldingAdminLinks'));
 const WeldingAdminGallery = lazy(() => import('@/pages/welding/WeldingAdminGallery'));
 const WeldingAdminSettings = lazy(() => import('@/pages/welding/WeldingAdminSettings'));
-import { WeldingSettingsProvider } from '@/contexts/WeldingSettingsContext';
+const WeldingSettingsProvider = lazy(() => import('@/contexts/WeldingSettingsContext').then(m => ({ default: m.WeldingSettingsProvider })));
 
 // Personal Trainer Portal
 const PTPortalLanding = lazy(() => import('@/pages/pt-portal/PTPortalLanding'));
@@ -580,7 +580,7 @@ const SepticStore = lazy(() => import('@/pages/septic/SepticStore'));
 const SepticInspections = lazy(() => import('@/pages/septic/SepticInspections'));
 const SepticInspectionForm = lazy(() => import('@/pages/septic/SepticInspectionForm'));
 const SepticDeveloper = lazy(() => import('@/pages/septic/SepticDeveloper'));
-import { SepticLayout } from '@/components/septic';
+const SepticLayout = lazy(() => import('@/components/septic').then(m => ({ default: m.SepticLayout })));
 
 // Export Company
 const ExportDashboard = lazy(() => import('@/pages/export/ExportDashboard'));
@@ -669,7 +669,7 @@ const ExportAnalyticsHub = lazy(() => import('@/pages/export/hubs/ExportAnalytic
 const ExportCommunicationHub = lazy(() => import('@/pages/export/hubs/ExportCommunicationHub'));
 const ExportImportHub = lazy(() => import('@/pages/export/hubs/ExportImportHub'));
 const ExportConfigHub = lazy(() => import('@/pages/export/hubs/ExportConfigHub'));
-import { ExportLayout } from '@/components/export';
+const ExportLayout = lazy(() => import('@/components/export').then(m => ({ default: m.ExportLayout })));
 
 function App() {
 
