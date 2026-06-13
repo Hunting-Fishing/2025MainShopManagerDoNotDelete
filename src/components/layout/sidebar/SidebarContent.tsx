@@ -98,7 +98,7 @@ export function SidebarContent() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-2 p-3 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+      <nav data-lenis-prevent className="flex-1 space-y-2 p-3 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         {/* Module Hub Link */}
         <div className="mb-3 space-y-1">
           <Link
