@@ -522,7 +522,7 @@ const GameDevLocalization = lazy(() => import('@/pages/game-development/GameDevL
 const GameDevTeam = lazy(() => import('@/pages/game-development/GameDevTeam'));
 const GameDevAnalytics = lazy(() => import('@/pages/game-development/GameDevAnalytics'));
 const GameDevSettings = lazy(() => import('@/pages/game-development/GameDevSettings'));
-import { GameDevLayout } from '@/components/game-development';
+const GameDevLayout = lazy(() => import('@/components/game-development').then(m => ({ default: m.GameDevLayout })));
 
 // Welding Module
 const WeldingAdminOverview = lazy(() => import('@/pages/welding/WeldingAdminOverview'));
