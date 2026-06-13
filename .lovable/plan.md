@@ -1,81 +1,86 @@
-## Diagnosis — why the site shows a blank/loading screen for so long
+## Goal
+Bring the Automotive Dashboard up to a modern, premium product-app standard: stronger visual hierarchy, better color, layered depth, motion, and richer icon/illustration treatment — without changing any data, queries, or routes.
 
-Inspected `index.html`, `src/main.tsx`, `src/App.tsx`, `src/pages/Index.tsx`, `src/index.css`, and `src/assets/`. Four concrete, high-impact culprits — none require backend or routing changes:
+Aesthetic direction (chosen defaults, since you skipped the questions):
+- Palette: **Charcoal & Ember** on a light surface — slate/zinc neutrals with an Ember (#e85d3a) + Indigo (#4f46e5) accent pair. Reads "performance garage," not generic SaaS.
+- Type: **Space Grotesk** (display/headings) + **DM Sans** (body). Loaded via the existing Google Fonts pipeline in `index.html`.
+- Motion: Framer Motion stagger on stat reveal, hover lift + sheen on category tiles, subtle gradient orbs in the hero.
 
-### 1. The 2.2 MB logo is preloaded on the critical path (biggest single win)
+## Scope (locked)
+- `src/pages/automotive/AutomotiveDashboard.tsx` — restructure layout.
+- `src/components/module-dashboard/*` — extend (NOT break) primitives used here so other modules don't regress. Add optional `variant="premium"` props where needed; default behavior stays identical for septic/welding/etc.
+- New file: `src/components/automotive/dashboard/*` — hero banner, bento stat cards, premium category tile, gradient orbs background.
+- Add 1 generated hero illustration (compressed JPG, lazy-loaded) to `src/assets/automotive-hero.jpg` for the hero band.
+- No DB, no hook, no route, no business-logic changes.
 
+Out of scope: the left sidebar in your screenshot (that's the shared `AppSidebar`), sub-pages (Quotes/Invoices/Diagnostics/etc.), and the other modules' dashboards. We can do those in follow-up passes.
+
+## Layout plan
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│  HERO BAND (gradient + orb mesh + car silhouette art)        │
+│  ─ Module crest (Car icon in gradient chip)                  │
+│  ─ "Automotive Repair" H1 (Space Grotesk, 40/48)             │
+│  ─ Live status pills: Today · Open Jobs · Revenue MTD        │
+│  ─ Primary CTAs: New Work Order (ember), New Quote (ghost)   │
+└──────────────────────────────────────────────────────────────┘
+┌─ Alerts row (only if any) ───────────────────────────────────┐
+│  Animated alert chips with severity color + icon             │
+└──────────────────────────────────────────────────────────────┘
+┌─ BENTO STATS (4 cols desktop / 2 mobile) ────────────────────┐
+│ ┌──Big──┐ ┌─sm─┐ ┌─sm─┐ ┌─sm─┐                                │
+│ │Revenue│ │Pend│ │InPr│ │Done│   gradient borders, sparkline │
+│ │ MTD   │ └────┘ └────┘ └────┘   on Revenue, ring on counts  │
+│ └───────┘ ┌─sm─┐ ┌─sm─┐ ┌─sm─┐                                │
+│           │Appt│ │Parts│ │Overd│                              │
+│           └────┘ └────┘ └────┘                                │
+└──────────────────────────────────────────────────────────────┘
+┌─ QUICK ACTIONS (horizontal pill rail) ───────────────────────┐
+│  Scrollable on mobile, hover sheen on desktop                │
+└──────────────────────────────────────────────────────────────┘
+┌─ CATEGORY BENTO ─────────────────────────────────────────────┐
+│  6-col responsive grid, premium tile:                        │
+│  - colored gradient icon chip (not flat bg)                  │
+│  - hover: tile lift + accent border + arrow slide            │
+│  - description always visible (md+), truncated on mobile     │
+└──────────────────────────────────────────────────────────────┘
+┌─ RECENT WORK ORDERS ─────┐ ┌─ UPCOMING APPOINTMENTS ────────┐
+│  card list, status badge │ │  timeline-style list with date │
+│  vehicle thumbnail glyph │ │  chips, customer + vehicle     │
+└──────────────────────────┘ └────────────────────────────────┘
 ```
--rw-r--r-- 2,204,978 bytes  src/assets/ab365-logo.png
-```
 
-It is:
-- Preloaded in `index.html` line 46: `<link rel="preload" as="image" href="/images/ab365-logo.png">`
-- Used as the only graphic in `<PageLoader />`, so the user stares at an empty page while a 2 MB PNG downloads on slow / mobile connections.
+## Visual upgrade specifics
+- Stat cards: replace flat colored tile with `bg-card` + 1px gradient border (`from-ember/40 to-indigo/40`) + soft glow shadow. Icon sits in a 40px gradient chip. Numbers use Space Grotesk 32/36 tabular-nums. Revenue card spans 2 cols and includes a tiny inline sparkline (CSS gradient bar, no chart lib needed).
+- Category tiles: gradient icon chip (`bg-gradient-to-br from-<color>-500 to-<color>-600`), subtle ring on hover, ChevronRight slides in on hover, premium shadow.
+- Hero band: `bg-gradient-to-br from-slate-900 via-slate-800 to-zinc-900` with two soft blurred orbs (ember + indigo) + an absolutely-positioned car silhouette illustration on the right (≤ 60 KB, lazy-loaded).
+- Iconography: keep lucide-react throughout (already imported), but wrap every primary icon in a gradient chip component for consistency.
+- Motion: import existing `framer-motion` if present; otherwise CSS-only stagger via `animation-delay` so we don't add deps.
 
-A logo should be ≤ 30 KB. This alone can make first paint feel "broken" on a 4G phone.
+## Files to touch (technical)
+1. `src/pages/automotive/AutomotiveDashboard.tsx` — replace JSX with new composition; keep all hooks/queries identical.
+2. `src/components/automotive/dashboard/AutomotiveHero.tsx` — NEW.
+3. `src/components/automotive/dashboard/BentoStatCard.tsx` — NEW.
+4. `src/components/automotive/dashboard/CategoryTile.tsx` — NEW.
+5. `src/components/automotive/dashboard/GradientOrbs.tsx` — NEW (decorative).
+6. `src/assets/automotive-hero.jpg` — NEW (generated, ≤ 60 KB, `loading="lazy"`).
+7. `src/index.css` — add 2-3 utility classes (`.shadow-glow`, `.bento-border`) if not already present.
 
-### 2. Render-blocking Google Fonts `@import` in `src/index.css`
+## Asset packs / icon strategy
+- Lucide-react covers all current icons; no extra icon pack needed.
+- For the hero illustration we'll generate a single optimized JPG via the image gen pipeline — cheaper and lighter than a Figma UI-kit import, and avoids licensing/redistribution concerns. If you later want a Figma kit (e.g. "Untitled UI" or "Shadcn Dashboard Kit"), tell me which one and I'll port specific tokens.
 
-```css
-@import url('https://fonts.googleapis.com/css2?family=Inter…Space+Grotesk…Plus+Jakarta+Sans…');
-```
+## Verification
+- `/automotive` renders on desktop (1440), tablet (768), and mobile (375) without overflow.
+- Screenshot the new hero + bento + categories at each breakpoint.
+- Confirm no regressions on `/septic`, `/welding`, `/power-washing` dashboards (they share `module-dashboard` primitives — only additive props introduced).
+- Network: hero image < 60 KB, no new third-party fonts, no new JS deps.
 
-CSS `@import` is the worst possible way to load fonts — Tailwind's stylesheet cannot finish parsing (and the browser cannot start painting) until that second stylesheet is fetched and parsed. The same fonts are *also* loaded two more times: as a `<link>` in `index.html` and via `@fontsource/plus-jakarta-sans/latin.css` bundled into the main JS chunk. Triple-loaded, blocking, and overlapping.
+## Out of scope (parking lot)
+- Sub-pages (Quotes / Invoices / Vehicle History / Diagnostics / Recalls / Labor Rates).
+- Sidebar / `AppSidebar` redesign.
+- Dark mode tuning beyond what existing tokens already provide.
+- Other modules' dashboards (Septic, Welding, etc.) — same treatment can be templated in a follow-up.
 
-### 3. `Cache-Control: no-cache, no-store, must-revalidate` in `index.html`
-
-Lines 11–13:
-
-```html
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
-```
-
-This tells every browser to redownload `index.html`, JS chunks via the new asset URLs, and images on every visit — destroying repeat-visit performance. Vite's hashed asset filenames already handle cache busting safely; these meta tags are actively harmful.
-
-### 4. The landing page eagerly bundles 8 hero/category JPGs
-
-`src/pages/Index.tsx` static-imports 8 category JPGs + a mobile bg (~575 KB total) before any below-the-fold lazy section can render. These end up in the first Index chunk that the user must download before seeing anything.
-
----
-
-## Plan
-
-### Step 1 — Compress / replace the 2.2 MB logo (must-do)
-
-Generate a fresh, properly sized logo asset (≤ 30 KB) into `src/assets/ab365-logo.png` using `imagegen` (premium tier, transparent background, 512×512). Reuse the same file path so every existing import keeps working — no other code changes.
-
-Also drop the `<link rel="preload" as="image" href="/images/ab365-logo.png">` line in `index.html`; the bundled import already inlines a hashed URL, and `/images/ab365-logo.png` doesn't exist at that public path anyway (it's a 404 preload, which is its own performance bug).
-
-### Step 2 — Remove the `@import` from `src/index.css`
-
-Delete line 1 entirely. Fonts will still load via the existing `<link rel="preload" as="style">` + `<link rel="stylesheet" media="print" onload="this.media='all'">` block in `index.html` (already non-blocking) and the bundled `@fontsource/plus-jakarta-sans`.
-
-### Step 3 — Remove the Cache-Control meta tags from `index.html`
-
-Delete lines 11–13. Hashed Vite assets handle cache busting; the HTML shell can use the host's default caching.
-
-### Step 4 — Lazy-load the category images on the landing page
-
-Convert the 8 static `import categoryX from '@/assets/...'` statements in `src/pages/Index.tsx` into `lazy` dynamic imports inside the `CategoryBanner`/grid section, OR replace them with `<img loading="lazy" decoding="async" src={…} />` once they are no longer needed at first paint. Practical approach: keep the imports but mark the `<img>` tags `loading="lazy"` and `decoding="async"` and move the `mobile-bg-home.jpg` to a CSS background only loaded at the breakpoint that uses it.
-
-### Step 5 — Add a tiny inline boot splash to `index.html`
-
-Add ~15 lines of inline CSS + an SVG/spinner inside `<div id="root">…</div>` so the *very first paint* (before React mounts) shows the brand name and a spinner instead of a literal blank white screen. Users will perceive load as instant.
-
-### Out of scope (for this task)
-
-- Server-side rendering / SSG — would help but is a much bigger change.
-- Removing `@fontsource/plus-jakarta-sans` from the JS bundle — defer until fonts are confirmed working from index.html alone.
-- The 2050-line `App.tsx` route table is already route-split via `lazy()` + `<Suspense>`; not the bottleneck.
-
-## Verification after build
-
-1. Reload the preview — first paint should show the inline splash immediately.
-2. Open DevTools Network → throttle to "Fast 3G" → record load. Expect:
-   - `ab365-logo.png` < 30 KB (was 2.2 MB).
-   - No `fonts.googleapis.com/css2` request blocking the main thread before first paint.
-   - JS chunks served with default caching headers (no `Cache-Control: no-store`).
-3. Lighthouse Performance score should jump materially (FCP/LCP improvement of several seconds on throttled mobile).
-4. Publish to push the fix to allbusiness365.com.
+Approve and I'll build it.
