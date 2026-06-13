@@ -195,9 +195,9 @@ export function CustomerProfileInfo() {
                   type="email"
                   value={profile.email}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
-                <p className="text-sm text-gray-500">Email cannot be changed</p>
+                <p className="text-sm text-muted-foreground">Email cannot be changed</p>
               </div>
 
               <div className="space-y-2">
