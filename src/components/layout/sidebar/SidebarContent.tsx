@@ -163,54 +163,52 @@ export function SidebarContent() {
 
         {filteredNavigation.map((section) => {
           const colorScheme = getSectionColorScheme(section.title);
-          
+
           return (
-            <div key={section.title} className={cn(
-              "mb-3 rounded-lg border transition-all duration-200",
-              colorScheme.background,
-              colorScheme.border
-            )}>
+            <div
+              key={section.title}
+              className="mb-3 rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-sm transition-all duration-200 hover:border-white/10"
+            >
               {/* Section Header */}
-              <div className={cn(
-                "px-3 py-2 rounded-t-lg border-b",
-                colorScheme.header,
-                colorScheme.border
-              )}>
+              <div className="px-3 py-2 border-b border-white/5">
                 <h3 className={cn(
-                  "text-xs font-semibold uppercase tracking-wider",
-                  colorScheme.headerText
+                  "text-[10px] font-bold uppercase tracking-[0.15em]",
+                  colorScheme.headerText?.replace('text-', 'text-') || 'text-slate-400'
                 )}>
                   {section.title}
                 </h3>
               </div>
-              
+
               {/* Section Items */}
-              <div className="p-2 space-y-1">
+              <div className="p-1.5 space-y-0.5">
                 {section.items.map((item) => {
-                  const isActive = location.pathname === item.href || 
+                  const isActive = location.pathname === item.href ||
                     (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
-                  
+
                   const IconComponent = item.icon;
-                  
+
                   return (
                     <Link
                       key={item.href}
                       to={item.href}
                       onClick={() => handleLinkClick(item.href)}
                       className={cn(
-                        'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-150',
+                        'group relative flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150',
                         isActive
-                          ? colorScheme.active + ' shadow-sm font-semibold'
-                          : colorScheme.text + ' ' + colorScheme.hover
+                          ? 'bg-gradient-to-r from-white/10 to-white/[0.03] text-white font-semibold shadow-inner ring-1 ring-white/10'
+                          : 'text-slate-300 hover:text-white hover:bg-white/5 hover:translate-x-0.5'
                       )}
                       title={item.description || item.title}
                     >
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r bg-indigo-400" />
+                      )}
                       <IconComponent
                         className={cn(
                           'mr-3 h-4 w-4 flex-shrink-0 transition-colors',
-                          isActive 
-                            ? colorScheme.icon.replace('text-', 'text-') + ' opacity-100'
-                            : colorScheme.icon + ' opacity-75 group-hover:opacity-100'
+                          isActive
+                            ? 'text-indigo-300'
+                            : 'text-slate-400 group-hover:text-indigo-300'
                         )}
                       />
                       {item.title}
