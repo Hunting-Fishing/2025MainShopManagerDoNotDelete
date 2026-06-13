@@ -65,8 +65,14 @@ export default defineConfig(({ mode }) => ({
           }
 
           if (id.includes('/src/pages/septic/') || id.includes('/src/components/septic/')) return 'app-septic';
-          if (id.includes('/src/pages/personal-trainer/') || id.includes('/src/components/nutrition/')) return 'app-nutrition';
-          if (id.includes('/src/pages/') && !id.includes('Index')) return 'app-pages';
+          if (id.includes('/src/pages/export/') || id.includes('/src/components/export/')) return 'app-export';
+          if (id.includes('/src/pages/personal-trainer/') || id.includes('/src/components/personal-trainer/') || id.includes('/src/components/nutrition/')) return 'app-personal-trainer';
+          if (id.includes('/src/pages/welding/') || id.includes('/src/components/welding/')) return 'app-welding';
+          if (id.includes('/src/pages/game-development/') || id.includes('/src/components/game-development/')) return 'app-game-dev';
+          if (id.includes('/src/pages/fuel-delivery/') || id.includes('/src/components/fuel-delivery/')) return 'app-fuel';
+          if (id.includes('/src/pages/water-delivery/') || id.includes('/src/components/water-delivery/')) return 'app-water';
+          if (id.includes('/src/pages/automotive/') || id.includes('/src/components/automotive/')) return 'app-automotive';
+          if (id.includes('/src/pages/gunsmith/') || id.includes('/src/components/gunsmith/')) return 'app-gunsmith';
           if (id.includes('/src/components/landing/')) return 'app-landing';
           if (id.includes('/src/hooks/')) return 'app-hooks';
           if (id.includes('/src/services/')) return 'app-services';
