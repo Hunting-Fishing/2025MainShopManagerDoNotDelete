@@ -580,7 +580,7 @@ const SepticStore = lazy(() => import('@/pages/septic/SepticStore'));
 const SepticInspections = lazy(() => import('@/pages/septic/SepticInspections'));
 const SepticInspectionForm = lazy(() => import('@/pages/septic/SepticInspectionForm'));
 const SepticDeveloper = lazy(() => import('@/pages/septic/SepticDeveloper'));
-import { SepticLayout } from '@/components/septic';
+const SepticLayout = lazy(() => import('@/components/septic').then(m => ({ default: m.SepticLayout })));
 
 // Export Company
 const ExportDashboard = lazy(() => import('@/pages/export/ExportDashboard'));
