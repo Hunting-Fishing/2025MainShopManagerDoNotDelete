@@ -14,6 +14,8 @@ export function CategoryBanner({ title, description, image, align = 'left' }: Ca
       <img 
         src={image} 
         alt={title} 
+        loading="lazy"
+        decoding="async"
         className="absolute inset-0 w-full h-full object-cover"
       />
       
