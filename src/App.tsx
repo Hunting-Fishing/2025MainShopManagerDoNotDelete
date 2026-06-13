@@ -669,7 +669,7 @@ const ExportAnalyticsHub = lazy(() => import('@/pages/export/hubs/ExportAnalytic
 const ExportCommunicationHub = lazy(() => import('@/pages/export/hubs/ExportCommunicationHub'));
 const ExportImportHub = lazy(() => import('@/pages/export/hubs/ExportImportHub'));
 const ExportConfigHub = lazy(() => import('@/pages/export/hubs/ExportConfigHub'));
-import { ExportLayout } from '@/components/export';
+const ExportLayout = lazy(() => import('@/components/export').then(m => ({ default: m.ExportLayout })));
 
 function App() {
 
