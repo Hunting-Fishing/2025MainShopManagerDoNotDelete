@@ -48,15 +48,15 @@ export function CustomerWorkOrders() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
       case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-500/10 text-amber-700 dark:text-amber-300';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-rose-500/10 text-rose-700 dark:text-rose-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -69,22 +69,22 @@ export function CustomerWorkOrders() {
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : workOrders.length > 0 ? (
           <div className="space-y-4">
             {workOrders.map((order) => (
-              <div key={order.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+              <div key={order.id} className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold">Work Order #{order.id.slice(-8)}</h3>
+                      <h3 className="font-semibold text-foreground">Work Order #{order.id.slice(-8)}</h3>
                       <Badge className={getStatusColor(order.status)}>
                         {order.status}
                       </Badge>
                     </div>
-                    <p className="text-gray-600 mb-2">{order.description}</p>
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <p className="text-muted-foreground mb-2">{order.description}</p>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
                         {new Date(order.created_at).toLocaleDateString()}
@@ -96,7 +96,7 @@ export function CustomerWorkOrders() {
                         </div>
                       )}
                       {order.total_cost && (
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-foreground">
                           ${order.total_cost.toFixed(2)}
                         </div>
                       )}
@@ -111,9 +111,9 @@ export function CustomerWorkOrders() {
           </div>
         ) : (
           <div className="text-center py-8">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Work Orders</h3>
-            <p className="text-gray-500">You don't have any work orders yet.</p>
+            <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No Work Orders</h3>
+            <p className="text-muted-foreground">You don't have any work orders yet.</p>
           </div>
         )}
       </CardContent>

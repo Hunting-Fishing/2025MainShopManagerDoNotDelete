@@ -51,9 +51,9 @@ export function ShopDirectory() {
       <Star
         key={i}
         className={`h-4 w-4 ${
-          i < Math.floor(rating) 
-            ? 'text-yellow-400 fill-current' 
-            : 'text-gray-300'
+          i < Math.floor(rating)
+            ? 'text-amber-400 fill-current'
+            : 'text-muted-foreground/30'
         }`}
       />
     ));
@@ -71,7 +71,7 @@ export function ShopDirectory() {
         <CardContent>
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search shops or locations..."
                 value={searchTerm}
