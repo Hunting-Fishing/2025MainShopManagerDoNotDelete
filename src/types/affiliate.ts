@@ -7,6 +7,8 @@ export type ManufacturerCategory =
   | 'atv-utv'
   | 'motorcycle';
 
+export type ManufacturerRegion = 'asia-ph' | 'asia' | 'europe' | 'north-america';
+
 export interface Manufacturer {
   id: string;
   name: string;
@@ -17,6 +19,8 @@ export interface Manufacturer {
   websiteUrl?: string;
   featured?: boolean;
   productCount?: number;
+  /** Regions where this manufacturer's vehicles are commonly sold/serviced. */
+  regions?: ManufacturerRegion[];
 }
 
 export interface ToolCategory {

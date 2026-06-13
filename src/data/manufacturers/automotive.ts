@@ -12,7 +12,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "Japanese multinational automotive manufacturer",
     slug: "toyota",
     featured: true,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-2",
@@ -21,7 +22,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "Japanese multinational conglomerate manufacturer",
     slug: "honda",
     featured: true,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-3",
@@ -30,7 +32,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "American multinational automobile manufacturer",
     slug: "ford",
     featured: true,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-4",
@@ -39,7 +42,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "American automobile division of General Motors",
     slug: "chevrolet",
     featured: false,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-5",
@@ -48,7 +52,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "German luxury vehicle manufacturer",
     slug: "bmw",
     featured: true,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-6",
@@ -57,7 +62,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "German global automobile marque",
     slug: "mercedes-benz",
     featured: true,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-7",
@@ -66,7 +72,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "German multinational automotive manufacturer",
     slug: "volkswagen",
     featured: false,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-8",
@@ -75,7 +82,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "German luxury vehicle manufacturer",
     slug: "audi",
     featured: true,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-9",
@@ -84,7 +92,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "Japanese multinational automobile manufacturer",
     slug: "nissan",
     featured: false,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-10",
@@ -93,7 +102,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "South Korean multinational automotive manufacturer",
     slug: "hyundai",
     featured: false,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-11",
@@ -102,7 +112,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "South Korean multinational automotive manufacturer",
     slug: "kia",
     featured: false,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-12",
@@ -111,7 +122,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "Japanese automobile manufacturer",
     slug: "subaru",
     featured: false,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-13",
@@ -120,7 +132,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "Japanese multinational automaker",
     slug: "mazda",
     featured: false,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-14",
@@ -129,7 +142,8 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "Luxury vehicle division of Toyota",
     slug: "lexus",
     featured: true,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   },
   {
     id: "auto-15",
@@ -138,6 +152,7 @@ export const automotiveManufacturers: Manufacturer[] = [
     description: "Luxury vehicle division of Honda",
     slug: "acura",
     featured: false,
-    category: "automotive"
+    category: "automotive",
+    regions: ["asia-ph", "asia", "europe", "north-america"]
   }
 ];
