@@ -23,9 +23,7 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "xlsx"],
   },
-  optimizeDeps: {
-    force: true,
-  },
+  optimizeDeps: {},
   esbuild: {
     logOverride: { 'duplicate-attribute': 'silent' },
   },
