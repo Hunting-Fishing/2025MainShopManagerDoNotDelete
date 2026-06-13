@@ -86,49 +86,43 @@ export function SidebarContent() {
     .filter(section => section.items.length > 0);
 
   return (
-    <div className="flex h-full flex-col text-slate-100">
+    <div className="flex h-full flex-col text-slate-700">
       {/* Logo */}
-      <div className="relative flex h-16 items-center justify-center px-6 border-b border-white/10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600" />
-        <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-orange-500/30 blur-2xl" />
-        <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-indigo-400/30 blur-2xl" />
-        <div className="relative z-10">
-          <SidebarLogo />
-        </div>
+      <div className="relative flex h-16 items-center justify-center px-6 border-b border-slate-200/80 bg-white">
+        <SidebarLogo />
       </div>
 
       {/* Active Module Indicator */}
-      <div className="py-3 border-b border-white/5 bg-slate-900/40">
+      <div className="py-3 border-b border-slate-200/80 bg-slate-50/60">
         <ModuleIndicator />
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-2 p-3 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+      <nav className="flex-1 space-y-2 p-3 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
         {/* Module Hub Link */}
         <div className="mb-3 space-y-1">
           <Link
             to="/module-hub"
             onClick={() => handleLinkClick('/module-hub')}
             className={cn(
-              'group relative flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
+              'group relative flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150',
               location.pathname === '/module-hub'
-                ? 'bg-gradient-to-r from-indigo-500/20 to-violet-500/10 text-white ring-1 ring-indigo-400/40 shadow-lg shadow-indigo-500/10'
-                : 'text-slate-300 hover:text-white hover:bg-white/5'
+                ? 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             )}
           >
             <LayoutGrid className={cn(
               'mr-3 h-4 w-4 transition-colors',
-              location.pathname === '/module-hub' ? 'text-indigo-300' : 'text-slate-400 group-hover:text-indigo-300'
+              location.pathname === '/module-hub' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600'
             )} />
             All Modules
           </Link>
-
         </div>
 
         {/* Developer Sections - Platform Developer only */}
         {isPlatformDeveloper && (
-          <div className="mb-3 space-y-1 pt-3 mt-2 border-t border-white/10">
-            <span className="px-4 text-[10px] font-bold text-orange-400 uppercase tracking-[0.15em]">
+          <div className="mb-3 space-y-1 pt-3 mt-2 border-t border-slate-200/80">
+            <span className="px-3 text-[10px] font-bold text-orange-600 uppercase tracking-[0.15em]">
               Developer
             </span>
             {[
@@ -145,10 +139,10 @@ export function SidebarContent() {
                 to={dev.href}
                 onClick={() => handleLinkClick(dev.href)}
                 className={cn(
-                  'group flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150',
+                  'group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150',
                   location.pathname === dev.href
-                    ? 'bg-orange-500/15 text-orange-300 ring-1 ring-orange-500/30'
-                    : 'text-slate-400 hover:bg-orange-500/10 hover:text-orange-300'
+                    ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200'
+                    : 'text-slate-500 hover:bg-orange-50 hover:text-orange-700'
                 )}
               >
                 <Code className="mr-3 h-4 w-4" />
@@ -162,25 +156,17 @@ export function SidebarContent() {
         <ModuleSections />
 
         {filteredNavigation.map((section) => {
-          const colorScheme = getSectionColorScheme(section.title);
-
           return (
-            <div
-              key={section.title}
-              className="mb-3 rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-sm transition-all duration-200 hover:border-white/10"
-            >
+            <div key={section.title} className="mb-2">
               {/* Section Header */}
-              <div className="px-3 py-2 border-b border-white/5">
-                <h3 className={cn(
-                  "text-[10px] font-bold uppercase tracking-[0.15em]",
-                  colorScheme.headerText?.replace('text-', 'text-') || 'text-slate-400'
-                )}>
+              <div className="px-3 pt-3 pb-1.5">
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
                   {section.title}
                 </h3>
               </div>
 
               {/* Section Items */}
-              <div className="p-1.5 space-y-0.5">
+              <div className="space-y-0.5">
                 {section.items.map((item) => {
                   const isActive = location.pathname === item.href ||
                     (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
@@ -195,20 +181,20 @@ export function SidebarContent() {
                       className={cn(
                         'group relative flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150',
                         isActive
-                          ? 'bg-gradient-to-r from-white/10 to-white/[0.03] text-white font-semibold shadow-inner ring-1 ring-white/10'
-                          : 'text-slate-300 hover:text-white hover:bg-white/5 hover:translate-x-0.5'
+                          ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       )}
                       title={item.description || item.title}
                     >
                       {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r bg-indigo-400" />
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r bg-indigo-600" />
                       )}
                       <IconComponent
                         className={cn(
                           'mr-3 h-4 w-4 flex-shrink-0 transition-colors',
                           isActive
-                            ? 'text-indigo-300'
-                            : 'text-slate-400 group-hover:text-indigo-300'
+                            ? 'text-indigo-600'
+                            : 'text-slate-400 group-hover:text-slate-600'
                         )}
                       />
                       {item.title}
