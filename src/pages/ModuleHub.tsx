@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Spotlight } from '@/components/ui/spotlight';
 import { StaticBeams } from '@/components/ui/background-beams';
 import { Card3D } from '@/components/ui/card-3d';
+import { Particles } from '@/components/ui/magicui/particles';
 import { 
   LayoutGrid, Sparkles, Search, X, ChevronDown, ChevronRight, 
   Home, HardHat, Car, Scissors, Dog, UtensilsCrossed, Monitor, 
