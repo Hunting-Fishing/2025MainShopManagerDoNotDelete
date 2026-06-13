@@ -13,16 +13,17 @@ export function AppSidebar() {
     <>
       {/* Mobile overlay */}
       {isMobile && isOpen && (
-        <div 
-          className="fixed inset-0 z-30 bg-black bg-opacity-50" 
+        <div
+          className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm"
           onClick={toggle}
         />
       )}
-      
+
       {/* Sidebar */}
       <div
         className={cn(
-          'fixed top-0 left-0 z-30 h-full w-[280px] bg-white border-r border-gray-200 transition-transform duration-300 shadow-lg print:hidden',
+          'fixed top-0 left-0 z-30 h-full w-[280px] transition-transform duration-300 shadow-2xl shadow-slate-950/40 print:hidden',
+          'bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-r border-white/5',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
