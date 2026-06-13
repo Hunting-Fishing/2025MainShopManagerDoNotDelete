@@ -1,88 +1,62 @@
-# Region-Aware Automotive Module — Phase 1: Asia / Philippines
+## Recommended Path: B now → A later → (skip C)
 
-Today `AutomotiveRecalls.tsx` and the vehicle catalog (`src/data/manufacturers/automotive.ts`) are hardcoded to a US/NHTSA worldview with sample data. We'll introduce a region dimension (Asia / Europe / North America) with **Asia → Philippines** as the active region, and wire recalls, TSBs, OBD2 references, and the vehicle picker to it. Phase 1 ships PH end-to-end; Europe and North America become selectable shells with the same schema, ready to backfill later.
+Yes — B is the safest starting point, and it does **not** block doing A afterward. C should stay off the table; it would break the app and undo work from A.
 
-## OBD2 — quick answer (documented in the UI)
+### Why this order works
 
-- **Generic codes** (P0xxx, B0xxx, C0xxx, U0xxx per SAE J2012 / ISO 15031-6) are **globally identical**. A PH-spec Toyota Vios and a US Camry both throw `P0420` for the same catalyst-efficiency fault.
-- **Manufacturer-specific codes** (P1xxx, P3xxx, B1/B2, C1/C2, U1/U2) **vary by OEM and sometimes by market** (different ECU calibrations for JDM/ASEAN vs. EU vs. NA emissions packages).
-- **OBD2 mandate dates differ**: US 1996, EU (EOBD petrol) 2001 / diesel 2004, PH effectively post-2008 on most modern ICE vehicles (no nationwide legal mandate equivalent to OBD-II; presence is OEM-driven).
-- **Readiness monitors / PIDs / emissions modes** can differ by regional emissions standard (Euro 4/5 vs. Tier-2/3 vs. PH Euro 4 since 2016).
+- **B (now)** establishes a documented baseline: which always-true policies and SECURITY DEFINER functions are *intentional* (audit logs, system inserts, multi-tenant helpers like `has_role`, `get_current_user_shop_id`). Without this baseline, A risks "hardening" policies that are supposed to be permissive and breaking logging/affiliate tracking/email flows.
+- **A (later)** then becomes a surgical pass: each remaining always-true policy is reviewed against the baseline and tightened only where it's clearly wrong. Much lower risk because we already know what to leave alone.
+- **C** is never the right move here — mass-revoking SECURITY DEFINER EXECUTE would break RLS itself (the whole multi-tenant model depends on `get_current_user_shop_id()` etc.).
 
-UI consequence: show generic codes globally; tag mfr-specific codes with `applicable_regions[]` and filter by the active region; show a region note on the DTC detail.
+---
 
-## Region model
+## Phase B — Plan (this step)
 
-Add a single source of truth used across the Automotive module:
+### 1. Fix the 3 dashboard/platform items
+These are real findings, unrelated to RLS policy semantics, and safe to fix immediately:
 
-```ts
-// src/lib/regions/automotive.ts
-export type AutomotiveRegion = 'asia-ph' | 'asia' | 'europe' | 'north-america';
-export const REGION_META: Record<AutomotiveRegion, { label; country; agencies; emissions; obdMandate }>;
-```
+| Finding | Action | Where |
+|---|---|---|
+| Leaked Password Protection disabled | Enable HaveIBeenPwned check | Supabase Dashboard → Authentication → Providers → Email |
+| Extension in `public` schema (e.g. `pg_trgm`, `uuid-ossp`) | Migration: move to `extensions` schema | SQL migration |
+| Public bucket allows listing | Either flip bucket to private, or add a restrictive `storage.objects` SELECT policy | Storage settings + policy |
 
-**Per-user preference** (chosen): store on `profiles.automotive_region` with default `'asia-ph'`. Read via a `useAutomotiveRegion()` hook with React Query + Supabase, expose a region switcher in the Automotive header (flag + label, persists on change).
+The first one is a dashboard toggle (I'll instruct, you click). The other two I can do via migration once you approve.
 
-## Scope of changes
+### 2. Record accepted posture in security memory
+Write the rationale into `update_memory` so future scans (and future-me) don't re-flag the same items:
 
-### 1. Region selector + persistence
-- Migration: add `automotive_region text default 'asia-ph'` to `profiles` (no RLS change — column on existing row).
-- `src/lib/regions/automotive.ts` — region constants, labels, agency metadata.
-- `src/hooks/useAutomotiveRegion.ts` — read/update preference.
-- `src/components/automotive/RegionSwitcher.tsx` — compact dropdown shown in `AutomotiveDashboard` header and on each sub-page header strip.
+- Always-true INSERT policies on logging/audit tables (`audit_logs`, `audit_trail`, `discount_audit_log`, `affiliate_link_clicks`, `email_events`, etc.) are **intentional** — required for system-side telemetry.
+- `SECURITY DEFINER` on tenant helpers (`has_role`, `get_current_user_shop_id`, `convert_*`, `generate_*`) is **intentional** — it's the foundation of the multi-tenant RLS design, per project memory `mem://security/multi-tenant-isolation-pattern`.
+- Document what would still be a real vulnerability (e.g. always-true SELECT on a tenant table like `customers`, `work_orders`, `invoices`).
 
-### 2. Recalls & TSBs (`AutomotiveRecalls.tsx`)
-Replace the two `SAMPLE_*` arrays with a region-routed data layer:
+### 3. Mark scanner findings as accepted (with explanation)
+For each scanner finding that falls under the accepted categories above, call `manage_security_finding` with `ignore` + a clear reason referencing the memory note. Real issues stay open.
 
-- New tables (migration):
-  - `auto_recalls` (region, source_agency, source_id, title, affected_makes[], affected_models[], year_from, year_to, issued_at, remedy, source_url, raw jsonb)
-  - `auto_tsbs` (region, manufacturer, bulletin_no, title, affected_makes[], affected_models[], year_from, year_to, issued_at, severity, source_url, raw jsonb)
-  - Public read (`anon` + `authenticated`); writes service-role only (sync jobs).
-- Edge function `sync-auto-recalls` with region-specific adapters:
-  - `asia-ph`: scrape DTI-FTEB consumer recall list + Toyota Motor Philippines / Mitsubishi Motors PH / Honda Cars PH / Isuzu PH / Suzuki PH safety-recall pages via the existing Firecrawl connector (per Firecrawl skill); cache raw JSON.
-  - `europe`: RAPEX/Safety Gate adapter stub.
-  - `north-america`: NHTSA public JSON API (`api.nhtsa.gov`) — already free/keyless.
-  - All adapters normalise into the `auto_recalls`/`auto_tsbs` shape and upsert by `(region, source_id)`.
-- UI filters list by active region; adds an "Agency" badge (DTI / NHTSA / RAPEX). VIN search hits a region-aware decoder route (NHTSA vPIC for NA; PH-market VIN lookup falls back to vPIC since most ASEAN VINs decode there for make/model/year).
+### 4. Deliverable from Phase B
+- 3 platform items resolved
+- Clean security memory document
+- Scanner inbox shows only *real* findings (the ones Phase A will target)
 
-### 3. OBD2 / Diagnostics (`AutomotiveDiagnostics.tsx`)
-- New table `auto_dtc_codes` (code, code_type `'generic'|'manufacturer'`, manufacturer nullable, applicable_regions text[], description, symptoms, common_causes, severity).
-- Seed generic SAE J2012 codes once (region-agnostic, applicable_regions = all).
-- Manufacturer-specific seeds gated by region; PH seed prioritises Toyota/Mitsubishi/Honda/Isuzu/Suzuki/Hyundai/Ford ASEAN calibrations.
-- UI shows a region pill on each result and a banner explaining generic vs. mfr-specific behaviour.
+---
 
-### 4. Vehicle catalog (`src/data/manufacturers/automotive.ts` + VIN handling)
-- Add `regions: AutomotiveRegion[]` to each `Manufacturer`. Tag PH-relevant makes (Toyota, Mitsubishi, Honda, Isuzu, Suzuki, Hyundai, Nissan, Ford, Kia, Mazda, Chevrolet, Foton, MG, Geely, Chery, BYD, Hino) with `'asia-ph'`.
-- Vehicle pickers (`CustomerVehicleFields`, work-order intake, etc.) filter by active region by default with a "Show all regions" toggle.
-- VIN decode service: keep NHTSA vPIC as the universal backend (works for most ASEAN imports). Add a `market` field stored alongside decoded vehicles so PH-market trims (e.g., Vios XLE, Mirage G4 GLX) can be hand-edited without overwriting the decode.
+## Phase A — Plan (next session, after B is done)
 
-## Out of scope (Phase 2+)
-- Full Europe + NA recall/TSB live syncs (adapters scaffolded but only PH and NHTSA wired).
-- LTO registration lookup integration (no public API; would need agency partnership).
-- Per-region pricing/units (km vs mi, PHP vs USD) — separate pass.
+Scoped, table-by-table review using the Phase B baseline:
 
-## Technical notes
+1. List remaining always-true INSERT/UPDATE/DELETE policies after the accepted ones are filtered out.
+2. For each: classify as **owner-scoped**, **role-scoped**, or **auth-only**, and rewrite with `auth.uid() IS NOT NULL` / `has_role(...)` / `shop_id = get_current_user_shop_id()` as appropriate.
+3. One migration per logical group (e.g. "tighten cart/wishlist writes", "tighten customer communications writes"), so any regression is easy to bisect.
+4. Smoke-test affected flows after each group.
 
-```text
-profiles.automotive_region (text)
-                │
-                ▼
-useAutomotiveRegion() ──► RegionSwitcher
-                │
-   ┌────────────┼─────────────┬────────────────┐
-   ▼            ▼             ▼                ▼
-Recalls UI   TSB UI       DTC lookup      Vehicle picker
-   │            │             │                │
-   ▼            ▼             ▼                ▼
-auto_recalls auto_tsbs   auto_dtc_codes   manufacturers[].regions
-   ▲            ▲             ▲
-   └── sync-auto-recalls edge fn (per-region adapters: PH scrape, NHTSA API, RAPEX stub)
-```
+---
 
-Data sources to be confirmed before edge-function build:
-- PH recalls: DTI-FTEB Consumer Product Recall list, plus OEM PH safety-recall pages (Toyota/Mitsubishi/Honda/Isuzu/Suzuki). All public HTML — Firecrawl scrape, daily cron.
-- PH TSBs: no public registry; seed manually + accept staff submissions via an admin form (production-first, no mock data — entries are real shop knowledge).
-- NHTSA: `https://api.nhtsa.gov/recalls/recallsByVehicle` and `vehicles/GetAllMakes` (free, no key).
-- DTC seed: SAE J2012 generic list (public spec) + OEM code packs.
+## What I need from you to proceed with B
 
-Region constants and tables ship as the foundation; Phase 1 fully wires PH, leaves Europe/NA as live-empty regions with the sync adapters scaffolded.
+Just a "go" — then I'll:
+1. Open the migration for the extension move + storage policy.
+2. Write the security memory update.
+3. Mark the accepted scanner findings as ignored.
+4. Give you the 1-click dashboard instruction for the leaked-password toggle.
+
+Best way forward: **approve B now, ship it, then green-light A as a follow-up.**
