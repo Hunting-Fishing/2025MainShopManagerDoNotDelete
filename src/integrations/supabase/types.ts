@@ -1911,6 +1911,156 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_dtc_codes: {
+        Row: {
+          applicable_regions: string[]
+          code: string
+          code_type: string
+          common_causes: string | null
+          created_at: string
+          description: string
+          id: string
+          manufacturer: string | null
+          severity: string
+          symptoms: string | null
+          updated_at: string
+        }
+        Insert: {
+          applicable_regions?: string[]
+          code: string
+          code_type: string
+          common_causes?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          manufacturer?: string | null
+          severity?: string
+          symptoms?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applicable_regions?: string[]
+          code?: string
+          code_type?: string
+          common_causes?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          manufacturer?: string | null
+          severity?: string
+          symptoms?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      auto_recalls: {
+        Row: {
+          affected_makes: string[]
+          affected_models: string[]
+          created_at: string
+          id: string
+          issued_at: string | null
+          raw: Json | null
+          region: string
+          remedy: string | null
+          source_agency: string
+          source_id: string
+          source_url: string | null
+          title: string
+          updated_at: string
+          year_from: number | null
+          year_to: number | null
+        }
+        Insert: {
+          affected_makes?: string[]
+          affected_models?: string[]
+          created_at?: string
+          id?: string
+          issued_at?: string | null
+          raw?: Json | null
+          region: string
+          remedy?: string | null
+          source_agency: string
+          source_id: string
+          source_url?: string | null
+          title: string
+          updated_at?: string
+          year_from?: number | null
+          year_to?: number | null
+        }
+        Update: {
+          affected_makes?: string[]
+          affected_models?: string[]
+          created_at?: string
+          id?: string
+          issued_at?: string | null
+          raw?: Json | null
+          region?: string
+          remedy?: string | null
+          source_agency?: string
+          source_id?: string
+          source_url?: string | null
+          title?: string
+          updated_at?: string
+          year_from?: number | null
+          year_to?: number | null
+        }
+        Relationships: []
+      }
+      auto_tsbs: {
+        Row: {
+          affected_makes: string[]
+          affected_models: string[]
+          bulletin_no: string
+          created_at: string
+          id: string
+          issued_at: string | null
+          manufacturer: string
+          raw: Json | null
+          region: string
+          severity: string
+          source_url: string | null
+          title: string
+          updated_at: string
+          year_from: number | null
+          year_to: number | null
+        }
+        Insert: {
+          affected_makes?: string[]
+          affected_models?: string[]
+          bulletin_no: string
+          created_at?: string
+          id?: string
+          issued_at?: string | null
+          manufacturer: string
+          raw?: Json | null
+          region: string
+          severity?: string
+          source_url?: string | null
+          title: string
+          updated_at?: string
+          year_from?: number | null
+          year_to?: number | null
+        }
+        Update: {
+          affected_makes?: string[]
+          affected_models?: string[]
+          bulletin_no?: string
+          created_at?: string
+          id?: string
+          issued_at?: string | null
+          manufacturer?: string
+          raw?: Json | null
+          region?: string
+          severity?: string
+          source_url?: string | null
+          title?: string
+          updated_at?: string
+          year_from?: number | null
+          year_to?: number | null
+        }
+        Relationships: []
+      }
       bank_accounts: {
         Row: {
           account_number_last4: string | null
@@ -39401,6 +39551,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          automotive_region: string
           created_at: string
           department: string | null
           department_id: string | null
@@ -39421,6 +39572,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          automotive_region?: string
           created_at?: string
           department?: string | null
           department_id?: string | null
@@ -39441,6 +39593,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          automotive_region?: string
           created_at?: string
           department?: string | null
           department_id?: string | null
