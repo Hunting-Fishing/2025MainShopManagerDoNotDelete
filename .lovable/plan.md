@@ -1,84 +1,88 @@
+# Region-Aware Automotive Module — Phase 1: Asia / Philippines
 
-# App-Wide UI Modernization — Cloud White SaaS
+Today `AutomotiveRecalls.tsx` and the vehicle catalog (`src/data/manufacturers/automotive.ts`) are hardcoded to a US/NHTSA worldview with sample data. We'll introduce a region dimension (Asia / Europe / North America) with **Asia → Philippines** as the active region, and wire recalls, TSBs, OBD2 references, and the vehicle picker to it. Phase 1 ships PH end-to-end; Europe and North America become selectable shells with the same schema, ready to backfill later.
 
-A full visual pass that re-skins the entire app around a Linear/Vercel-style "Cloud White SaaS" aesthetic, extends the bento dashboard pattern from Automotive to every module, and layers in free graphic upgrades (MagicUI effects, Framer Motion micro-interactions, Tabler icons, Undraw illustrations) plus a real light/dark toggle.
+## OBD2 — quick answer (documented in the UI)
 
-No business logic, data queries, RLS, routing, or module functionality changes — purely a presentation pass.
+- **Generic codes** (P0xxx, B0xxx, C0xxx, U0xxx per SAE J2012 / ISO 15031-6) are **globally identical**. A PH-spec Toyota Vios and a US Camry both throw `P0420` for the same catalyst-efficiency fault.
+- **Manufacturer-specific codes** (P1xxx, P3xxx, B1/B2, C1/C2, U1/U2) **vary by OEM and sometimes by market** (different ECU calibrations for JDM/ASEAN vs. EU vs. NA emissions packages).
+- **OBD2 mandate dates differ**: US 1996, EU (EOBD petrol) 2001 / diesel 2004, PH effectively post-2008 on most modern ICE vehicles (no nationwide legal mandate equivalent to OBD-II; presence is OEM-driven).
+- **Readiness monitors / PIDs / emissions modes** can differ by regional emissions standard (Euro 4/5 vs. Tier-2/3 vs. PH Euro 4 since 2016).
 
-## What you'll get
+UI consequence: show generic codes globally; tag mfr-specific codes with `applicable_regions[]` and filter by the active region; show a region note on the DTC detail.
 
-- A crisp, modern light theme — soft off-white surfaces (`#fafbfc`), slate text, indigo `#3b82f6` accent, refined shadows and 14px radius — applied app-wide through design tokens (no per-component hex rewrites).
-- A working dark mode with a toggle in the header; remembers your choice.
-- A modernized app shell: sidebar, header, footer, breadcrumbs, page transitions.
-- Every module dashboard restructured into the bento layout pioneered on Automotive (hero band, stat tiles with gradient icon chips, category tiles, scrollable quick-action rail).
-- Polished list, detail, and form pages — consistent card styling, sticky toolbars, empty-state illustrations, skeleton loaders, smoother hovers.
-- Selected MagicUI flourishes used sparingly: Border Beam on hero/CTA cards, Shimmer Button for primary CTAs, Animated List for activity feeds, Particles only on the Module Hub landing.
-- Framer Motion micro-interactions: page fades, staggered card entrances, hover lift on tiles.
-- Replace generic icons with Tabler / refined Lucide where it sharpens meaning. Undraw illustrations on empty states and portal landing screens.
+## Region model
 
-## Plan of work (phased)
+Add a single source of truth used across the Automotive module:
 
-### Phase 1 — Design system foundation
-- Rewrite light-mode HSL tokens in `src/index.css` to the Cloud White palette (background `#fafbfc`, surfaces `#ffffff` + `#e8ecf1` borders, slate text, primary `#3b82f6`, muted-foreground slate-500).
-- Tune dark-mode tokens to match (deep slate background, indigo-400 primary, slate-800 surfaces).
-- Refresh shadows (softer, slate-tinted), set `--radius: 0.875rem`, add `--shadow-soft` and `--ring-focus`.
-- Add typography tokens; keep existing Space Grotesk / Plus Jakarta Sans pairing already in `tailwind.config.ts`.
+```ts
+// src/lib/regions/automotive.ts
+export type AutomotiveRegion = 'asia-ph' | 'asia' | 'europe' | 'north-america';
+export const REGION_META: Record<AutomotiveRegion, { label; country; agencies; emissions; obdMandate }>;
+```
 
-### Phase 2 — Theme toggle
-- Add a `ThemeProvider` using `next-themes` (or a lightweight in-house equivalent) and a Sun/Moon toggle button in `src/components/layout/Header.tsx`.
-- Persist preference in `localStorage`; respect `prefers-color-scheme` on first load.
-- Verify Tailwind `darkMode: ["class"]` (already set) and audit any hardcoded `bg-white`/`text-black` usages along the shell.
+**Per-user preference** (chosen): store on `profiles.automotive_region` with default `'asia-ph'`. Read via a `useAutomotiveRegion()` hook with React Query + Supabase, expose a region switcher in the Automotive header (flag + label, persists on change).
 
-### Phase 3 — App shell
-- `Header.tsx`, `HeaderActions.tsx`, `AppFooter.tsx`: switch to token-driven surfaces, add subtle bottom border, command-K search affordance, theme toggle, refined avatar menu.
-- `AppSidebar.tsx` + `sidebar/SidebarContent.tsx`: keep the clean white look you approved, swap active-state to indigo-50/indigo-700 ring, add small Tabler section icons, subtle hover translate.
-- `Layout.tsx`: add Framer Motion `AnimatePresence` page fade wrapper (already have `AnimatedPage`; wire it in).
+## Scope of changes
 
-### Phase 4 — Reusable upgraded UI primitives
-- Lift the Automotive `BentoStatCard`, `CategoryTile`, `AutomotiveHero`, `GradientOrbs` into module-agnostic versions under `src/components/module-dashboard/`:
-  - `BentoStatCard`, `CategoryTile`, `ModuleHero`, `QuickActionRail`, `ActivityFeedCard`, `EmptyStateIllustration`.
-- Add MagicUI components (manual install per their docs): `border-beam`, `shimmer-button`, `animated-list`, `particles`, `magic-card`. Files placed under `src/components/ui/magicui/`.
-- Add a small `<Illustration name="...">` wrapper that pulls Undraw SVGs (stored locally under `src/assets/illustrations/` as inline SVG, recolored via `currentColor` to follow the theme).
+### 1. Region selector + persistence
+- Migration: add `automotive_region text default 'asia-ph'` to `profiles` (no RLS change — column on existing row).
+- `src/lib/regions/automotive.ts` — region constants, labels, agency metadata.
+- `src/hooks/useAutomotiveRegion.ts` — read/update preference.
+- `src/components/automotive/RegionSwitcher.tsx` — compact dropdown shown in `AutomotiveDashboard` header and on each sub-page header strip.
 
-### Phase 5 — Module Hub landing
-- Re-skin `/module-hub` with the new hero (Particles backdrop, Shimmer CTA), bento module grid using `CategoryTile`, animated stats row.
+### 2. Recalls & TSBs (`AutomotiveRecalls.tsx`)
+Replace the two `SAMPLE_*` arrays with a region-routed data layer:
 
-### Phase 6 — Module dashboards
-Apply the bento pattern to each module dashboard, keeping live data queries unchanged:
-- Septic, Welding, Power Washing, Personal Trainer, Export Company, Game Development, Gunsmith, Fuel Delivery, Fleet, Equipment.
-- Each gets: `ModuleHero` with live KPI pills, 4-card bento stat grid, category tiles for sub-pages, activity feed using `AnimatedList`.
+- New tables (migration):
+  - `auto_recalls` (region, source_agency, source_id, title, affected_makes[], affected_models[], year_from, year_to, issued_at, remedy, source_url, raw jsonb)
+  - `auto_tsbs` (region, manufacturer, bulletin_no, title, affected_makes[], affected_models[], year_from, year_to, issued_at, severity, source_url, raw jsonb)
+  - Public read (`anon` + `authenticated`); writes service-role only (sync jobs).
+- Edge function `sync-auto-recalls` with region-specific adapters:
+  - `asia-ph`: scrape DTI-FTEB consumer recall list + Toyota Motor Philippines / Mitsubishi Motors PH / Honda Cars PH / Isuzu PH / Suzuki PH safety-recall pages via the existing Firecrawl connector (per Firecrawl skill); cache raw JSON.
+  - `europe`: RAPEX/Safety Gate adapter stub.
+  - `north-america`: NHTSA public JSON API (`api.nhtsa.gov`) — already free/keyless.
+  - All adapters normalise into the `auto_recalls`/`auto_tsbs` shape and upsert by `(region, source_id)`.
+- UI filters list by active region; adds an "Agency" badge (DTI / NHTSA / RAPEX). VIN search hits a region-aware decoder route (NHTSA vPIC for NA; PH-market VIN lookup falls back to vPIC since most ASEAN VINs decode there for make/model/year).
 
-### Phase 7 — List / detail / form pass
-- Standardize page chrome: sticky page header with breadcrumbs + primary action, consistent `Card` surfaces, refined `Table` row hover, refined `Input`/`Select`/`Button` focus rings.
-- Add `Skeleton` loading and `EmptyStateIllustration` to all data-driven lists.
-- Page-level Framer Motion fade-in.
+### 3. OBD2 / Diagnostics (`AutomotiveDiagnostics.tsx`)
+- New table `auto_dtc_codes` (code, code_type `'generic'|'manufacturer'`, manufacturer nullable, applicable_regions text[], description, symptoms, common_causes, severity).
+- Seed generic SAE J2012 codes once (region-agnostic, applicable_regions = all).
+- Manufacturer-specific seeds gated by region; PH seed prioritises Toyota/Mitsubishi/Honda/Isuzu/Suzuki/Hyundai/Ford ASEAN calibrations.
+- UI shows a region pill on each result and a banner explaining generic vs. mfr-specific behaviour.
 
-### Phase 8 — Customer portals
-- Apply Cloud White tokens, refreshed `CustomerPortalLayout` header/footer, hero illustration, dark mode support.
+### 4. Vehicle catalog (`src/data/manufacturers/automotive.ts` + VIN handling)
+- Add `regions: AutomotiveRegion[]` to each `Manufacturer`. Tag PH-relevant makes (Toyota, Mitsubishi, Honda, Isuzu, Suzuki, Hyundai, Nissan, Ford, Kia, Mazda, Chevrolet, Foton, MG, Geely, Chery, BYD, Hino) with `'asia-ph'`.
+- Vehicle pickers (`CustomerVehicleFields`, work-order intake, etc.) filter by active region by default with a "Show all regions" toggle.
+- VIN decode service: keep NHTSA vPIC as the universal backend (works for most ASEAN imports). Add a `market` field stored alongside decoded vehicles so PH-market trims (e.g., Vios XLE, Mirage G4 GLX) can be hand-edited without overwriting the decode.
 
-### Phase 9 — QA pass
-- Walk the major routes at desktop + mobile viewports, light + dark, verify contrast, fix any leftover hardcoded color classes flagged by ripgrep (`bg-white|text-black|bg-slate-9` etc. inside components).
+## Out of scope (Phase 2+)
+- Full Europe + NA recall/TSB live syncs (adapters scaffolded but only PH and NHTSA wired).
+- LTO registration lookup integration (no public API; would need agency partnership).
+- Per-region pricing/units (km vs mi, PHP vs USD) — separate pass.
 
 ## Technical notes
 
-- New deps: `next-themes` (theme toggle), `@tabler/icons-react` (icon vocabulary). MagicUI components are copy-pasted source (no npm dep). Framer Motion is already in the project.
-- All color decisions live in `src/index.css` tokens + `tailwind.config.ts` — components reference semantic classes (`bg-background`, `text-foreground`, `border-border`, `bg-card`, `text-primary`), never raw hex.
-- Bento primitives in `src/components/module-dashboard/` are pure presentation; they accept props for icon, gradient, value, onClick — no data fetching.
-- MagicUI installs follow https://magicui.design/docs manual install (component files dropped into `src/components/ui/magicui/`).
-- Undraw illustrations stored as local SVG components so they recolor with the theme.
-- No DB migrations, no edge functions, no auth/RLS changes.
-- Code-splitting and existing `React.lazy` route boundaries are preserved.
+```text
+profiles.automotive_region (text)
+                │
+                ▼
+useAutomotiveRegion() ──► RegionSwitcher
+                │
+   ┌────────────┼─────────────┬────────────────┐
+   ▼            ▼             ▼                ▼
+Recalls UI   TSB UI       DTC lookup      Vehicle picker
+   │            │             │                │
+   ▼            ▼             ▼                ▼
+auto_recalls auto_tsbs   auto_dtc_codes   manufacturers[].regions
+   ▲            ▲             ▲
+   └── sync-auto-recalls edge fn (per-region adapters: PH scrape, NHTSA API, RAPEX stub)
+```
 
-## Out of scope
+Data sources to be confirmed before edge-function build:
+- PH recalls: DTI-FTEB Consumer Product Recall list, plus OEM PH safety-recall pages (Toyota/Mitsubishi/Honda/Isuzu/Suzuki). All public HTML — Firecrawl scrape, daily cron.
+- PH TSBs: no public registry; seed manually + accept staff submissions via an admin form (production-first, no mock data — entries are real shop knowledge).
+- NHTSA: `https://api.nhtsa.gov/recalls/recallsByVehicle` and `vehicles/GetAllMakes` (free, no key).
+- DTC seed: SAE J2012 generic list (public spec) + OEM code packs.
 
-- Adding/removing features or pages
-- Changing data models, queries, or RLS
-- Reworking auth flows
-- Rewriting business logic in any module
-
-## File impact (high level)
-
-- Edited: `src/index.css`, `tailwind.config.ts`, `src/components/layout/*`, `src/components/layout/sidebar/*`, `src/pages/ModuleHub.tsx`, every `src/pages/<module>/<Module>Dashboard.tsx`, `src/components/customer-portal/CustomerPortalLayout.tsx`, shared `src/components/ui/*` (button/card/table/input visual tweaks).
-- Created: `src/components/theme/ThemeProvider.tsx`, `src/components/theme/ThemeToggle.tsx`, `src/components/module-dashboard/{BentoStatCard,CategoryTile,ModuleHero,QuickActionRail,ActivityFeedCard,EmptyStateIllustration}.tsx`, `src/components/ui/magicui/{border-beam,shimmer-button,animated-list,particles,magic-card}.tsx`, `src/assets/illustrations/*.svg`.
-
-Approve to start with Phase 1–3 (foundation, theme toggle, shell) so you see the new look immediately, then proceed phase-by-phase.
+Region constants and tables ship as the foundation; Phase 1 fully wires PH, leaves Europe/NA as live-empty regions with the sync adapters scaffolded.
