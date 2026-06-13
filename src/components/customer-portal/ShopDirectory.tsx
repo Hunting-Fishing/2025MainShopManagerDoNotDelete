@@ -51,9 +51,9 @@ export function ShopDirectory() {
       <Star
         key={i}
         className={`h-4 w-4 ${
-          i < Math.floor(rating) 
-            ? 'text-yellow-400 fill-current' 
-            : 'text-gray-300'
+          i < Math.floor(rating)
+            ? 'text-amber-400 fill-current'
+            : 'text-muted-foreground/30'
         }`}
       />
     ));
