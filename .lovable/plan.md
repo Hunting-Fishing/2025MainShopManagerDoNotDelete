@@ -1,112 +1,50 @@
-## Welding Sales Rep Workspace
+## Problem
 
-Replace the thin "Sales Pipeline" page at `/welding/sales` with a full-featured sales-rep workspace built around the data the rep actually manages: clients, inbound requests, follow-ups, quotes, deposits, and time spent.
+The published site (allbusiness365.com) and preview show a white screen. The console reports:
 
-### Layout
-
-Tabbed page inside `WeldingAdminLayout` with a KPI strip on top and 6 tabs.
-
-```text
-┌────────────────────────────────────────────────────────────┐
-│ KPIs:  Open Leads | Follow-ups Today | Quotes Sent | Won $ │
-│        Deposits Held | Time Logged (week)                  │
-├────────────────────────────────────────────────────────────┤
-│ [Pipeline] [Clients] [Requests] [Quotes] [Follow-ups]      │
-│ [Deposits] [Time]                                          │
-└────────────────────────────────────────────────────────────┘
+```
+Uncaught ReferenceError: Cannot access 'P' before initialization
+  at vendor-charts-D16U26QP.js:9
 ```
 
-### Tabs
+This is a temporal dead zone (TDZ) error inside the `vendor-charts` bundle, which crashes the app at module init — before React can render — producing a blank page.
 
-1. **Pipeline (Kanban)** — drag activities across columns: Open → Contacted → Quoted → Won / Lost. Cards show client, value, next follow-up, category tag. Click to edit (existing dialog, expanded).
-2. **Clients** — searchable list of `welding_customers` joined with rollups (open quotes, total billed, deposit on file, last contact). Categorize via a new `category` and `tags[]` column (Lead / Active / VIP / Cold + freeform tags). Click row → drawer with full history (interactions, quotes, invoices, deposits, time).
-3. **Requests** — inbound items from `welding_contact_messages` + manually-added activities of type `inquiry`. Convert a request → client and/or → quote in one click.
-4. **Quotes** — list of `welding_quotes` filtered to current sales rep (`created_by = auth.uid()` when present). Status filter, send/follow-up buttons, conversion-to-invoice indicator.
-5. **Follow-ups** — agenda view (Overdue / Today / This week / Later) sourced from `welding_sales_activities.follow_up_date`. Mark complete (sets status), reschedule, snooze.
-6. **Deposits** — list of recorded deposits with client, amount, date, linked quote/invoice, status (Held / Applied / Refunded). New table required.
-7. **Time** — per-client time entries (visit, call, quoting, admin) with date, minutes, billable flag. Weekly summary by client and category. New table required.
+## Root cause
 
-### Database changes (migration)
+`vite.config.ts` uses a `manualChunks` function that splits `recharts` and `d3-*` packages into a `vendor-charts` chunk:
 
-Add categorization + new tables. All RLS scoped via `shop_id = public.get_current_user_shop_id()` (per Core rules), idempotent `IF NOT EXISTS` / `DO` blocks.
-
-```sql
--- Categorize clients
-ALTER TABLE welding_customers
-  ADD COLUMN IF NOT EXISTS category text DEFAULT 'lead',
-  ADD COLUMN IF NOT EXISTS tags text[] DEFAULT '{}',
-  ADD COLUMN IF NOT EXISTS assigned_rep uuid;
-
--- Sales activity enrichments
-ALTER TABLE welding_sales_activities
-  ADD COLUMN IF NOT EXISTS category text,
-  ADD COLUMN IF NOT EXISTS estimated_value numeric DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS pipeline_order int DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS completed_at timestamptz;
-
--- Deposits
-CREATE TABLE IF NOT EXISTS welding_deposits (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  shop_id uuid NOT NULL,
-  customer_id uuid REFERENCES welding_customers(id) ON DELETE SET NULL,
-  quote_id uuid REFERENCES welding_quotes(id) ON DELETE SET NULL,
-  invoice_id uuid REFERENCES welding_invoices(id) ON DELETE SET NULL,
-  amount numeric NOT NULL,
-  payment_method text,
-  received_date date DEFAULT now(),
-  status text DEFAULT 'held',  -- held | applied | refunded
-  notes text,
-  created_by uuid,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
-
--- Time tracking
-CREATE TABLE IF NOT EXISTS welding_time_entries (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  shop_id uuid NOT NULL,
-  customer_id uuid REFERENCES welding_customers(id) ON DELETE SET NULL,
-  quote_id uuid REFERENCES welding_quotes(id) ON DELETE SET NULL,
-  user_id uuid,
-  category text DEFAULT 'general', -- visit | call | quoting | admin | travel
-  entry_date date DEFAULT now(),
-  minutes int NOT NULL,
-  billable boolean DEFAULT false,
-  notes text,
-  created_at timestamptz DEFAULT now()
-);
+```ts
+if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
 ```
 
-RLS enabled with shop-scoped policies for select/insert/update/delete on both new tables.
+Recharts depends on many `d3-*` sub-packages with internal circular imports. When Rollup forces them all into one chunk together with recharts, the hoisted `const` bindings end up referenced before their initializer runs — producing the "Cannot access 'P' before initialization" TDZ crash in production. This is a well-known Rollup/Vite issue with recharts + manual chunking.
 
-### Files
+It does not happen in dev because Vite serves ES modules unbundled.
 
-- **Edit** `src/pages/welding/WeldingAdminSales.tsx` — convert to tabbed shell + KPI strip.
-- **New** `src/components/welding/sales/`
-  - `SalesKpiStrip.tsx`
-  - `PipelineBoard.tsx` (kanban)
-  - `ClientsTab.tsx` + `ClientDrawer.tsx`
-  - `RequestsTab.tsx`
-  - `QuotesTab.tsx`
-  - `FollowUpsTab.tsx`
-  - `DepositsTab.tsx` + `DepositDialog.tsx`
-  - `TimeTab.tsx` + `TimeEntryDialog.tsx`
-  - `ActivityDialog.tsx` (extracted/expanded from current inline form)
-- **New** `src/hooks/welding/useSalesData.ts` — react-query hooks for each dataset.
-- **New migration** `supabase/migrations/<ts>_welding_sales_workspace.sql`.
+## Fix
 
-### Behaviour rules
+Remove the manual chunking rule that forces recharts + d3 into a single chunk and let Rollup handle them with its default chunking (which respects circular-import order). Specifically:
 
-- All data live from Supabase, scoped by `shopId` via existing `useShopId` hook (no mock data).
-- Empty states with CTA per tab; loading skeletons; toast on save/error.
-- Mobile: tabs collapse into a horizontal scroll bar; kanban becomes vertical stacked columns; cards are tap-friendly (≥44px hit area).
-- Follow-up overdue cards keep the existing amber border treatment.
-- Pipeline drag uses `@dnd-kit/core` (already in project) — fallback to status `Select` on touch.
-- Deposit "Apply to invoice" updates `welding_invoices.amount_paid` semantics already present (and inserts a `welding_payments` row).
-- Time entries roll up weekly per client; billable totals feed a future invoice line (out of scope here, just stored).
+1. In `vite.config.ts`, remove the line:
+   ```ts
+   if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
+   ```
+   so recharts and d3 fall through to default chunking (or the `vendor-other` catch-all on a per-package basis won't trigger because we'll also let them be naturally split).
 
-### Out of scope
+2. As an extra safety measure, also remove the `vendor-other` catch-all `return 'vendor-other'` at the bottom of the function so each remaining `node_modules` package gets its own chunk by default. This prevents future TDZ regressions from other circular-dep libraries.
 
-- Email/SMS sending to clients (uses existing messages module).
-- Commission calculations.
-- Calendar sync (uses existing welding calendar page).
+3. Keep all other intentional chunking (radix, supabase, mapbox, etc.) untouched — those packages don't have the circular-import problem.
+
+No other files need to change. After redeploy the bundle will load cleanly and the white screen will be resolved.
+
+## Verification
+
+After the edit:
+- Build runs (harness auto-builds).
+- Reload the preview — app should render instead of white screen.
+- Console should no longer show the `Cannot access 'P' before initialization` error.
+- Then user clicks Publish to push the fix to allbusiness365.com.
+
+## Note on the other console error
+
+The `chrome-extension://...settings.js` SyntaxError is from a browser extension, not the app — unrelated and ignored.
