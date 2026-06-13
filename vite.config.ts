@@ -37,7 +37,9 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
+            // NOTE: Do NOT manually chunk recharts/d3 — circular imports cause TDZ
+            // "Cannot access 'P' before initialization" errors in production.
+            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor')) return;
             if (id.includes('@radix-ui/react-dialog') || id.includes('@radix-ui/react-popover') || id.includes('@radix-ui/react-dropdown')) return 'vendor-radix-overlay';
             if (id.includes('@radix-ui')) return 'vendor-radix';
             if (id.includes('@supabase')) return 'vendor-supabase';
@@ -61,8 +63,9 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('semantic-ui') || id.includes('react-joyride') || id.includes('react-markdown')) return 'vendor-misc';
             if (id.includes('@dnd-kit') || id.includes('@hello-pangea') || id.includes('react-beautiful-dnd')) return 'vendor-dnd';
             if (id.includes('react-day-picker') || id.includes('embla-carousel')) return 'vendor-picker';
-            return 'vendor-other';
+            return;
           }
+
           if (id.includes('/src/pages/septic/') || id.includes('/src/components/septic/')) return 'app-septic';
           if (id.includes('/src/pages/personal-trainer/') || id.includes('/src/components/nutrition/')) return 'app-nutrition';
           if (id.includes('/src/pages/') && !id.includes('Index')) return 'app-pages';
