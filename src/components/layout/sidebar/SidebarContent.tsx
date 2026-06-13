@@ -86,35 +86,43 @@ export function SidebarContent() {
     .filter(section => section.items.length > 0);
 
   return (
-    <div className="flex h-full flex-col bg-white border-r border-gray-200">
+    <div className="flex h-full flex-col text-slate-100">
       {/* Logo */}
-      <div className="flex h-16 items-center justify-center px-6 bg-gradient-to-r from-indigo-600 to-indigo-700 border-b border-indigo-800">
-        <SidebarLogo />
+      <div className="relative flex h-16 items-center justify-center px-6 border-b border-white/10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600" />
+        <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-orange-500/30 blur-2xl" />
+        <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-indigo-400/30 blur-2xl" />
+        <div className="relative z-10">
+          <SidebarLogo />
+        </div>
       </div>
 
       {/* Active Module Indicator */}
-      <div className="py-3 border-b border-gray-100">
+      <div className="py-3 border-b border-white/5 bg-slate-900/40">
         <ModuleIndicator />
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-2 p-2 overflow-y-auto">
+      <nav className="flex-1 space-y-2 p-3 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
         {/* Module Hub Link */}
         <div className="mb-3 space-y-1">
           <Link
             to="/module-hub"
             onClick={() => handleLinkClick('/module-hub')}
             className={cn(
-              'flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-150',
-              'hover:bg-muted/50',
-              'text-muted-foreground hover:text-foreground',
-              location.pathname === '/module-hub' && 'bg-muted text-foreground'
+              'group relative flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
+              location.pathname === '/module-hub'
+                ? 'bg-gradient-to-r from-indigo-500/20 to-violet-500/10 text-white ring-1 ring-indigo-400/40 shadow-lg shadow-indigo-500/10'
+                : 'text-slate-300 hover:text-white hover:bg-white/5'
             )}
           >
-            <LayoutGrid className="mr-3 h-4 w-4" />
+            <LayoutGrid className={cn(
+              'mr-3 h-4 w-4 transition-colors',
+              location.pathname === '/module-hub' ? 'text-indigo-300' : 'text-slate-400 group-hover:text-indigo-300'
+            )} />
             All Modules
           </Link>
-          
+
         </div>
 
         {/* Developer Sections - Platform Developer only */}
