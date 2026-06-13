@@ -465,7 +465,7 @@ const WaterDeliveryPurchases = lazy(() => import('@/pages/water-delivery/WaterDe
 const WaterDeliveryStaff = lazy(() => import('@/pages/water-delivery/WaterDeliveryStaff'));
 const WaterDeliveryPartsInventory = lazy(() => import('@/pages/water-delivery/WaterDeliveryPartsInventory'));
 const WaterDeliveryStore = lazy(() => import('@/pages/water-delivery/WaterDeliveryStore'));
-import { WaterDeliveryLayout } from '@/components/water-delivery';
+const WaterDeliveryLayout = lazy(() => import('@/components/water-delivery').then(m => ({ default: m.WaterDeliveryLayout })));
 
 // Personal Trainer
 const PersonalTrainerDashboard = lazy(() => import('@/pages/personal-trainer/PersonalTrainerDashboard'));
