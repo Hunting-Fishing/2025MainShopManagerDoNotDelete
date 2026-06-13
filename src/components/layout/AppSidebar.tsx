@@ -14,7 +14,7 @@ export function AppSidebar() {
       {/* Mobile overlay */}
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm"
+          className="fixed inset-0 z-30 bg-foreground/30 backdrop-blur-sm"
           onClick={toggle}
         />
       )}
@@ -22,8 +22,8 @@ export function AppSidebar() {
       {/* Sidebar */}
       <div
         className={cn(
-          'fixed top-0 left-0 z-30 h-full w-[280px] transition-transform duration-300 shadow-xl shadow-slate-900/10 print:hidden',
-          'bg-white border-r border-slate-200/80',
+          'fixed top-0 left-0 z-30 h-full w-[280px] transition-transform duration-300 shadow-soft print:hidden',
+          'bg-sidebar border-r border-sidebar-border',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >

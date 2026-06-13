@@ -6,6 +6,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { I18nextProvider } from 'react-i18next';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { ConsoleErrorLogger } from '@/components/debug/ConsoleErrorLogger';
 import { GlobalErrorBoundary } from '@/components/error/GlobalErrorBoundary';
 import i18n from './i18n/config';
@@ -133,12 +134,14 @@ const AppWithBootReady: React.FC = () => {
         <QueryClientProvider client={queryClient}>
           <I18nextProvider i18n={i18n}>
             <LanguageProvider>
-              <AuthProvider>
-                <BrowserRouter>
-                  <ConsoleErrorLogger />
-                  <App />
-                </BrowserRouter>
-              </AuthProvider>
+              <ThemeProvider defaultTheme="light">
+                <AuthProvider>
+                  <BrowserRouter>
+                    <ConsoleErrorLogger />
+                    <App />
+                  </BrowserRouter>
+                </AuthProvider>
+              </ThemeProvider>
             </LanguageProvider>
           </I18nextProvider>
         </QueryClientProvider>
