@@ -400,7 +400,7 @@ const FuelDeliveryProfile = lazy(() => import('@/pages/fuel-delivery/FuelDeliver
 const FuelDeliverySettings = lazy(() => import('@/pages/fuel-delivery/FuelDeliverySettings'));
 const FuelDeliveryPurchases = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryPurchases'));
 const FuelDeliveryStore = lazy(() => import('@/pages/fuel-delivery/FuelDeliveryStore'));
-import { FuelDeliveryLayout } from '@/components/fuel-delivery';
+const FuelDeliveryLayout = lazy(() => import('@/components/fuel-delivery').then(m => ({ default: m.FuelDeliveryLayout })));
 
 // Fuel Delivery Portal
 const FuelDeliveryPortalLanding = lazy(() => import('@/pages/fuel-delivery-portal/FuelDeliveryPortalLanding'));
