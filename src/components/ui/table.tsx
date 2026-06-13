@@ -31,11 +31,10 @@ const TableBody = React.forwardRef<
     colorRows?: boolean;
   }
 >(({ className, colorRows = false, ...props }, ref) => {
-  // Add an additional class for striped rows when colorRows is true
-  const bodyClass = colorRows 
-    ? "[&_tr:nth-of-type(even)]:bg-slate-50 [&_tr:nth-of-type(odd)]:bg-white [&_tr:last-child]:border-0"
+  const bodyClass = colorRows
+    ? "[&_tr:nth-of-type(even)]:bg-muted/30 [&_tr:nth-of-type(odd)]:bg-card [&_tr:last-child]:border-0"
     : "[&_tr:last-child]:border-0";
-    
+
   return (
     <tbody
       ref={ref}
