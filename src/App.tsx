@@ -497,7 +497,7 @@ const PersonalTrainerGymStaff = lazy(() => import('@/pages/personal-trainer/Pers
 const PersonalTrainerTimeTracking = lazy(() => import('@/pages/personal-trainer/PersonalTrainerTimeTracking'));
 const PersonalTrainerSupplements = lazy(() => import('@/pages/personal-trainer/PersonalTrainerSupplements'));
 const PersonalTrainerAbout = lazy(() => import('@/pages/personal-trainer/PersonalTrainerAbout'));
-import { PersonalTrainerLayout } from '@/components/personal-trainer';
+const PersonalTrainerLayout = lazy(() => import('@/components/personal-trainer').then(m => ({ default: m.PersonalTrainerLayout })));
 
 // Game Development Module
 const GameDevDashboard = lazy(() => import('@/pages/game-development/GameDevDashboard'));
