@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { useShopId } from '@/hooks/useShopId';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Loader2, AlertTriangle } from 'lucide-react';
+import { Building2, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -15,7 +15,7 @@ interface ShopGuardProps {
  * This is a critical security component that ensures multi-tenant data isolation.
  */
 export function ShopGuard({ children }: ShopGuardProps) {
-  const { shopId, loading, error } = useShopId();
+  const { shopId, loading, error, refetch } = useShopId();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -44,11 +44,16 @@ export function ShopGuard({ children }: ShopGuardProps) {
           </CardHeader>
           <CardContent className="space-y-4 text-center">
             <p className="text-muted-foreground">
-              There was a problem loading your profile. Please try logging in again.
+              {error.message || 'There was a problem loading your profile.'}
             </p>
-            <Button onClick={handleLogout} variant="outline" className="w-full">
-              Return to Login
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button onClick={refetch} className="w-full">
+                <RefreshCw className="h-4 w-4 mr-2" /> Retry
+              </Button>
+              <Button onClick={handleLogout} variant="outline" className="w-full">
+                Return to Login
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
