@@ -2,7 +2,18 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-const AUTH_TIMEOUT_MS = 8000;
+const AUTH_TIMEOUT_MS = 5000;
+const ROLES_TIMEOUT_MS = 5000;
+
+function withTimeout<T>(p: PromiseLike<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    Promise.resolve(p).then(
+      (v) => { clearTimeout(id); resolve(v); },
+      (e) => { clearTimeout(id); reject(e); },
+    );
+  });
+}
 
 interface AuthState {
   user: User | null;
@@ -47,60 +58,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handlerRef = useRef<(event: string, currentSession: Session | null) => void>();
 
+  const applyRoles = (roleNames: string[]) => {
+    setUserRoles(roleNames);
+    setIsAdmin(roleNames.includes('admin'));
+    setIsOwner(roleNames.includes('owner'));
+    setIsManager(roleNames.includes('manager') || roleNames.includes('yard_manager'));
+  };
+
   const fetchUserRoles = async (authUserId: string): Promise<void> => {
     setIsRolesLoading(true);
     try {
-      const { data: directRoles, error: directError } = await supabase
-        .from('user_roles')
-        .select(`roles (name)`)
-        .eq('user_id', authUserId);
+      const directRes: any = await withTimeout(
+        supabase.from('user_roles').select(`roles (name)`).eq('user_id', authUserId),
+        ROLES_TIMEOUT_MS,
+        'user_roles lookup',
+      );
 
-      if (!directError && directRoles && directRoles.length > 0) {
-        const roleNames = directRoles.map(item => (item.roles as any)?.name).filter(Boolean) as string[];
-        setUserRoles(roleNames);
-        setIsAdmin(roleNames.includes('admin'));
-        setIsOwner(roleNames.includes('owner'));
-        setIsManager(roleNames.includes('manager') || roleNames.includes('yard_manager'));
-        setError(null);
+      if (!directRes?.error && directRes?.data?.length) {
+        const roleNames = directRes.data.map((i: any) => i.roles?.name).filter(Boolean) as string[];
+        applyRoles(roleNames);
         return;
       }
 
-      // Fallback: try profile.id lookup
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id')
-        .or(`user_id.eq.${authUserId},id.eq.${authUserId}`)
-        .maybeSingle();
+      const profileRes: any = await withTimeout(
+        supabase.from('profiles').select('id').or(`user_id.eq.${authUserId},id.eq.${authUserId}`).maybeSingle(),
+        ROLES_TIMEOUT_MS,
+        'profile lookup',
+      );
 
-      const profileId = profileData?.id;
+      const profileId = profileRes?.data?.id;
       if (profileId && profileId !== authUserId) {
-        const { data: profileRoles, error: profileError } = await supabase
-          .from('user_roles')
-          .select(`roles (name)`)
-          .eq('user_id', profileId);
-
-        if (!profileError && profileRoles && profileRoles.length > 0) {
-          const roleNames = profileRoles.map(item => (item.roles as any)?.name).filter(Boolean) as string[];
-          setUserRoles(roleNames);
-          setIsAdmin(roleNames.includes('admin'));
-          setIsOwner(roleNames.includes('owner'));
-          setIsManager(roleNames.includes('manager') || roleNames.includes('yard_manager'));
-          setError(null);
+        const profileRoles: any = await withTimeout(
+          supabase.from('user_roles').select(`roles (name)`).eq('user_id', profileId),
+          ROLES_TIMEOUT_MS,
+          'profile user_roles lookup',
+        );
+        if (!profileRoles?.error && profileRoles?.data?.length) {
+          const roleNames = profileRoles.data.map((i: any) => i.roles?.name).filter(Boolean) as string[];
+          applyRoles(roleNames);
           return;
         }
       }
 
-      setUserRoles([]);
-      setIsAdmin(false);
-      setIsOwner(false);
-      setIsManager(false);
+      applyRoles([]);
     } catch (err) {
-      console.error('AuthProvider: Error fetching roles:', err);
-      setUserRoles([]);
-      setIsAdmin(false);
-      setIsOwner(false);
-      setIsManager(false);
-      setError('Failed to load user permissions');
+      // Never block the app — fall back to empty roles and log.
+      console.warn('AuthProvider: role fetch failed/timeout:', err);
+      applyRoles([]);
     } finally {
       setIsRolesLoading(false);
     }
