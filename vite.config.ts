@@ -35,9 +35,10 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // NOTE: Grouping recharts/d3 into a single chunk to prevent TDZ
-            // "Cannot access 'P' before initialization" errors occur if split across chunks.
-            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor') || id.includes('chart.js') || id.includes('react-chartjs')) return 'vendor-charts';
+            // Recharts, d3, react-smooth, and react-is have circular dependencies.
+            // They must initialize from the same chunk to avoid TDZ crashes like
+            // "Cannot access 'P' before initialization" in production bundles.
+            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor') || id.includes('react-smooth') || id.includes('react-is') || id.includes('chart.js') || id.includes('react-chartjs')) return 'vendor-charts';
             if (id.includes('@radix-ui/react-dialog') || id.includes('@radix-ui/react-popover') || id.includes('@radix-ui/react-dropdown')) return 'vendor-radix-overlay';
             if (id.includes('@radix-ui')) return 'vendor-radix';
             if (id.includes('@supabase')) return 'vendor-supabase';
@@ -52,7 +53,7 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('@tanstack/react-table')) return 'vendor-rt';
             if (id.includes('@tanstack')) return 'vendor-tanstack';
             if (id.includes('date-fns')) return 'vendor-datefns';
-            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-is/')) return 'vendor-react';
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/scheduler/')) return 'vendor-react';
             if (id.includes('react-router')) return 'vendor-router';
             if (id.includes('zod') || id.includes('react-hook-form') || id.includes('@hookform')) return 'vendor-forms';
             if (id.includes('i18next') || id.includes('react-i18next')) return 'vendor-i18n';
