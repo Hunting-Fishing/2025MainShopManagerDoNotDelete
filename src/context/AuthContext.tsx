@@ -124,16 +124,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserId(currentSession?.user?.id ?? null);
     setUserName(currentSession?.user?.email ?? currentSession?.user?.user_metadata?.full_name ?? null);
 
+    // Unblock the app as soon as we know the session — roles load in background.
+    setIsLoading(false);
+
     if (currentSession?.user?.id) {
-      fetchUserRoles(currentSession.user.id).finally(() => {
-        setIsLoading(false);
-      });
+      void fetchUserRoles(currentSession.user.id);
     } else {
-      setIsAdmin(false);
-      setIsOwner(false);
-      setIsManager(false);
-      setUserRoles([]);
-      setIsLoading(false);
+      applyRoles([]);
+      setIsRolesLoading(false);
     }
   };
 
