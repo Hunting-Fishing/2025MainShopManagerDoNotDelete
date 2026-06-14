@@ -1,47 +1,33 @@
-## Diagnostic findings
+## Fix 8 critical RLS findings, then publish
 
-- The exact text **“Loading your workspace...”** is rendered only by `ShopGuard`, which runs inside `ProtectedRoute` after authentication is considered complete.
-- The public `/` page currently loads, but it still downloads far too much app code: browser profiling showed ~204 scripts, ~2MB JS, ~7.2s DOMContentLoaded, and protected-shell files loading on the landing page.
-- `AuthContext` still has a hang path: the 8s auth timeout is cleared before `fetchUserRoles()` finishes. If `user_roles` or fallback `profiles` lookup hangs, `isLoading` can stay true forever.
-- `useShopId` now has a timeout, but it still depends on `authLoading`; if auth role loading never resolves, workspace guards remain blocked.
-- Startup Supabase tables currently show **no explicit Data API grants** in `information_schema.role_table_grants` for critical tables like `profiles`, `shops`, `user_roles`, `roles`, `shop_enabled_modules`, `business_modules`, and `shop_hours`. RLS exists, but missing grants can still break client access.
-- The logged-in user data exists: profile, shop, owner role, and enabled modules are present in the database.
-- Module Hub still calls subscription/platform checks at startup, including an edge function that can involve Stripe. That should not block the main workspace from rendering.
+### Goal
+Close all 8 cross-tenant data leaks the security scanner flagged, then ship to `allbusiness365.com`.
 
-## Plan to fix
+### Single idempotent migration
+One migration drops every offending `USING (true)` / anon-write policy and replaces it with the standard `shop_id = public.get_current_user_shop_id()` pattern already used across the project. Each statement is wrapped in `DO` / `DROP POLICY IF EXISTS` so it's safe to re-run.
 
-1. **Harden auth bootstrap**
-   - Update `AuthContext` so session loading ends once the session is known.
-   - Load roles separately with a strict timeout and safe fallback to an empty role list.
-   - Ensure `isRolesLoading` always resolves and can never hold the app indefinitely.
+### Tables fixed
 
-2. **Harden shop lookup**
-   - Keep `useShopId` on the AuthContext singleton.
-   - Add proper timeout cleanup and consistent error handling.
-   - Ensure `ShopGuard` always transitions to either content, retryable error, or setup-required state.
+| # | Table | Fix |
+|---|---|---|
+| 1 | `audit_logs` | Drop `Authenticated users can view audit logs` (USING true). Keep existing admin/owner-scoped policy. |
+| 2 | `customer_interactions` | Drop `Enable full access to customer_interactions`. Add shop-scoped ALL policy via `get_current_user_shop_id()`. |
+| 3 | `equipment_future_plans` | Drop `Anyone can view equipment future plans`. Add shop-scoped SELECT for authenticated users. |
+| 4 | `follow_ups` | Drop the 3 `USING (true)` view/insert/update policies. Add shop-scoped ALL policy. |
+| 5 | `shop_settings` + `company_settings` | Drop the `auth.role() IN ('authenticated','anon')` policies. Add shop-scoped ALL policy (authenticated only). |
+| 6 | `work_order_job_lines` | Drop the 4 `USING (true)` policies. Existing shop-scoped policy remains. |
+| 7 | `work_order_parts` | Drop `Enable read access for all users`. Existing shop-scoped policies remain. |
+| 8 | `work_order_time_entries` | Drop `Allow all access to work_order_time_entries`. Existing user/shop-scoped policies remain. |
 
-3. **Add missing startup grants via migration**
-   - Add explicit authenticated/service-role grants for startup tables required by the browser:
-     - `profiles`, `shops`, `user_roles`, `roles`, `shop_enabled_modules`, `business_modules`, `module_subscriptions`, `platform_developers`, `shop_hours`
-   - Do not add anonymous access unless an existing public policy requires it.
-   - Leave RLS protections intact.
+All replacement policies use the existing `public.get_current_user_shop_id()` security-definer function — no new functions, no schema changes, no app-code changes.
 
-4. **Stop loading protected workspace code on the public homepage**
-   - Move authenticated routes into a lazy protected shell component.
-   - Lazy-load `Layout`, `AuthGate`, `AuthenticatedProviders`, and protected route groups only after the user enters the app.
-   - Keep `/` focused on the landing page so public visitors do not download sidebar/module/workspace logic.
+### Verification
+1. Re-run `security--get_scan_results` — all 8 error-level findings should clear.
+2. Smoke-check `/automotive`, `/shop-manager`, and a work-order detail page in preview to confirm nothing read-broke (existing shop-scoped policies already cover the legitimate access paths).
+3. Publish.
 
-5. **Stop blocking Module Hub on billing checks**
-   - Render the workspace from live `business_modules` and `shop_enabled_modules` first.
-   - Move `check-module-subscriptions`/Stripe checks into a background billing status query with timeout and error fallback.
-   - Never let billing/subscription status keep the workspace stuck on loading.
+### Not in scope (the 5 warnings)
+`business_industries`, `customer_referrals`/`referral_transactions`, `discount_audit_log`, `diy_bay_rate_history`, Realtime channels, leaked-password protection. These don't block publish. I can do them in a follow-up pass if you want — say the word.
 
-6. **Validate the fix**
-   - Verify `/` loads with fewer initial scripts and no protected-shell imports.
-   - Verify authenticated `/module-hub` reaches usable UI.
-   - Verify a protected route cannot stay on “Loading your workspace...” longer than the timeout.
-   - Check console, network, Supabase logs, and slow-query signals after the change.
-
-<presentation-actions>
-<presentation-link url="https://docs.lovable.dev/tips-tricks/troubleshooting">Troubleshooting docs</presentation-link>
-</presentation-actions>
+### Risk
+Low. Every replacement policy is the same pattern used by ~400 other policies in this DB. If a legitimate flow breaks (unlikely), the fix is to add a missing `shop_id` on the offending insert path — not to roll back the policy.
