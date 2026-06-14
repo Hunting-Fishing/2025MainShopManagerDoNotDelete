@@ -1,59 +1,47 @@
-# Fix: App stuck on "Loading your workspace"
+## Diagnostic findings
 
-## Root cause
+- The exact text **“Loading your workspace...”** is rendered only by `ShopGuard`, which runs inside `ProtectedRoute` after authentication is considered complete.
+- The public `/` page currently loads, but it still downloads far too much app code: browser profiling showed ~204 scripts, ~2MB JS, ~7.2s DOMContentLoaded, and protected-shell files loading on the landing page.
+- `AuthContext` still has a hang path: the 8s auth timeout is cleared before `fetchUserRoles()` finishes. If `user_roles` or fallback `profiles` lookup hangs, `isLoading` can stay true forever.
+- `useShopId` now has a timeout, but it still depends on `authLoading`; if auth role loading never resolves, workspace guards remain blocked.
+- Startup Supabase tables currently show **no explicit Data API grants** in `information_schema.role_table_grants` for critical tables like `profiles`, `shops`, `user_roles`, `roles`, `shop_enabled_modules`, `business_modules`, and `shop_hours`. RLS exists, but missing grants can still break client access.
+- The logged-in user data exists: profile, shop, owner role, and enabled modules are present in the database.
+- Module Hub still calls subscription/platform checks at startup, including an edge function that can involve Stripe. That should not block the main workspace from rendering.
 
-The "Loading your workspace…" screen comes from `src/components/auth/ShopGuard.tsx`, which depends on `src/hooks/useShopId.ts`. That hook:
+## Plan to fix
 
-1. Calls `supabase.auth.getUser()` itself (a second, parallel auth call to the one already running in `AuthContext`).
-2. Then queries `profiles` with an `.or(id.eq.<uid>,user_id.eq.<uid>)` filter.
-3. Has **no timeout** — if either call hangs (network blip, RLS denial that never resolves, slow profile lookup), `loading` stays `true` forever and the user is locked on the spinner.
+1. **Harden auth bootstrap**
+   - Update `AuthContext` so session loading ends once the session is known.
+   - Load roles separately with a strict timeout and safe fallback to an empty role list.
+   - Ensure `isRolesLoading` always resolves and can never hold the app indefinitely.
 
-`AuthContext` already has an 8s safety timeout, but `useShopId` runs independently after auth resolves and can hang indefinitely on its own.
+2. **Harden shop lookup**
+   - Keep `useShopId` on the AuthContext singleton.
+   - Add proper timeout cleanup and consistent error handling.
+   - Ensure `ShopGuard` always transitions to either content, retryable error, or setup-required state.
 
-## Plan
+3. **Add missing startup grants via migration**
+   - Add explicit authenticated/service-role grants for startup tables required by the browser:
+     - `profiles`, `shops`, `user_roles`, `roles`, `shop_enabled_modules`, `business_modules`, `module_subscriptions`, `platform_developers`, `shop_hours`
+   - Do not add anonymous access unless an existing public policy requires it.
+   - Leave RLS protections intact.
 
-### 1. Refactor `src/hooks/useShopId.ts`
-- Read `userId` from `useAuthUser()` (AuthContext singleton) instead of calling `supabase.auth.getUser()` again — removes one redundant network round-trip and an entire failure mode.
-- Wait for auth to finish (`isLoading` from context) before querying.
-- Wrap the profile query in a `Promise.race` with a **6-second timeout** that resolves with `shopId = null` and an error message instead of hanging forever.
-- Keep the existing `.or(id.eq.X,user_id.eq.X).maybeSingle()` shape so multi-staff profile resolution still works.
+4. **Stop loading protected workspace code on the public homepage**
+   - Move authenticated routes into a lazy protected shell component.
+   - Lazy-load `Layout`, `AuthGate`, `AuthenticatedProviders`, and protected route groups only after the user enters the app.
+   - Keep `/` focused on the landing page so public visitors do not download sidebar/module/workspace logic.
 
-### 2. Improve `src/components/auth/ShopGuard.tsx` UX
-- When the timeout fires (loading finishes with an `error`), show the existing error card with a "Retry" button (calls a `refetch` returned from `useShopId`) in addition to "Return to Login", so users aren't forced to sign out for a transient failure.
-- Add a `refetch` function to `useShopId` to support the retry button.
+5. **Stop blocking Module Hub on billing checks**
+   - Render the workspace from live `business_modules` and `shop_enabled_modules` first.
+   - Move `check-module-subscriptions`/Stripe checks into a background billing status query with timeout and error fallback.
+   - Never let billing/subscription status keep the workspace stuck on loading.
 
-### 3. No other files change
-- `AuthContext`, `ProtectedRoute`, routing, and RLS are untouched. This is purely a hook resilience fix.
+6. **Validate the fix**
+   - Verify `/` loads with fewer initial scripts and no protected-shell imports.
+   - Verify authenticated `/module-hub` reaches usable UI.
+   - Verify a protected route cannot stay on “Loading your workspace...” longer than the timeout.
+   - Check console, network, Supabase logs, and slow-query signals after the change.
 
-## Technical details
-
-```ts
-// useShopId.ts (shape)
-const { userId, isLoading: authLoading } = useAuthUser();
-useEffect(() => {
-  if (authLoading) return;
-  if (!userId) { setShopId(null); setLoading(false); return; }
-
-  const timeout = new Promise<never>((_, rej) =>
-    setTimeout(() => rej(new Error('Profile lookup timed out')), 6000)
-  );
-  const query = supabase.from('profiles')
-    .select('shop_id')
-    .or(`id.eq.${userId},user_id.eq.${userId}`)
-    .maybeSingle();
-
-  Promise.race([query, timeout])
-    .then(({ data }) => setShopId(data?.shop_id ?? null))
-    .catch(err => { setError(err); setShopId(null); })
-    .finally(() => setLoading(false));
-}, [userId, authLoading, refetchTick]);
-```
-
-## Verification
-- Reload `/module-hub` while authenticated → spinner resolves within 6s worst case.
-- Throttle network in DevTools → after 6s, error card with Retry appears instead of indefinite spinner.
-- Unauthenticated → still redirects to `/login` via `ProtectedRoute`.
-
-## Out of scope
-- Changes to RLS, AuthContext, routing, or UI design.
-- The earlier lazy-loading / chunking work remains in place.
+<presentation-actions>
+<presentation-link url="https://docs.lovable.dev/tips-tricks/troubleshooting">Troubleshooting docs</presentation-link>
+</presentation-actions>
