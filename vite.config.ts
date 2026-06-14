@@ -35,9 +35,9 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // NOTE: Do NOT manually chunk recharts/d3 — circular imports cause TDZ
-            // "Cannot access 'P' before initialization" errors in production.
-            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor')) return;
+            // NOTE: Grouping recharts/d3 into a single chunk to prevent TDZ
+            // "Cannot access 'P' before initialization" errors occur if split across chunks.
+            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor') || id.includes('chart.js') || id.includes('react-chartjs')) return 'vendor-charts';
             if (id.includes('@radix-ui/react-dialog') || id.includes('@radix-ui/react-popover') || id.includes('@radix-ui/react-dropdown')) return 'vendor-radix-overlay';
             if (id.includes('@radix-ui')) return 'vendor-radix';
             if (id.includes('@supabase')) return 'vendor-supabase';
@@ -47,13 +47,12 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('xlsx')) return 'vendor-xlsx';
             if (id.includes('jspdf')) return 'vendor-pdf';
             if (id.includes('framer-motion')) return 'vendor-motion';
-            if (id.includes('chart.js') || id.includes('react-chartjs')) return 'vendor-chartjs';
             if (id.includes('lucide-react')) return 'vendor-icons';
             if (id.includes('@tanstack/react-query')) return 'vendor-rq';
             if (id.includes('@tanstack/react-table')) return 'vendor-rt';
             if (id.includes('@tanstack')) return 'vendor-tanstack';
             if (id.includes('date-fns')) return 'vendor-datefns';
-            if (id.includes('react-dom')) return 'vendor-react-dom';
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-is/')) return 'vendor-react';
             if (id.includes('react-router')) return 'vendor-router';
             if (id.includes('zod') || id.includes('react-hook-form') || id.includes('@hookform')) return 'vendor-forms';
             if (id.includes('i18next') || id.includes('react-i18next')) return 'vendor-i18n';
@@ -74,8 +73,6 @@ export default defineConfig(({ mode }) => ({
           if (id.includes('/src/pages/automotive/') || id.includes('/src/components/automotive/')) return 'app-automotive';
           if (id.includes('/src/pages/gunsmith/') || id.includes('/src/components/gunsmith/')) return 'app-gunsmith';
           if (id.includes('/src/components/landing/')) return 'app-landing';
-          if (id.includes('/src/hooks/')) return 'app-hooks';
-          if (id.includes('/src/services/')) return 'app-services';
         },
       },
     },
