@@ -45,8 +45,15 @@ export default defineConfig(({ mode }) => ({
               id.includes('node_modules/scheduler/') ||
               id.includes('react-is') ||
               id.includes('@tanstack/react-query') ||
-              id.includes('react-router')
+              id.includes('react-router') ||
+              id.includes('lucide-react') ||
+              id.includes('react-helmet-async') ||
+              id.includes('react-hook-form') ||
+              id.includes('@hookform') ||
+              id.includes('react-i18next') ||
+              id.includes('use-sync-external-store')
             ) return 'vendor-react';
+
 
             // Recharts, d3, react-smooth have circular deps — keep together.
             if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor') || id.includes('react-smooth') || id.includes('chart.js') || id.includes('react-chartjs')) return 'vendor-charts';
